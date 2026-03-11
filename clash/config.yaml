@@ -1,0 +1,100 @@
+# Clash 配置文件
+# 基础配置模板
+
+mixed-port: 7890
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: info
+external-controller: 127.0.0.1:9090
+
+# DNS 配置
+dns:
+  enable: true
+  listen: 0.0.0.0:1053
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+  fallback:
+    - https://1.1.1.1/dns-query
+    - https://8.8.8.8/dns-query
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
+
+# 代理提供者（请在这里添加你的订阅链接）
+proxy-providers:
+  my-subscription:
+    type: http
+    url: "https://example.com/subscribe?token=xxx"
+    interval: 3600
+    path: ./proxy-providers/my-subscription.yaml
+    health-check:
+      enable: true
+      interval: 600
+      url: http://www.google.com/generate_204
+
+# 代理组
+proxy-groups:
+  - name: PROXY
+    type: select
+    proxies:
+      - 自动选择
+      - DIRECT
+
+  - name: 自动选择
+    type: url-test
+    use:
+      - my-subscription
+    url: http://www.google.com/generate_204
+    interval: 300
+    tolerance: 50
+
+  - name: 全球直连
+    type: select
+    proxies:
+      - DIRECT
+
+  - name: 全球拦截
+    type: select
+    proxies:
+      - REJECT
+      - DIRECT
+
+# 规则集
+rule-providers:
+  proxy:
+    type: http
+    behavior: classical
+    url: https://raw.githubusercontent.com/yourname/proxy-config/main/rules/proxy.list
+    path: ./ruleset/proxy.yaml
+    interval: 86400
+
+  direct:
+    type: http
+    behavior: classical
+    url: https://raw.githubusercontent.com/yourname/proxy-config/main/rules/direct.list
+    path: ./ruleset/direct.yaml
+    interval: 86400
+
+  reject:
+    type: http
+    behavior: classical
+    url: https://raw.githubusercontent.com/yourname/proxy-config/main/rules/reject.list
+    path: ./ruleset/reject.yaml
+    interval: 86400
+
+# 规则
+rules:
+  - RULE-SET,reject,全球拦截
+  - RULE-SET,direct,全球直连
+  - RULE-SET,proxy,PROXY
+  - GEOIP,CN,全球直连
+  - MATCH,PROXY

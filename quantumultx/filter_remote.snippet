@@ -1,0 +1,47 @@
+# Quantumult X Filter Remote Snippet
+# 规则片段文件
+
+# 代理规则
+host-suffix, google.com, PROXY
+host-suffix, googleapis.com, PROXY
+host-suffix, youtube.com, PROXY
+host-suffix, github.com, PROXY
+host-suffix, x.com, PROXY
+host-suffix, twitter.com, PROXY
+host-suffix, openai.com, PROXY
+host-suffix, chatgpt.com, PROXY
+host-suffix, reddit.com, PROXY
+host-suffix, medium.com, PROXY
+
+# 直连规则
+host-suffix, cn, DIRECT
+host-suffix, baidu.com, DIRECT
+host-suffix, taobao.com, DIRECT
+host-suffix, jd.com, DIRECT
+host-suffix, tmall.com, DIRECT
+host-suffix, aliyun.com, DIRECT
+host-suffix, qq.com, DIRECT
+host-suffix, weibo.com, DIRECT
+host-suffix, bilibili.com, DIRECT
+host-suffix, alipay.com, DIRECT
+host-suffix, wechat.com, DIRECT
+
+# 局域网
+host-suffix, local, DIRECT
+ip-cidr, 127.0.0.0/8, DIRECT
+ip-cidr, 192.168.0.0/16, DIRECT
+ip-cidr, 10.0.0.0/8, DIRECT
+ip-cidr, 172.16.0.0/12, DIRECT
+
+# 拦截规则
+host-suffix, doubleclick.net, REJECT
+host-suffix, googleadservices.com, REJECT
+host-suffix, googlesyndication.com, REJECT
+host-suffix, google-analytics.com, REJECT
+host-suffix, facebook-analytics.com, REJECT
+host-suffix, crashlytics.com, REJECT
+host-suffix, admob.com, REJECT
+host-suffix, appsflyer.com, REJECT
+
+# 兜底规则
+final, PROXY
