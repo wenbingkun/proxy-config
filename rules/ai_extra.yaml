@@ -1,0 +1,29 @@
+domain_suffix:
+  - poe.com
+  - character.ai
+  - stability.ai
+  - codeium.com
+  - windsurf.com
+  - huggingface.co
+  - groq.com
+  - together.ai
+  - replicate.com
+  - runwayml.com
+  - elevenlabs.io
+  - cohere.ai
+  - jasper.ai
+  - grok.com
+  - x.ai
+  - mistral.ai
+  - cursor.com
+  - kimi.ai
+  - moonshot.cn
+  - doubao.com
+  - suno.com
+  - coze.com
+  - perplexity.ai
+  - midjourney.com
+
+domain_keyword:
+  - antigravity
+  - cloudcode-pa

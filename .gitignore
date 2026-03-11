@@ -1,0 +1,14 @@
+# Quantumult X local bootstrap and MitM secrets
+quantumultx/bootstrap.conf
+quantumultx/*.p12
+quantumultx/*.pem
+quantumultx/*.crt
+quantumultx/*.key
+quantumultx/*.cer
+
+# Clash runtime caches
+clash/cache/
+/cache/
+
+# Old config backups (kept locally for reference)
+old/

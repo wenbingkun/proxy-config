@@ -1,0 +1,10 @@
+domain_suffix:
+  - npmjs.com
+  - pypi.org
+  - python.org
+  - brew.sh
+  - formulae.brew.sh
+  - marketplace.visualstudio.com
+  - vscode.dev
+  - jetbrains.com
+  - plugins.jetbrains.com

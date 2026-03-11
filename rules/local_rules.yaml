@@ -1,0 +1,61 @@
+rule_sets:
+  - id: local_network
+    title: 局域网和本地
+    source: local_network.yaml
+    clash_policy: DIRECT
+    qx_policy: DIRECT
+  - id: ai_extra
+    title: AI 补充规则
+    source: ai_extra.yaml
+    clash_policy: 🤖 人工智能
+    qx_policy: 🤖 人工智能
+  - id: hk_finance
+    title: 香港银行和券商
+    source: hk_finance.yaml
+    clash_policy: 🇭🇰 香港节点
+    qx_policy: 🇭🇰 香港节点
+  - id: crypto_extra
+    title: 加密货币补充规则
+    source: crypto_extra.yaml
+    clash_policy: 💰 加密货币
+    qx_policy: 💰 加密货币
+  - id: collaboration_extra
+    title: 商务协作补充规则
+    source: collaboration_extra.yaml
+    clash_policy: 🎙️ 商务协作
+    qx_policy: 💬 通讯协作
+  - id: zoom
+    title: Zoom 规则
+    source: zoom.yaml
+    clash_policy: 🎙️ 商务协作
+    qx_policy: 💬 通讯协作
+  - id: social_media
+    title: 社交平台补充规则
+    source: social_media.yaml
+    clash_policy: 🌐 社交平台
+    qx_policy: 🌐 社交平台
+  - id: crunchyroll
+    title: Crunchyroll 规则
+    source: crunchyroll.yaml
+    clash_policy: 🎬 流媒体
+    qx_policy: Streaming
+  - id: dev_extra
+    title: 开发服务补充规则
+    source: dev_extra.yaml
+    clash_policy: 👨‍💻 开发服务
+    qx_policy: 💻 开发服务
+  - id: stack_overflow
+    title: Stack Exchange 规则
+    source: stack_overflow.yaml
+    clash_policy: 👨‍💻 开发服务
+    qx_policy: 💻 开发服务
+  - id: speedtest
+    title: 网络测速规则
+    source: speedtest.yaml
+    clash_policy: 📡 网络测速
+    qx_policy: 📡 网络测速
+  - id: game_extra
+    title: 游戏服务补充规则
+    source: game_extra.yaml
+    clash_policy: 🎮 游戏平台
+    qx_policy: 🎮 游戏平台

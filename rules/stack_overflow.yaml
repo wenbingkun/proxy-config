@@ -1,0 +1,12 @@
+domain_suffix:
+  - stackoverflow.com
+  - stackexchange.com
+  - serverfault.com
+  - superuser.com
+  - askubuntu.com
+  - stackapps.com
+  - stackauth.com
+  - mathoverflow.net
+
+domain:
+  - stack.imgur.com

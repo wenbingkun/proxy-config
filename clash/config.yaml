@@ -1,25 +1,73 @@
-# Clash 配置文件
-# 基础配置模板
+# Clash(Mihomo) comprehensive config adapted from the original source config.
+# Keep shared local rules in rules/*.yaml and regenerate with scripts/build_rules.py.
 
-mixed-port: 7890
+port: 7890
+socks-port: 7891
+redir-port: 7892
+mixed-port: 7893
 allow-lan: true
-bind-address: '*'
+bind-address: "*"
 mode: rule
 log-level: info
+ipv6: false
 external-controller: 127.0.0.1:9090
 
-# DNS 配置
+experimental:
+  ignore-resolve-fail: true
+
+global-client-fingerprint: chrome
+
+sniffer:
+  enable: true
+  sniff:
+    TLS:
+      ports: [443, 8443]
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    QUIC:
+      ports: [443, 8443]
+
 dns:
   enable: true
-  listen: 0.0.0.0:1053
-  default-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
+  ipv6: false
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
+  proxy-server-nameserver:
+    - https://223.5.5.5/dns-query
+    - https://119.29.29.29/dns-query
+  fake-ip-filter:
+    - "*.lan"
+    - "*.localdomain"
+    - "*.example"
+    - "*.invalid"
+    - "*.localhost"
+    - "*.test"
+    - "*.local"
+    - "*.home.arpa"
+    - time.*.com
+    - time.*.gov
+    - time.*.edu.cn
+    - time.*.apple.com
+    - ntp.*.com
+    - "*.time.edu.cn"
+    - "*.ntp.org.cn"
+    - +.pool.ntp.org
+    - localhost.ptlogin2.qq.com
+    - +.srv.nintendo.net
+    - +.stun.playstation.net
+    - +.msftconnecttest.com
+    - +.msftncsi.com
+    - +.xboxlive.com
+    - msftconnecttest.com
+    - xbox.*.microsoft.com
+    - "*.battlenet.com.cn"
+    - "*.battlenet.com"
+    - "*.blzstatic.cn"
+    - "*.battle.net"
   nameserver:
-    - https://doh.pub/dns-query
-    - https://dns.alidns.com/dns-query
+    - https://223.5.5.5/dns-query
+    - https://119.29.29.29/dns-query
   fallback:
     - https://1.1.1.1/dns-query
     - https://8.8.8.8/dns-query
@@ -28,73 +76,397 @@ dns:
     geoip-code: CN
     ipcidr:
       - 240.0.0.0/4
+      - 0.0.0.0/32
+      - 127.0.0.1/32
+    domain:
+      - +.google.com
+      - +.facebook.com
+      - +.youtube.com
+      - +.twitter.com
+      - +.github.com
+  respect-rules: true
 
-# 代理提供者（请在这里添加你的订阅链接）
+pr: &global_select
+  type: select
+  proxies:
+    - ♻️ 自动选择
+    - 🚀 手动切换
+    - 🇭🇰 香港节点
+    - 🇲🇴 澳门节点
+    - 🇯🇵 日本节点
+    - 🇺🇲 美国节点
+    - 🇨🇳 台湾节点
+    - 🇸🇬 狮城节点
+    - 🇰🇷 韩国节点
+    - 🇬🇧 英国节点
+    - 🇪🇺 欧洲节点
+    - 🇨🇦 加拿大节点
+    - 🇦🇺 澳洲节点
+    - 🇳🇿 新西兰节点
+    - 🏝️ 大洋洲节点
+    - 🌎 南美节点
+    - 🕌 中东节点
+    - 🌍 非洲节点
+    - 🇦🇶 南极节点
+    - 🌏 东南亚节点
+    - 🌏 中亚节点
+    - 🌐 故障转移
+    - DIRECT
+p: &provider_base
+  type: http
+  interval: 86400
+  health-check:
+    enable: true
+    url: http://www.gstatic.com/generate_204
+    interval: 1800
+    timeout: 5000
+    lazy: true
+auto: &auto_group
+  type: url-test
+  lazy: true
+  url: http://www.gstatic.com/generate_204
+  interval: 1800
+  tolerance: 50
+  timeout: 5000
+  use: [Sub]
+use: &use_group
+  type: select
+  use: [Sub]
+fallback: &fallback_group
+  type: fallback
+  lazy: true
+  url: http://www.gstatic.com/generate_204
+  interval: 1800
+  timeout: 5000
+  use: [Sub]
+
 proxy-providers:
-  my-subscription:
-    type: http
-    url: "https://example.com/subscribe?token=xxx"
-    interval: 3600
-    path: ./proxy-providers/my-subscription.yaml
-    health-check:
-      enable: true
-      interval: 600
-      url: http://www.google.com/generate_204
+  Sub:
+    <<: *provider_base
+    url: "https://example.com/subscription.yaml?token=replace-me"
+    path: ./cache/proxy-providers/sub.yaml
+    override:
+      additional-prefix: "[机场]"
+      additional-suffix: ""
+    exclude-filter: "(?i)剩余|到期|过期|官网|产品|平台|网站|备用|频道|群|测试|实验"
+    include-all: true
 
-# 代理组
 proxy-groups:
-  - name: PROXY
+  - name: 🚀 手动切换
+    <<: *use_group
+  - name: 🌏 全球加速
     type: select
     proxies:
-      - 自动选择
+      - ♻️ 自动选择
+      - 🚀 手动切换
+      - 🇭🇰 香港节点
+      - 🇲🇴 澳门节点
+      - 🇯🇵 日本节点
+      - 🇺🇲 美国节点
+      - 🇨🇳 台湾节点
+      - 🇸🇬 狮城节点
+      - 🇰🇷 韩国节点
+      - 🇬🇧 英国节点
+      - 🇪🇺 欧洲节点
+      - 🇨🇦 加拿大节点
+      - 🇦🇺 澳洲节点
+      - 🇳🇿 新西兰节点
+      - 🏝️ 大洋洲节点
+      - 🌎 南美节点
+      - 🕌 中东节点
+      - 🌍 非洲节点
+      - 🇦🇶 南极节点
+      - 🌏 东南亚节点
+      - 🌏 中亚节点
+      - 🔄 备用线路
       - DIRECT
-
-  - name: 自动选择
-    type: url-test
-    use:
-      - my-subscription
-    url: http://www.google.com/generate_204
-    interval: 300
+  - name: 🎬 流媒体
+    type: select
+    proxies:
+      - 🇺🇲 美国节点
+      - 🇸🇬 狮城节点
+      - 🇭🇰 香港节点
+      - 🇨🇳 台湾节点
+      - 🇬🇧 英国节点
+      - 🇯🇵 日本节点
+      - 🌎 南美节点
+      - 🔄 备用线路
+  - name: 📺 哔哩哔哩
+    type: select
+    proxies: [DIRECT, 🇭🇰 香港节点, 🇨🇳 台湾节点, 🇸🇬 狮城节点, 🚀 手动切换, ♻️ 自动选择]
+  - name: 🌐 社交平台
+    type: select
+    proxies: [🇸🇬 狮城节点, 🇺🇲 美国节点, 🇭🇰 香港节点, 🇬🇧 英国节点, 🌎 南美节点, 🌏 东南亚节点, 🔄 备用线路]
+  - name: 🤖 人工智能
+    type: select
+    proxies: [🇺🇲 美国节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇬🇧 英国节点, 🔄 备用线路]
+  - name: 🎮 游戏平台
+    type: select
+    proxies: [DIRECT, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇺🇲 美国节点, 🇰🇷 韩国节点, 🌎 南美节点, 🌏 东南亚节点, 🇬🇧 英国节点, 🇪🇺 欧洲节点]
+  - name: 👨‍💻 开发服务
+    type: select
+    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🇬🇧 英国节点, DIRECT]
+  - name: 💰 加密货币
+    type: select
+    proxies: [🇰🇷 韩国节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇺🇲 美国节点, 🇭🇰 香港节点, 🇬🇧 英国节点, 🇦🇺 澳洲节点, DIRECT]
+  - name: 🎙️ 商务协作
+    type: select
+    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, DIRECT]
+  - name: 🛒 电商支付
+    type: select
+    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇬🇧 英国节点, 🇯🇵 日本节点, DIRECT]
+  - name: 🍎 苹果服务
+    type: select
+    proxies: [DIRECT, 🇺🇲 美国节点, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇸🇬 狮城节点]
+  - name: 🌌 谷歌服务
+    type: select
+    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🔄 备用线路]
+  - name: Ⓜ️ 微软服务
+    type: select
+    proxies: [🇺🇲 美国节点, 🇭🇰 香港节点, 🇸🇬 狮城节点, DIRECT]
+  - name: 🇨🇳 国内服务
+    type: select
+    proxies: [DIRECT, 🇭🇰 香港节点, 🇨🇳 台湾节点]
+  - name: 📡 网络测速
+    type: select
+    proxies: [♻️ 自动选择, DIRECT]
+  - name: 🛡️ 安全防护
+    type: select
+    proxies: [REJECT, DIRECT]
+  - name: 🐟 兜底分流
+    <<: *global_select
+  - name: ♻️ 自动选择
+    <<: *auto_group
+  - name: 🌐 故障转移
+    <<: *fallback_group
+    filter: ".*"
+  - name: 🔄 备用线路
+    type: select
+    proxies: [♻️ 自动选择, 🌐 故障转移, DIRECT]
+  - name: 🇭🇰 香港节点
+    <<: *fallback_group
     tolerance: 50
+    filter: "(?i)港|hk|hongkong|hong kong"
+  - name: 🇲🇴 澳门节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)澳门|macao|macau"
+  - name: 🇨🇳 台湾节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)台|tw|taiwan"
+  - name: 🇯🇵 日本节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)日本|jp|japan"
+  - name: 🇰🇷 韩国节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)韩|kr|korea"
+  - name: 🇺🇲 美国节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)美国|us|unitedstates|united states"
+  - name: 🇸🇬 狮城节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)新加坡|狮城|sg|singapore"
+  - name: 🇬🇧 英国节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)英|uk|britain|united kingdom"
+  - name: 🇨🇦 加拿大节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)加拿大|ca|canada"
+  - name: 🇦🇺 澳洲节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)澳大利亚|澳洲|au|australia"
+  - name: 🇳🇿 新西兰节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)新西兰|new zealand"
+  - name: 🌏 东南亚节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)马来|泰国|越南|菲律宾|印尼|印度|马尔代夫|柬埔寨|缅甸|老挝|孟加拉|尼泊尔|斯里兰卡|不丹|阿富汗|巴基斯坦|文莱|东帝汶"
+  - name: 🌏 中亚节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)蒙古|哈萨克|乌兹别克|吉尔吉斯|塔吉克|土库曼"
+  - name: 🇪🇺 欧洲节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)法国|德国|荷兰|意大利|西班牙|瑞士|俄罗斯|丹麦|挪威|瑞典|芬兰|捷克|波兰|比利时|奥地利|匈牙利|斯洛伐克|斯洛文尼亚|克罗地亚|波黑|塞尔维亚|黑山|北马其顿|阿尔巴尼亚|保加利亚|罗马尼亚|乌克兰|白俄罗斯|立陶宛|拉脱维亚|爱沙尼亚|冰岛|爱尔兰|葡萄牙|希腊|马耳他|塞浦路斯|卢森堡|摩纳哥|安道尔|圣马力诺|梵蒂冈|列支敦士登|摩尔多瓦|格鲁吉亚|亚美尼亚|阿塞拜疆|直布罗陀|法罗群岛|奥兰群岛|马恩岛|根西岛|泽西岛"
+  - name: 🏝️ 大洋洲节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)斐济|巴布亚新几内亚|新喀里多尼亚|法属波利尼西亚|萨摩亚|汤加|瓦努阿图|所罗门群岛|基里巴斯|瑙鲁|帕劳|密克罗尼西亚|马绍尔群岛|关岛|美属萨摩亚|北马里亚纳|库克群岛|纽埃|诺福克岛|托克劳|瓦立斯"
+  - name: 🌎 南美节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)墨西哥|巴拿马|百慕大|格陵兰|格林纳达|哥斯达黎加|英属维尔京|美属维尔京|巴西|智利|秘鲁|古巴|阿根廷|乌拉圭|巴拉圭|牙买加|苏里南|巴哈马|圭亚那|法属圭亚那|伯利兹|蒙特塞拉特|荷属阿鲁巴|荷属库拉索|圣马丁|圣巴泰勒米|瓜德罗普|马提尼克|安提瓜|圣基茨|特立尼达|圣文森特|圣卢西亚|哥伦比亚|厄瓜多尔|委内瑞拉|玻利维亚|危地马拉|萨尔瓦多|波多黎各|开曼群岛|洪都拉斯|尼加拉瓜|多米尼克|多米尼加|巴巴多斯|福克兰|特克斯|圣皮埃尔|海地"
+  - name: 🕌 中东节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)阿联酋|沙特|土耳其|伊朗|伊拉克|以色列|巴勒斯坦|约旦|黎巴嫩|叙利亚|科威特|卡塔尔|巴林|阿曼|也门"
+  - name: 🌍 非洲节点
+    <<: *fallback_group
+    tolerance: 50
+    filter: "(?i)埃及|加纳|多哥|南非|贝宁|苏丹|马里|刚果|加蓬|乍得|摩洛哥|突尼斯|利比亚|肯尼亚|卢旺达|佛得角|安哥拉|喀麦隆|布隆迪|索马里|吉布提|冈比亚|几内亚|莱索托|马拉维|尼日尔|乌干达|马约特|赞比亚|南苏丹|塞舌尔|科摩罗|尼日利亚|莫桑比克|毛里求斯|科特迪瓦|坦桑尼亚|津巴布韦|塞内加尔|博茨瓦纳|纳米比亚|塞拉利昂|斯威士兰|利比里亚|阿尔及利亚|马达加斯加|赤道几内亚|布基纳法索|厄立特里亚|埃塞俄比亚|毛里塔尼亚|中非|几内亚比绍|圣多美|留尼汪"
+  - name: 🇦🇶 南极节点
+    <<: *fallback_group
+    tolerance: 50
+    timeout: 8000
+    filter: "(?i)南极|antarctica|antarctic"
 
-  - name: 全球直连
-    type: select
-    proxies:
-      - DIRECT
-
-  - name: 全球拦截
-    type: select
-    proxies:
-      - REJECT
-      - DIRECT
-
-# 规则集
 rule-providers:
-  proxy:
-    type: http
-    behavior: classical
-    url: https://raw.githubusercontent.com/yourname/proxy-config/main/rules/proxy.list
-    path: ./ruleset/proxy.yaml
-    interval: 86400
+  AdBlock: {type: http, behavior: domain, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt", path: ./cache/rulesets/AdBlock.txt}
+  AdGuard: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Advertising/Advertising.yaml", path: ./cache/rulesets/AdGuard.yaml}
+  Privacy: {type: http, behavior: domain, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt", path: ./cache/rulesets/Privacy.txt}
+  Tracking: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Privacy/Privacy.yaml", path: ./cache/rulesets/Tracking.yaml}
+  Hijacking: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Hijacking/Hijacking.yaml", path: ./cache/rulesets/Hijacking.yaml}
+  AI: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://gist.githubusercontent.com/ddgksf2013/cb4121e8b5c5d865cc949cb8120320c4/raw/Ai.yaml", path: ./cache/rulesets/AI.yaml}
+  Slack: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Slack/Slack.yaml", path: ./cache/rulesets/Slack.yaml}
+  Zoom: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/zoom.yaml", path: ./cache/rulesets/Zoom.yaml}
+  WhatsApp: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Whatsapp/Whatsapp.yaml", path: ./cache/rulesets/WhatsApp.yaml}
+  Line: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Line/Line.yaml", path: ./cache/rulesets/Line.yaml}
+  YouTube: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/YouTube/YouTube.yaml", path: ./cache/rulesets/YouTube.yaml}
+  BiliBili: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/BiliBili/BiliBili.yaml", path: ./cache/rulesets/BiliBili.yaml}
+  Bahamut: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Bahamut/Bahamut.yaml", path: ./cache/rulesets/Bahamut.yaml}
+  TikTok: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/TikTok/TikTok.yaml", path: ./cache/rulesets/TikTok.yaml}
+  Telegram: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Telegram/Telegram.yaml", path: ./cache/rulesets/Telegram.yaml}
+  Twitter: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Twitter/Twitter.yaml", path: ./cache/rulesets/Twitter.yaml}
+  Instagram: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Instagram/Instagram.yaml", path: ./cache/rulesets/Instagram.yaml}
+  Discord: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Discord/Discord.yaml", path: ./cache/rulesets/Discord.yaml}
+  Facebook: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Facebook/Facebook.yaml", path: ./cache/rulesets/Facebook.yaml}
+  Reddit: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Reddit/Reddit.yaml", path: ./cache/rulesets/Reddit.yaml}
+  LinkedIn: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/LinkedIn/LinkedIn.yaml", path: ./cache/rulesets/LinkedIn.yaml}
+  Pinterest: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Pinterest/Pinterest.yaml", path: ./cache/rulesets/Pinterest.yaml}
+  SocialMedia: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/social_media.yaml", path: ./cache/rulesets/SocialMedia.yaml}
+  Netflix: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Netflix/Netflix.yaml", path: ./cache/rulesets/Netflix.yaml}
+  Disney: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Disney/Disney.yaml", path: ./cache/rulesets/Disney.yaml}
+  Spotify: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Spotify/Spotify.yaml", path: ./cache/rulesets/Spotify.yaml}
+  Twitch: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Twitch/Twitch.yaml", path: ./cache/rulesets/Twitch.yaml}
+  AppleTV: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/AppleTV/AppleTV.yaml", path: ./cache/rulesets/AppleTV.yaml}
+  PrimeVideo: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/AmazonPrimeVideo/AmazonPrimeVideo.yaml", path: ./cache/rulesets/PrimeVideo.yaml}
+  HBO: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/HBO/HBO.yaml", path: ./cache/rulesets/HBO.yaml}
+  Hulu: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Hulu/Hulu.yaml", path: ./cache/rulesets/Hulu.yaml}
+  Crunchyroll: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/crunchyroll.yaml", path: ./cache/rulesets/Crunchyroll.yaml}
+  DAZN: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/DAZN/DAZN.yaml", path: ./cache/rulesets/DAZN.yaml}
+  GlobalMedia: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GlobalMedia/GlobalMedia_Classical.yaml", path: ./cache/rulesets/GlobalMedia.yaml}
+  Apple: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Apple/Apple_Classical.yaml", path: ./cache/rulesets/Apple.yaml}
+  Google: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Google/Google.yaml", path: ./cache/rulesets/Google.yaml}
+  Microsoft: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml", path: ./cache/rulesets/Microsoft.yaml}
+  GitHub: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GitHub/GitHub.yaml", path: ./cache/rulesets/GitHub.yaml}
+  GitLab: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GitLab/GitLab.yaml", path: ./cache/rulesets/GitLab.yaml}
+  Docker: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Docker/Docker.yaml", path: ./cache/rulesets/Docker.yaml}
+  StackOverflow: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/stack_overflow.yaml", path: ./cache/rulesets/StackOverflow.yaml}
+  Cloudflare: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Cloudflare/Cloudflare.yaml", path: ./cache/rulesets/Cloudflare.yaml}
+  Developer: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Developer/Developer.yaml", path: ./cache/rulesets/Developer.yaml}
+  Amazon: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Amazon/Amazon.yaml", path: ./cache/rulesets/Amazon.yaml}
+  PayPal: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/PayPal/PayPal.yaml", path: ./cache/rulesets/PayPal.yaml}
+  WeChat: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/WeChat/WeChat.yaml", path: ./cache/rulesets/WeChat.yaml}
+  Alibaba: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Alibaba/Alibaba.yaml", path: ./cache/rulesets/Alibaba.yaml}
+  Tencent: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Tencent/Tencent.yaml", path: ./cache/rulesets/Tencent.yaml}
+  Download: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Download/Download.yaml", path: ./cache/rulesets/Download.yaml}
+  Crypto: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Crypto/Crypto.yaml", path: ./cache/rulesets/Crypto.yaml}
+  ChinaDirect: {type: http, behavior: domain, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt", path: ./cache/rulesets/ChinaDirect.txt}
+  ChinaCompany: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/China/China.yaml", path: ./cache/rulesets/ChinaCompany.yaml}
+  Steam: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Steam/Steam.yaml", path: ./cache/rulesets/Steam.yaml}
+  Epic: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Epic/Epic.yaml", path: ./cache/rulesets/Epic.yaml}
+  PlayStation: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/PlayStation/PlayStation.yaml", path: ./cache/rulesets/PlayStation.yaml}
+  Xbox: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Xbox/Xbox.yaml", path: ./cache/rulesets/Xbox.yaml}
+  Nintendo: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Nintendo/Nintendo.yaml", path: ./cache/rulesets/Nintendo.yaml}
+  BattleNet: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Blizzard/Blizzard.yaml", path: ./cache/rulesets/BattleNet.yaml}
+  Game: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Game/Game.yaml", path: ./cache/rulesets/Game.yaml}
+  ProxyLite: {type: http, behavior: domain, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt", path: ./cache/rulesets/ProxyLite.txt}
+  Lan: {type: http, behavior: ipcidr, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.txt}
+  LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
+  AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
+  HKFinance: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/hk_finance.yaml", path: ./cache/rulesets/HKFinance.yaml}
+  CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
+  CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
+  DevExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/dev_extra.yaml", path: ./cache/rulesets/DevExtra.yaml}
+  Speedtest: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/speedtest.yaml", path: ./cache/rulesets/Speedtest.yaml}
+  GameExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/game_extra.yaml", path: ./cache/rulesets/GameExtra.yaml}
 
-  direct:
-    type: http
-    behavior: classical
-    url: https://raw.githubusercontent.com/yourname/proxy-config/main/rules/direct.list
-    path: ./ruleset/direct.yaml
-    interval: 86400
-
-  reject:
-    type: http
-    behavior: classical
-    url: https://raw.githubusercontent.com/yourname/proxy-config/main/rules/reject.list
-    path: ./ruleset/reject.yaml
-    interval: 86400
-
-# 规则
 rules:
-  - RULE-SET,reject,全球拦截
-  - RULE-SET,direct,全球直连
-  - RULE-SET,proxy,PROXY
-  - GEOIP,CN,全球直连
-  - MATCH,PROXY
+  - RULE-SET,LocalNetwork,DIRECT
+  - RULE-SET,Lan,DIRECT
+  - RULE-SET,AdBlock,🛡️ 安全防护
+  - RULE-SET,AdGuard,🛡️ 安全防护
+  - RULE-SET,Privacy,🛡️ 安全防护
+  - RULE-SET,Tracking,🛡️ 安全防护
+  - RULE-SET,Hijacking,🛡️ 安全防护
+  - RULE-SET,AIExtra,🤖 人工智能
+  - RULE-SET,AI,🤖 人工智能
+  - RULE-SET,HKFinance,🇭🇰 香港节点
+  - RULE-SET,Crypto,💰 加密货币
+  - RULE-SET,CryptoExtra,💰 加密货币
+  - RULE-SET,Slack,🎙️ 商务协作
+  - RULE-SET,Zoom,🎙️ 商务协作
+  - RULE-SET,WhatsApp,🎙️ 商务协作
+  - RULE-SET,Line,🎙️ 商务协作
+  - RULE-SET,CollaborationExtra,🎙️ 商务协作
+  - RULE-SET,YouTube,🌌 谷歌服务
+  - RULE-SET,BiliBili,📺 哔哩哔哩
+  - RULE-SET,Bahamut,🎬 流媒体
+  - RULE-SET,TikTok,🌐 社交平台
+  - RULE-SET,Telegram,🌐 社交平台
+  - RULE-SET,Twitter,🌐 社交平台
+  - RULE-SET,Instagram,🌐 社交平台
+  - RULE-SET,Discord,🌐 社交平台
+  - RULE-SET,Facebook,🌐 社交平台
+  - RULE-SET,Reddit,🌐 社交平台
+  - RULE-SET,LinkedIn,🌐 社交平台
+  - RULE-SET,Pinterest,🌐 社交平台
+  - RULE-SET,SocialMedia,🌐 社交平台
+  - RULE-SET,Netflix,🎬 流媒体
+  - RULE-SET,Disney,🎬 流媒体
+  - RULE-SET,Spotify,🎬 流媒体
+  - RULE-SET,Twitch,🎬 流媒体
+  - RULE-SET,AppleTV,🎬 流媒体
+  - RULE-SET,PrimeVideo,🎬 流媒体
+  - RULE-SET,HBO,🎬 流媒体
+  - RULE-SET,Hulu,🎬 流媒体
+  - RULE-SET,Crunchyroll,🎬 流媒体
+  - RULE-SET,DAZN,🎬 流媒体
+  - RULE-SET,GlobalMedia,🎬 流媒体
+  - RULE-SET,Apple,🍎 苹果服务
+  - RULE-SET,Google,🌌 谷歌服务
+  - RULE-SET,Microsoft,Ⓜ️ 微软服务
+  - RULE-SET,GitHub,👨‍💻 开发服务
+  - RULE-SET,GitLab,👨‍💻 开发服务
+  - RULE-SET,Docker,👨‍💻 开发服务
+  - RULE-SET,StackOverflow,👨‍💻 开发服务
+  - RULE-SET,Cloudflare,👨‍💻 开发服务
+  - RULE-SET,Developer,👨‍💻 开发服务
+  - RULE-SET,DevExtra,👨‍💻 开发服务
+  - RULE-SET,Amazon,🛒 电商支付
+  - RULE-SET,PayPal,🛒 电商支付
+  - RULE-SET,WeChat,🇨🇳 国内服务
+  - RULE-SET,Alibaba,🇨🇳 国内服务
+  - RULE-SET,Tencent,🇨🇳 国内服务
+  - RULE-SET,Speedtest,📡 网络测速
+  - RULE-SET,Download,DIRECT
+  - RULE-SET,ChinaDirect,🇨🇳 国内服务
+  - RULE-SET,ChinaCompany,🇨🇳 国内服务
+  - RULE-SET,Steam,🎮 游戏平台
+  - RULE-SET,Epic,🎮 游戏平台
+  - RULE-SET,PlayStation,🎮 游戏平台
+  - RULE-SET,Xbox,🎮 游戏平台
+  - RULE-SET,Nintendo,🎮 游戏平台
+  - RULE-SET,BattleNet,🎮 游戏平台
+  - RULE-SET,Game,🎮 游戏平台
+  - RULE-SET,GameExtra,🎮 游戏平台
+  - RULE-SET,ProxyLite,🌏 全球加速
+  - GEOIP,CN,🇨🇳 国内服务
+  - MATCH,🐟 兜底分流
+
+tun:
+  enable: false
+  stack: system
+  auto-route: true
+  auto-detect-interface: true
