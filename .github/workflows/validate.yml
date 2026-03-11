@@ -1,0 +1,97 @@
+name: Config Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Check required files and directories
+        run: |
+          python - <<'EOF'
+          import sys
+          from pathlib import Path
+
+          ROOT = Path(".")
+          required = [
+              "rules",
+              "quantumultx",
+              "clash",
+              "scripts",
+              "README.md",
+              "AGENTS.md",
+              ".gitignore",
+              "clash/config.yaml",
+              "quantumultx/bootstrap.example.conf",
+              "quantumultx/filter_remote.snippet",
+              "rules/local_rules.yaml",
+              "scripts/build_rules.py",
+          ]
+          missing = [p for p in required if not (ROOT / p).exists()]
+          if missing:
+              print("Missing required files/directories:")
+              for p in missing:
+                  print(f"  {p}")
+              sys.exit(1)
+          print(f"All {len(required)} required paths present.")
+          EOF
+
+      - name: Validate YAML syntax
+        run: |
+          python - <<'EOF'
+          import sys
+          from pathlib import Path
+          import yaml
+
+          ROOT = Path(".")
+          targets = (
+              list(Path("clash").glob("*.yaml")) +
+              list(Path("clash/rulesets").glob("*.yaml")) +
+              list(Path("rules").glob("*.yaml"))
+          )
+          errors = []
+          for path in sorted(targets):
+              try:
+                  yaml.safe_load(path.read_text(encoding="utf-8"))
+              except yaml.YAMLError as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("YAML syntax errors:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+          print(f"YAML syntax OK ({len(targets)} files checked).")
+          EOF
+
+      - name: Check clash/config.yaml has rule-providers
+        run: |
+          python - <<'EOF'
+          import sys
+          from pathlib import Path
+          import yaml
+
+          data = yaml.safe_load(Path("clash/config.yaml").read_text(encoding="utf-8")) or {}
+          providers = data.get("rule-providers")
+          if not isinstance(providers, dict) or len(providers) == 0:
+              print("clash/config.yaml: 'rule-providers' missing or empty")
+              sys.exit(1)
+          print(f"clash/config.yaml: {len(providers)} rule-providers defined.")
+          EOF
+
+      - name: Check generated files are up to date
+        run: python3 scripts/build_rules.py --check
