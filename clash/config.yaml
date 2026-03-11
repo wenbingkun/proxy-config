@@ -327,6 +327,7 @@ rule-providers:
   Privacy: {type: http, behavior: domain, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt", path: ./cache/rulesets/Privacy.txt}
   Tracking: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Privacy/Privacy.yaml", path: ./cache/rulesets/Tracking.yaml}
   Hijacking: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Hijacking/Hijacking.yaml", path: ./cache/rulesets/Hijacking.yaml}
+  Malware: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Malware/Malware.yaml", path: ./cache/rulesets/Malware.yaml}
   AI: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://gist.githubusercontent.com/ddgksf2013/cb4121e8b5c5d865cc949cb8120320c4/raw/Ai.yaml", path: ./cache/rulesets/AI.yaml}
   Slack: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Slack/Slack.yaml", path: ./cache/rulesets/Slack.yaml}
   Zoom: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/zoom.yaml", path: ./cache/rulesets/Zoom.yaml}
@@ -400,6 +401,7 @@ rules:
   - RULE-SET,Privacy,🛡️ 安全防护
   - RULE-SET,Tracking,🛡️ 安全防护
   - RULE-SET,Hijacking,🛡️ 安全防护
+  - RULE-SET,Malware,🛡️ 安全防护
   - RULE-SET,AIExtra,🤖 人工智能
   - RULE-SET,AI,🤖 人工智能
   - RULE-SET,HKFinance,🇭🇰 香港节点
