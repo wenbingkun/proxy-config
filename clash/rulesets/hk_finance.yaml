@@ -2,6 +2,7 @@
 # Source: rules/hk_finance.yaml
 payload:
   - DOMAIN-SUFFIX,hsbc.com.hk
+  - DOMAIN-SUFFIX,hsbc.com
   - DOMAIN-SUFFIX,hangseng.com
   - DOMAIN-SUFFIX,bochk.com
   - DOMAIN-SUFFIX,bea.com.hk

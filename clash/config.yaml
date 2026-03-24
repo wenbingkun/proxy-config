@@ -264,8 +264,8 @@ proxy-groups:
     tolerance: 50
     filter: "(?i)韩|kr|korea"
   - name: 🇺🇲 美国节点
-    <<: *fallback_group
-    tolerance: 50
+    type: select
+    use: [Sub]
     filter: "(?i)美国|us|unitedstates|united states"
   - name: 🇸🇬 狮城节点
     <<: *fallback_group
