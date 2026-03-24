@@ -15,7 +15,6 @@ external-controller: 127.0.0.1:9090
 experimental:
   ignore-resolve-fail: true
 
-global-client-fingerprint: chrome
 
 sniffer:
   enable: true
