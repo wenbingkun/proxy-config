@@ -385,7 +385,6 @@ rule-providers:
   Lan: {type: http, behavior: ipcidr, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.txt}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
-  HKFinance: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/hk_finance.yaml", path: ./cache/rulesets/HKFinance.yaml}
   CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
   CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
   DevExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/dev_extra.yaml", path: ./cache/rulesets/DevExtra.yaml}
@@ -403,7 +402,6 @@ rules:
   - RULE-SET,Malware,🛡️ 安全防护
   - RULE-SET,AIExtra,🤖 人工智能
   - RULE-SET,AI,🤖 人工智能
-  - RULE-SET,HKFinance,🇭🇰 香港节点
   - RULE-SET,Crypto,💰 加密货币
   - RULE-SET,CryptoExtra,💰 加密货币
   - RULE-SET,Slack,🎙️ 商务协作

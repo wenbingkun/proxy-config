@@ -9,11 +9,6 @@ rule_sets:
     source: ai_extra.yaml
     clash_policy: 🤖 人工智能
     qx_policy: 🤖 人工智能
-  - id: hk_finance
-    title: 香港银行和券商
-    source: hk_finance.yaml
-    clash_policy: 🇭🇰 香港节点
-    qx_policy: 🇭🇰 香港节点
   - id: crypto_extra
     title: 加密货币补充规则
     source: crypto_extra.yaml
