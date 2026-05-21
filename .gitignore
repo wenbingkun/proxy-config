@@ -12,3 +12,6 @@ clash/cache/
 
 # Old config backups (kept locally for reference)
 old/
+
+# Codex CLI artifacts
+.codex
