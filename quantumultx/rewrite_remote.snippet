@@ -1,5 +1,6 @@
 # Quantumult X custom rewrite snippet.
 # Keep client-specific rewrites here when they should be synced by this repo.
-#
-# Example:
-# ^https?:\/\/example\.com\/ads url reject
+# QX treats an empty rewrite resource as invalid, so keep one harmless
+# never-used rule to make this remote snippet parseable.
+^https?:\/\/proxy-config\.invalid\/__noop__$ url reject
+hostname = proxy-config.invalid
