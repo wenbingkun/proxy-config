@@ -7,5 +7,4 @@ domain_suffix:
   - officecdn.microsoft.com
 
 domain:
-  - downloads.claude.ai
   - registry.npmjs.org

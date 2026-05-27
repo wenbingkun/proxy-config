@@ -7,5 +7,4 @@ payload:
   - DOMAIN-SUFFIX,download.microsoft.com
   - DOMAIN-SUFFIX,download.visualstudio.microsoft.com
   - DOMAIN-SUFFIX,officecdn.microsoft.com
-  - DOMAIN,downloads.claude.ai
   - DOMAIN,registry.npmjs.org
