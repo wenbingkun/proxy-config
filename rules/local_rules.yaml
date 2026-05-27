@@ -4,6 +4,16 @@ rule_sets:
     source: local_network.yaml
     clash_policy: DIRECT
     qx_policy: DIRECT
+  - id: download_extra
+    title: 软件下载直连补充规则
+    source: download_extra.yaml
+    clash_policy: DIRECT
+    qx_policy: DIRECT
+  - id: banking_extra
+    title: 银行券商直连补充规则
+    source: banking_extra.yaml
+    clash_policy: DIRECT
+    qx_policy: DIRECT
   - id: ai_extra
     title: AI 补充规则
     source: ai_extra.yaml

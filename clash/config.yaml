@@ -384,6 +384,8 @@ rule-providers:
   ProxyLite: {type: http, behavior: domain, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt", path: ./cache/rulesets/ProxyLite.txt}
   Lan: {type: http, behavior: ipcidr, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.txt}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
+  DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
+  BankingExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/banking_extra.yaml", path: ./cache/rulesets/BankingExtra.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
   CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
   CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
@@ -400,6 +402,8 @@ rules:
   - RULE-SET,Tracking,🛡️ 安全防护
   - RULE-SET,Hijacking,🛡️ 安全防护
   - RULE-SET,Malware,🛡️ 安全防护
+  - RULE-SET,DownloadExtra,DIRECT
+  - RULE-SET,BankingExtra,DIRECT
   - RULE-SET,AIExtra,🤖 人工智能
   - RULE-SET,AI,🤖 人工智能
   - RULE-SET,Crypto,💰 加密货币
