@@ -1,4 +1,9 @@
 domain_suffix:
+  - anthropic.com
+  - claude.ai
+  - claude.com
+  - claudeusercontent.com
+  - clau.de
   - poe.com
   - character.ai
   - stability.ai

@@ -1,11 +1,7 @@
 domain_suffix:
-  - download.nvidia.com
-  - dl.google.com
-  - dl-ssl.google.com
   - download.microsoft.com
   - download.visualstudio.microsoft.com
   - officecdn.microsoft.com
 
 domain:
-  - downloads.claude.ai
   - registry.npmjs.org
