@@ -396,14 +396,14 @@ rule-providers:
 rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
+  - RULE-SET,DownloadExtra,DIRECT
+  - RULE-SET,BankingExtra,DIRECT
   - RULE-SET,AdBlock,🛡️ 安全防护
   - RULE-SET,AdGuard,🛡️ 安全防护
   - RULE-SET,Privacy,🛡️ 安全防护
   - RULE-SET,Tracking,🛡️ 安全防护
   - RULE-SET,Hijacking,🛡️ 安全防护
   - RULE-SET,Malware,🛡️ 安全防护
-  - RULE-SET,DownloadExtra,DIRECT
-  - RULE-SET,BankingExtra,DIRECT
   - RULE-SET,AIExtra,🤖 人工智能
   - RULE-SET,AI,🤖 人工智能
   - RULE-SET,Crypto,💰 加密货币
