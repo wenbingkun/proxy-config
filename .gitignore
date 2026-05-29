@@ -15,3 +15,6 @@ old/
 
 # Codex CLI artifacts
 .codex
+
+# Claude Code local settings
+.claude/
