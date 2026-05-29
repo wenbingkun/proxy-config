@@ -7,4 +7,5 @@ payload:
   - DOMAIN-SUFFIX,brew.sh
   - DOMAIN-SUFFIX,marketplace.visualstudio.com
   - DOMAIN-SUFFIX,vscode.dev
+  - DOMAIN-SUFFIX,vsassets.io
   - DOMAIN-SUFFIX,jetbrains.com
