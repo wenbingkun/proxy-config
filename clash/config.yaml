@@ -396,6 +396,7 @@ rule-providers:
 rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
+  - DOMAIN-SUFFIX,ndcdyn.interactivebrokers.com,🇭🇰 香港节点
   - DOMAIN-SUFFIX,interactivebrokers.com,DIRECT
   - DOMAIN-SUFFIX,interactivebrokers.hk,DIRECT
   - DOMAIN-SUFFIX,ibkr.com,DIRECT
