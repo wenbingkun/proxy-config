@@ -1,5 +1,5 @@
 domain_suffix:
-  # Hong Kong banks and virtual banks
+  # Hong Kong traditional banks
   - hsbc.com.hk
   - hsbc.com
   - hsbc.hk
@@ -27,6 +27,10 @@ domain_suffix:
   - ocbc.com
   - bankcomm.com.hk
   - cncbinternational.com
+  - asia.ccb.com
+  - ccb.com.hk
+
+  # Hong Kong virtual banks
   - za.group
   - zajourney.com
   - zainvest.group
@@ -41,15 +45,8 @@ domain_suffix:
   - fusionbank.com
   - fusionbank.com.hk
   - antbank.hk
-  - asia.ccb.com
-  - ccb.com.hk
 
-  # Hong Kong brokers and IBKR
-  - interactivebrokers.com
-  - interactivebrokers.hk
-  - ibkr.com
-  - ibkr.com.hk
-  - ibkrcampus.com
+  # Chinese brokers (mainland presence, direct is most stable)
   - futuhk.com
   - futunn.com
   - futu5.com
@@ -60,18 +57,18 @@ domain_suffix:
   - tigerbrokers.com.hk
   - usmartsecurities.com
   - usmart.hk
-  - webull.com.hk
-  - webull.com
-  - saxobank.com
-  - home.saxo
-  - sofi.hk
+  - u-smartglobal.com
   - longbridge.hk
   - longportapp.com
+
+  # Hong Kong local brokers
+  - sofi.hk
   - phillip.com.hk
   - poems.com.hk
-  - aastocks.com
-  - etnet.com.hk
   - brightsmart.com
   - brightsmart.com.hk
   - bsgroup.com.hk
-  - u-smartglobal.com
+
+  # Market data and finance info
+  - aastocks.com
+  - etnet.com.hk
