@@ -396,6 +396,11 @@ rule-providers:
 rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
+  - DOMAIN-SUFFIX,interactivebrokers.com,DIRECT
+  - DOMAIN-SUFFIX,interactivebrokers.hk,DIRECT
+  - DOMAIN-SUFFIX,ibkr.com,DIRECT
+  - DOMAIN-SUFFIX,ibkr.com.hk,DIRECT
+  - DOMAIN-SUFFIX,ibkrcampus.com,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
   - RULE-SET,BankingExtra,DIRECT
   - RULE-SET,AdBlock,🛡️ 安全防护
