@@ -9,11 +9,16 @@ rule_sets:
     source: download_extra.yaml
     clash_policy: DIRECT
     qx_policy: DIRECT
-  - id: banking_extra
-    title: 银行券商直连补充规则
-    source: banking_extra.yaml
+  - id: hk_banks
+    title: 香港银行券商直连规则
+    source: hk_banks.yaml
     clash_policy: DIRECT
     qx_policy: DIRECT
+  - id: intl_brokers
+    title: 国际券商走香港节点规则
+    source: intl_brokers.yaml
+    clash_policy: 🇭🇰 香港节点
+    qx_policy: 🇭🇰 香港节点
   - id: ai_extra
     title: AI 补充规则
     source: ai_extra.yaml

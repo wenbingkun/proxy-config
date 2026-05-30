@@ -385,7 +385,8 @@ rule-providers:
   Lan: {type: http, behavior: ipcidr, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.txt}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
-  BankingExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/banking_extra.yaml", path: ./cache/rulesets/BankingExtra.yaml}
+  HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
+  IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
   CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
   CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
@@ -396,14 +397,9 @@ rule-providers:
 rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
-  - DOMAIN-SUFFIX,ndcdyn.interactivebrokers.com,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,interactivebrokers.com,DIRECT
-  - DOMAIN-SUFFIX,interactivebrokers.hk,DIRECT
-  - DOMAIN-SUFFIX,ibkr.com,DIRECT
-  - DOMAIN-SUFFIX,ibkr.com.hk,DIRECT
-  - DOMAIN-SUFFIX,ibkrcampus.com,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
-  - RULE-SET,BankingExtra,DIRECT
+  - RULE-SET,HkBanks,DIRECT
+  - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,AdBlock,🛡️ 安全防护
   - RULE-SET,AdGuard,🛡️ 安全防护
   - RULE-SET,Privacy,🛡️ 安全防护
