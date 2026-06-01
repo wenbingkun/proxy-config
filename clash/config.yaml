@@ -386,7 +386,6 @@ rule-providers:
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
   HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
-  IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
   CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
   CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
@@ -399,7 +398,6 @@ rules:
   - RULE-SET,Lan,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
   - RULE-SET,HkBanks,DIRECT
-  - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,AdBlock,🛡️ 安全防护
   - RULE-SET,AdGuard,🛡️ 安全防护
   - RULE-SET,Privacy,🛡️ 安全防护
