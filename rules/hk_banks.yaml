@@ -69,17 +69,6 @@ domain_suffix:
   - brightsmart.com.hk
   - bsgroup.com.hk
 
-  # International brokers (direct via Asia gateways)
-  - interactivebrokers.com
-  - interactivebrokers.hk
-  - ibkr.com
-  - ibkr.com.hk
-  - ibkrcampus.com
-  - saxobank.com
-  - home.saxo
-  - webull.com
-  - webull.com.hk
-
   # Market data and finance info
   - aastocks.com
   - etnet.com.hk
