@@ -407,6 +407,8 @@ rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
+  - DOMAIN-SUFFIX,ibllc.com.cn,🇭🇰 香港节点
+  - DOMAIN-SUFFIX,ibllc.com,🇭🇰 香港节点
   - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,HkBanks,DIRECT
   - RULE-SET,AdBlock,🛡️ 安全防护

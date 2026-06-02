@@ -5,6 +5,9 @@ domain_suffix:
   - ibkr.com
   - ibkr.com.hk
   - ibkrcampus.com
+  # IBKR LLC entity gateways (mcgw*.ibllc.com.cn is the mainland mobile gateway)
+  - ibllc.com.cn
+  - ibllc.com
 
   # Saxo Bank
   - saxobank.com
