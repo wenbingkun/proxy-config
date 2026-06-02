@@ -127,17 +127,17 @@ auto: &auto_group
   interval: 1800
   tolerance: 50
   timeout: 5000
-  use: [Sub]
+  use: [Sub, Sub2]
 use: &use_group
   type: select
-  use: [Sub]
+  use: [Sub, Sub2]
 fallback: &fallback_group
   type: fallback
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
   timeout: 5000
-  use: [Sub]
+  use: [Sub, Sub2]
 
 proxy-providers:
   Sub:
@@ -145,7 +145,16 @@ proxy-providers:
     url: "https://example.com/subscription.yaml?token=replace-me"
     path: ./cache/proxy-providers/sub.yaml
     override:
-      additional-prefix: "[机场]"
+      additional-prefix: "[Sub1]"
+      additional-suffix: ""
+    exclude-filter: "(?i)剩余|到期|过期|官网|产品|平台|网站|备用|频道|群|测试|实验"
+    include-all: true
+  Sub2:
+    <<: *provider_base
+    url: "https://example.com/subscription2.yaml?token=replace-me"
+    path: ./cache/proxy-providers/sub2.yaml
+    override:
+      additional-prefix: "[Sub2]"
       additional-suffix: ""
     exclude-filter: "(?i)剩余|到期|过期|官网|产品|平台|网站|备用|频道|群|测试|实验"
     include-all: true
@@ -245,75 +254,75 @@ proxy-groups:
   - name: 🇭🇰 香港节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)港|hk|hongkong|hong kong"
+    filter: "(?i)香港|港|(^|[^a-z])(hk|hong ?kong)([^a-z]|$)"
   - name: 🇲🇴 澳门节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)澳门|macao|macau"
+    filter: "(?i)澳门|澳門|(^|[^a-z])(mo|macao|macau)([^a-z]|$)"
   - name: 🇨🇳 台湾节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)台|tw|taiwan"
+    filter: "(?i)台湾|臺灣|台|臺|(^|[^a-z])(tw|taiwan)([^a-z]|$)"
   - name: 🇯🇵 日本节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)日本|jp|japan"
+    filter: "(?i)日本|(^|[^a-z])(jp|japan)([^a-z]|$)"
   - name: 🇰🇷 韩国节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)韩|kr|korea"
+    filter: "(?i)韩国|韓國|韩|韓|(^|[^a-z])(kr|korea|south ?korea)([^a-z]|$)"
   - name: 🇺🇲 美国节点
     type: select
-    use: [Sub]
-    filter: "(?i)美国|us|unitedstates|united states"
+    use: [Sub, Sub2]
+    filter: "(?i)美国|美國|(^|[^a-z])(us|usa|united ?states)([^a-z]|$)"
   - name: 🇸🇬 狮城节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)新加坡|狮城|sg|singapore"
+    filter: "(?i)新加坡|狮城|獅城|(^|[^a-z])(sg|singapore)([^a-z]|$)"
   - name: 🇬🇧 英国节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)英|uk|britain|united kingdom"
+    filter: "(?i)英国|英國|英|(^|[^a-z])(uk|gb|britain|united ?kingdom|england)([^a-z]|$)"
   - name: 🇨🇦 加拿大节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)加拿大|ca|canada"
+    filter: "(?i)加拿大|(^|[^a-z])(ca|canada)([^a-z]|$)"
   - name: 🇦🇺 澳洲节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)澳大利亚|澳洲|au|australia"
+    filter: "(?i)澳大利亚|澳大利亞|澳洲|(^|[^a-z])(au|australia)([^a-z]|$)"
   - name: 🇳🇿 新西兰节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)新西兰|new zealand"
+    filter: "(?i)新西兰|新西蘭|(^|[^a-z])(nz|new ?zealand)([^a-z]|$)"
   - name: 🌏 东南亚节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)马来|泰国|越南|菲律宾|印尼|印度|马尔代夫|柬埔寨|缅甸|老挝|孟加拉|尼泊尔|斯里兰卡|不丹|阿富汗|巴基斯坦|文莱|东帝汶"
+    filter: "(?i)东南亚|東南亞|马来|泰国|越南|菲律宾|印尼|印度|马尔代夫|柬埔寨|缅甸|老挝|孟加拉|尼泊尔|斯里兰卡|不丹|阿富汗|巴基斯坦|文莱|东帝汶|(^|[^a-z])(sea|southeast ?asia|malaysia|thailand|vietnam|philippines|indonesia|india|maldives|cambodia|myanmar|laos|bangladesh|nepal|sri ?lanka|bhutan|afghanistan|pakistan|brunei|timor|my|th|vn|ph|id|in|kh|mm|bd|np|pk)([^a-z]|$)"
   - name: 🌏 中亚节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)蒙古|哈萨克|乌兹别克|吉尔吉斯|塔吉克|土库曼"
+    filter: "(?i)中亚|中亞|蒙古|哈萨克|乌兹别克|吉尔吉斯|塔吉克|土库曼|(^|[^a-z])(central ?asia|mongolia|kazakhstan|uzbekistan|kyrgyzstan|tajikistan|turkmenistan)([^a-z]|$)"
   - name: 🇪🇺 欧洲节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)法国|德国|荷兰|意大利|西班牙|瑞士|俄罗斯|丹麦|挪威|瑞典|芬兰|捷克|波兰|比利时|奥地利|匈牙利|斯洛伐克|斯洛文尼亚|克罗地亚|波黑|塞尔维亚|黑山|北马其顿|阿尔巴尼亚|保加利亚|罗马尼亚|乌克兰|白俄罗斯|立陶宛|拉脱维亚|爱沙尼亚|冰岛|爱尔兰|葡萄牙|希腊|马耳他|塞浦路斯|卢森堡|摩纳哥|安道尔|圣马力诺|梵蒂冈|列支敦士登|摩尔多瓦|格鲁吉亚|亚美尼亚|阿塞拜疆|直布罗陀|法罗群岛|奥兰群岛|马恩岛|根西岛|泽西岛"
+    filter: "(?i)欧洲|歐洲|法国|德国|荷兰|意大利|西班牙|瑞士|俄罗斯|丹麦|挪威|瑞典|芬兰|捷克|波兰|比利时|奥地利|匈牙利|斯洛伐克|斯洛文尼亚|克罗地亚|波黑|塞尔维亚|黑山|北马其顿|阿尔巴尼亚|保加利亚|罗马尼亚|乌克兰|白俄罗斯|立陶宛|拉脱维亚|爱沙尼亚|冰岛|爱尔兰|葡萄牙|希腊|马耳他|塞浦路斯|卢森堡|摩纳哥|安道尔|圣马力诺|梵蒂冈|列支敦士登|摩尔多瓦|格鲁吉亚|亚美尼亚|阿塞拜疆|直布罗陀|法罗群岛|奥兰群岛|马恩岛|根西岛|泽西岛|(^|[^a-z])(eu|europe|france|germany|netherlands|italy|spain|switzerland|russia|denmark|norway|sweden|finland|czech|poland|belgium|austria|hungary|slovakia|slovenia|croatia|bosnia|serbia|montenegro|macedonia|albania|bulgaria|romania|ukraine|belarus|lithuania|latvia|estonia|iceland|ireland|portugal|greece|malta|cyprus|luxembourg|monaco|andorra|vatican|liechtenstein|moldova|georgia|armenia|azerbaijan|gibraltar|nl|ru|de|ch|fr|se|bg|at|ie|hu)([^a-z]|$)"
   - name: 🏝️ 大洋洲节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)斐济|巴布亚新几内亚|新喀里多尼亚|法属波利尼西亚|萨摩亚|汤加|瓦努阿图|所罗门群岛|基里巴斯|瑙鲁|帕劳|密克罗尼西亚|马绍尔群岛|关岛|美属萨摩亚|北马里亚纳|库克群岛|纽埃|诺福克岛|托克劳|瓦立斯"
+    filter: "(?i)大洋洲|斐济|巴布亚新几内亚|新喀里多尼亚|法属波利尼西亚|萨摩亚|汤加|瓦努阿图|所罗门群岛|基里巴斯|瑙鲁|帕劳|密克罗尼西亚|马绍尔群岛|关岛|美属萨摩亚|北马里亚纳|库克群岛|纽埃|诺福克岛|托克劳|瓦立斯|(^|[^a-z])(oceania|fiji|papua|caledonia|polynesia|samoa|tonga|vanuatu|solomon|kiribati|nauru|palau|micronesia|marshall|guam|mariana|cook ?islands|niue|norfolk|tokelau|wallis)([^a-z]|$)"
   - name: 🌎 南美节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)墨西哥|巴拿马|百慕大|格陵兰|格林纳达|哥斯达黎加|英属维尔京|美属维尔京|巴西|智利|秘鲁|古巴|阿根廷|乌拉圭|巴拉圭|牙买加|苏里南|巴哈马|圭亚那|法属圭亚那|伯利兹|蒙特塞拉特|荷属阿鲁巴|荷属库拉索|圣马丁|圣巴泰勒米|瓜德罗普|马提尼克|安提瓜|圣基茨|特立尼达|圣文森特|圣卢西亚|哥伦比亚|厄瓜多尔|委内瑞拉|玻利维亚|危地马拉|萨尔瓦多|波多黎各|开曼群岛|洪都拉斯|尼加拉瓜|多米尼克|多米尼加|巴巴多斯|福克兰|特克斯|圣皮埃尔|海地"
+    filter: "(?i)南美|拉美|拉丁美洲|墨西哥|巴拿马|百慕大|格陵兰|格林纳达|哥斯达黎加|英属维尔京|美属维尔京|巴西|智利|秘鲁|古巴|阿根廷|乌拉圭|巴拉圭|牙买加|苏里南|巴哈马|圭亚那|法属圭亚那|伯利兹|蒙特塞拉特|荷属阿鲁巴|荷属库拉索|圣马丁|圣巴泰勒米|瓜德罗普|马提尼克|安提瓜|圣基茨|特立尼达|圣文森特|圣卢西亚|哥伦比亚|厄瓜多尔|委内瑞拉|玻利维亚|危地马拉|萨尔瓦多|波多黎各|开曼群岛|洪都拉斯|尼加拉瓜|多米尼克|多米尼加|巴巴多斯|福克兰|特克斯|圣皮埃尔|海地|(^|[^a-z])(south ?america|latin ?america|latam|mexico|panama|bermuda|greenland|grenada|costa ?rica|virgin ?islands|brazil|chile|peru|cuba|argentina|uruguay|paraguay|jamaica|suriname|bahamas|guyana|belize|aruba|curacao|martinique|colombia|ecuador|venezuela|bolivia|guatemala|el ?salvador|puerto ?rico|honduras|nicaragua|barbados|br|ar|cl)([^a-z]|$)"
   - name: 🕌 中东节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)阿联酋|沙特|土耳其|伊朗|伊拉克|以色列|巴勒斯坦|约旦|黎巴嫩|叙利亚|科威特|卡塔尔|巴林|阿曼|也门"
+    filter: "(?i)中东|中東|阿联酋|阿聯酋|沙特|土耳其|伊朗|伊拉克|以色列|巴勒斯坦|约旦|黎巴嫩|叙利亚|科威特|卡塔尔|巴林|阿曼|也门|(^|[^a-z])(middle ?east|uae|united ?arab ?emirates|saudi|turkey|iran|iraq|israel|palestine|jordan|lebanon|syria|kuwait|qatar|bahrain|oman|yemen|ae|tr)([^a-z]|$)"
   - name: 🌍 非洲节点
     <<: *fallback_group
     tolerance: 50
-    filter: "(?i)埃及|加纳|多哥|南非|贝宁|苏丹|马里|刚果|加蓬|乍得|摩洛哥|突尼斯|利比亚|肯尼亚|卢旺达|佛得角|安哥拉|喀麦隆|布隆迪|索马里|吉布提|冈比亚|几内亚|莱索托|马拉维|尼日尔|乌干达|马约特|赞比亚|南苏丹|塞舌尔|科摩罗|尼日利亚|莫桑比克|毛里求斯|科特迪瓦|坦桑尼亚|津巴布韦|塞内加尔|博茨瓦纳|纳米比亚|塞拉利昂|斯威士兰|利比里亚|阿尔及利亚|马达加斯加|赤道几内亚|布基纳法索|厄立特里亚|埃塞俄比亚|毛里塔尼亚|中非|几内亚比绍|圣多美|留尼汪"
+    filter: "(?i)非洲|埃及|加纳|多哥|南非|贝宁|苏丹|马里|刚果|加蓬|乍得|摩洛哥|突尼斯|利比亚|肯尼亚|卢旺达|佛得角|安哥拉|喀麦隆|布隆迪|索马里|吉布提|冈比亚|几内亚|莱索托|马拉维|尼日尔|乌干达|马约特|赞比亚|南苏丹|塞舌尔|科摩罗|尼日利亚|莫桑比克|毛里求斯|科特迪瓦|坦桑尼亚|津巴布韦|塞内加尔|博茨瓦纳|纳米比亚|塞拉利昂|斯威士兰|利比里亚|阿尔及利亚|马达加斯加|赤道几内亚|布基纳法索|厄立特里亚|埃塞俄比亚|毛里塔尼亚|中非|几内亚比绍|圣多美|留尼汪|(^|[^a-z])(africa|egypt|ghana|togo|south ?africa|benin|sudan|mali|congo|gabon|chad|morocco|tunisia|libya|kenya|rwanda|angola|cameroon|burundi|somalia|djibouti|gambia|guinea|lesotho|malawi|niger|uganda|zambia|seychelles|comoros|nigeria|mozambique|mauritius|tanzania|zimbabwe|senegal|botswana|namibia|liberia|algeria|madagascar|ethiopia)([^a-z]|$)"
   - name: 🇦🇶 南极节点
     <<: *fallback_group
     tolerance: 50
