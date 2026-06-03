@@ -12,8 +12,8 @@ rule_sets:
   - id: intl_brokers_us
     title: IBKR LLC 美区动态网关走美国节点
     source: intl_brokers_us.yaml
-    clash_policy: 🇺🇲 美国节点
-    qx_policy: 🇺🇲 美国节点
+    clash_policy: 🇺🇸 美国节点
+    qx_policy: 🇺🇸 美国节点
   - id: intl_brokers
     title: 国际券商走香港节点规则
     source: intl_brokers.yaml

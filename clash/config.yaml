@@ -93,7 +93,7 @@ pr: &global_select
     - 🇭🇰 香港节点
     - 🇲🇴 澳门节点
     - 🇯🇵 日本节点
-    - 🇺🇲 美国节点
+    - 🇺🇸 美国节点
     - 🇨🇳 台湾节点
     - 🇸🇬 狮城节点
     - 🇰🇷 韩国节点
@@ -170,7 +170,7 @@ proxy-groups:
       - 🇭🇰 香港节点
       - 🇲🇴 澳门节点
       - 🇯🇵 日本节点
-      - 🇺🇲 美国节点
+      - 🇺🇸 美国节点
       - 🇨🇳 台湾节点
       - 🇸🇬 狮城节点
       - 🇰🇷 韩国节点
@@ -191,7 +191,7 @@ proxy-groups:
   - name: 🎬 流媒体
     type: select
     proxies:
-      - 🇺🇲 美国节点
+      - 🇺🇸 美国节点
       - 🇸🇬 狮城节点
       - 🇭🇰 香港节点
       - 🇨🇳 台湾节点
@@ -204,34 +204,34 @@ proxy-groups:
     proxies: [DIRECT, 🇭🇰 香港节点, 🇨🇳 台湾节点, 🇸🇬 狮城节点, 🚀 手动切换, ♻️ 自动选择]
   - name: 🌐 社交平台
     type: select
-    proxies: [🇸🇬 狮城节点, 🇺🇲 美国节点, 🇭🇰 香港节点, 🇬🇧 英国节点, 🌎 南美节点, 🌏 东南亚节点, 🔄 备用线路]
+    proxies: [🇸🇬 狮城节点, 🇺🇸 美国节点, 🇭🇰 香港节点, 🇬🇧 英国节点, 🌎 南美节点, 🌏 东南亚节点, 🔄 备用线路]
   - name: 🤖 人工智能
     type: select
-    proxies: [🇺🇲 美国节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇬🇧 英国节点, 🔄 备用线路]
+    proxies: [🇺🇸 美国节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇬🇧 英国节点, 🔄 备用线路]
   - name: 🎮 游戏平台
     type: select
-    proxies: [DIRECT, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇺🇲 美国节点, 🇰🇷 韩国节点, 🌎 南美节点, 🌏 东南亚节点, 🇬🇧 英国节点, 🇪🇺 欧洲节点]
+    proxies: [DIRECT, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇺🇸 美国节点, 🇰🇷 韩国节点, 🌎 南美节点, 🌏 东南亚节点, 🇬🇧 英国节点, 🇪🇺 欧洲节点]
   - name: 👨‍💻 开发服务
     type: select
-    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🇬🇧 英国节点, DIRECT]
+    proxies: [🇺🇸 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🇬🇧 英国节点, DIRECT]
   - name: 💰 加密货币
     type: select
-    proxies: [🇰🇷 韩国节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇺🇲 美国节点, 🇭🇰 香港节点, 🇬🇧 英国节点, 🇦🇺 澳洲节点, DIRECT]
+    proxies: [🇰🇷 韩国节点, 🇯🇵 日本节点, 🇸🇬 狮城节点, 🇺🇸 美国节点, 🇭🇰 香港节点, 🇬🇧 英国节点, 🇦🇺 澳洲节点, DIRECT]
   - name: 🎙️ 商务协作
     type: select
-    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, DIRECT]
+    proxies: [🇺🇸 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, DIRECT]
   - name: 🛒 电商支付
     type: select
-    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇬🇧 英国节点, 🇯🇵 日本节点, DIRECT]
+    proxies: [🇺🇸 美国节点, 🇸🇬 狮城节点, 🇬🇧 英国节点, 🇯🇵 日本节点, DIRECT]
   - name: 🍎 苹果服务
     type: select
-    proxies: [DIRECT, 🇺🇲 美国节点, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇸🇬 狮城节点]
+    proxies: [DIRECT, 🇺🇸 美国节点, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇸🇬 狮城节点]
   - name: 🌌 谷歌服务
     type: select
-    proxies: [🇺🇲 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🔄 备用线路]
+    proxies: [🇺🇸 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🔄 备用线路]
   - name: Ⓜ️ 微软服务
     type: select
-    proxies: [🇺🇲 美国节点, 🇭🇰 香港节点, 🇸🇬 狮城节点, DIRECT]
+    proxies: [🇺🇸 美国节点, 🇭🇰 香港节点, 🇸🇬 狮城节点, DIRECT]
   - name: 🇨🇳 国内服务
     type: select
     proxies: [DIRECT, 🇭🇰 香港节点, 🇨🇳 台湾节点]
@@ -271,7 +271,7 @@ proxy-groups:
     <<: *fallback_group
     tolerance: 50
     filter: "(?i)韩国|韓國|韩|韓|(^|[^a-z])(kr|korea|south ?korea)([^a-z]|$)"
-  - name: 🇺🇲 美国节点
+  - name: 🇺🇸 美国节点
     type: select
     use: [Sub, Sub2]
     filter: "(?i)美国|美國|(^|[^a-z])(us|usa|united ?states)([^a-z]|$)"
@@ -408,12 +408,12 @@ rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
-  - DOMAIN-SUFFIX,ndcdyn.interactivebrokers.com,🇺🇲 美国节点
-  - DOMAIN-SUFFIX,cdcdyn.interactivebrokers.com,🇺🇲 美国节点
-  - DOMAIN-SUFFIX,gdcdyn.interactivebrokers.com,🇺🇲 美国节点
+  - DOMAIN-SUFFIX,ndcdyn.interactivebrokers.com,🇺🇸 美国节点
+  - DOMAIN-SUFFIX,cdcdyn.interactivebrokers.com,🇺🇸 美国节点
+  - DOMAIN-SUFFIX,gdcdyn.interactivebrokers.com,🇺🇸 美国节点
   - DOMAIN-SUFFIX,ibllc.com.cn,🇭🇰 香港节点
   - DOMAIN-SUFFIX,ibllc.com,🇭🇰 香港节点
-  - RULE-SET,IntlBrokersUS,🇺🇲 美国节点
+  - RULE-SET,IntlBrokersUS,🇺🇸 美国节点
   - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,HkBanks,DIRECT
   - RULE-SET,AdBlock,🛡️ 安全防护
