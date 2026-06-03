@@ -20,7 +20,7 @@ sniffer:
   enable: true
   sniff:
     TLS:
-      ports: [443, 8443]
+      ports: [443, 8443, 4000, 4001]
     HTTP:
       ports: [80, 8080-8880]
       override-destination: true
@@ -394,7 +394,6 @@ rule-providers:
   Lan: {type: http, behavior: ipcidr, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.txt}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
-  IntlBrokersUS: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/intl_brokers_us.yaml", path: ./cache/rulesets/IntlBrokersUS.yaml}
   IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
   HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
@@ -408,14 +407,8 @@ rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
-  - DOMAIN-SUFFIX,ndcdyn.interactivebrokers.com,🇺🇸 美国节点
-  - DOMAIN-SUFFIX,cdcdyn.interactivebrokers.com,🇺🇸 美国节点
-  - DOMAIN-SUFFIX,gdcdyn.interactivebrokers.com,🇺🇸 美国节点
-  - DOMAIN-SUFFIX,ibllc.com.cn,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibllc.com,🇭🇰 香港节点
-  - RULE-SET,IntlBrokersUS,🇺🇸 美国节点
-  - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,HkBanks,DIRECT
+  - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,AdBlock,🛡️ 安全防护
   - RULE-SET,AdGuard,🛡️ 安全防护
   - RULE-SET,Privacy,🛡️ 安全防护

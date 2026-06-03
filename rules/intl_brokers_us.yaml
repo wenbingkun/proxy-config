@@ -1,7 +1,0 @@
-domain_suffix:
-  # IBKR LLC (US entity) dynamic data center gateways
-  # Route via US node so the egress IP matches the LLC account region,
-  # avoiding the IP/account-region mismatch redirect loop on login.
-  - ndcdyn.interactivebrokers.com
-  - cdcdyn.interactivebrokers.com
-  - gdcdyn.interactivebrokers.com
