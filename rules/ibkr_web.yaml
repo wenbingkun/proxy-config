@@ -1,0 +1,11 @@
+domain_suffix:
+  # IBKR web, Client Portal, and dynamic HTTPS portal gateways.
+  - interactivebrokers.com
+  - interactivebrokers.hk
+  - interactivebrokers.com.hk
+  - ibkr.com
+  - ibkr.com.hk
+  - ibkr.hk
+  - ibkrcampus.com
+  - ibkr.info
+  - ibllc.com

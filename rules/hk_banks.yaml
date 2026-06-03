@@ -69,16 +69,6 @@ domain_suffix:
   - brightsmart.com.hk
   - bsgroup.com.hk
 
-  # Interactive Brokers (verified reachable from mainland on user's network;
-  # covers ndcdyn/gdcdyn/cdcdyn web gateways and mcgw* Shenzhen app gateway)
-  - interactivebrokers.com
-  - interactivebrokers.hk
-  - ibkr.com
-  - ibkr.com.hk
-  - ibkrcampus.com
-  - ibllc.com
-  - ibllc.com.cn
-
   # Market data and finance info
   - aastocks.com
   - etnet.com.hk

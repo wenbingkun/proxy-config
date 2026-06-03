@@ -9,6 +9,16 @@ rule_sets:
     source: download_extra.yaml
     clash_policy: DIRECT
     qx_policy: DIRECT
+  - id: ibkr_trading
+    title: IBKR 交易网关直连规则
+    source: ibkr_trading.yaml
+    clash_policy: DIRECT
+    qx_policy: DIRECT
+  - id: ibkr_web
+    title: IBKR 网页走香港节点规则
+    source: ibkr_web.yaml
+    clash_policy: 🇭🇰 香港节点
+    qx_policy: 🇭🇰 香港节点
   - id: intl_brokers
     title: 国际券商走香港节点规则
     source: intl_brokers.yaml
