@@ -1,15 +1,8 @@
 domain_suffix:
-  # Interactive Brokers (overseas servers; covers ndcdyn/gdcdyn/cdcdyn gateways)
-  - interactivebrokers.com
-  - interactivebrokers.hk
-  - ibkr.com
-  - ibkr.com.hk
-  - ibkrcampus.com
-
-  # Saxo Bank
+  # Saxo Bank (overseas servers; no user-confirmed mainland reachability)
   - saxobank.com
   - home.saxo
 
-  # Webull
+  # Webull (overseas servers; no user-confirmed mainland reachability)
   - webull.com
   - webull.com.hk
