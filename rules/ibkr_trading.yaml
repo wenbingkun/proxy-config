@@ -1,3 +1,0 @@
-domain_suffix:
-  # IBKR Mobile / TWS trading gateway, e.g. mcgw1.ibllc.com.cn:4001.
-  - ibllc.com.cn

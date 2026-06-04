@@ -394,8 +394,6 @@ rule-providers:
   Lan: {type: http, behavior: ipcidr, format: text, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.txt}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
-  IbkrTrading: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ibkr_trading.yaml", path: ./cache/rulesets/IbkrTrading.yaml}
-  IbkrWeb: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ibkr_web.yaml", path: ./cache/rulesets/IbkrWeb.yaml}
   IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
   HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
@@ -409,18 +407,6 @@ rules:
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
   - RULE-SET,DownloadExtra,DIRECT
-  - DOMAIN-SUFFIX,ibllc.com.cn,DIRECT
-  - DOMAIN-SUFFIX,interactivebrokers.com,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,interactivebrokers.hk,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,interactivebrokers.com.hk,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibkr.com,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibkr.com.hk,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibkr.hk,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibkrcampus.com,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibkr.info,🇭🇰 香港节点
-  - DOMAIN-SUFFIX,ibllc.com,🇭🇰 香港节点
-  - RULE-SET,IbkrTrading,DIRECT
-  - RULE-SET,IbkrWeb,🇭🇰 香港节点
   - RULE-SET,HkBanks,DIRECT
   - RULE-SET,IntlBrokers,🇭🇰 香港节点
   - RULE-SET,AdBlock,🛡️ 安全防护
