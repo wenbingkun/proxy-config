@@ -233,6 +233,29 @@ def check_policy_references(failures: list[str]) -> None:
             )
 
 
+def check_windows_runtime_defaults(failures: list[str]) -> None:
+    data = yaml.safe_load((ROOT / "clash" / "config.yaml").read_text(encoding="utf-8")) or {}
+    dns = data.get("dns", {})
+    tun = data.get("tun", {})
+    expected = {
+        "allow-lan": False,
+        "external-controller": "127.0.0.1:9090",
+        "unified-delay": True,
+        "ipv6": False,
+    }
+    for key, value in expected.items():
+        if data.get(key) != value:
+            fail(f"clash/config.yaml: expected {key}={value!r}", failures)
+    if "bind-address" in data:
+        fail("clash/config.yaml: bind-address must not be explicitly exposed", failures)
+    if not isinstance(dns, dict) or dns.get("enable") is not True:
+        fail("clash/config.yaml: DNS must be enabled", failures)
+    elif dns.get("enhanced-mode") != "fake-ip" or dns.get("ipv6") is not False:
+        fail("clash/config.yaml: expected fake-ip DNS with IPv6 disabled", failures)
+    if not isinstance(tun, dict) or tun.get("enable") is not False:
+        fail("clash/config.yaml: TUN must remain disabled by default", failures)
+
+
 def main() -> int:
     failures: list[str] = []
 
@@ -247,6 +270,9 @@ def main() -> int:
 
     print("=== Policy References ===")
     check_policy_references(failures)
+
+    print("=== Windows Runtime Defaults ===")
+    check_windows_runtime_defaults(failures)
 
     if failures:
         print("\nAUDIT FAILED:")
