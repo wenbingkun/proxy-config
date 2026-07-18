@@ -204,6 +204,9 @@ proxy-groups:
   - name: 🎮 游戏平台
     type: select
     proxies: [DIRECT, 🇭🇰 香港节点, 🇨🇳 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 🇺🇸 美国节点, 🌏 东南亚节点, 🕌 中东中亚节点, 🌏 亚洲其他节点, 🇪🇺 欧洲节点, 🌎 北美节点, 🌎 南美节点, 🏝️ 大洋洲节点]
+  - name: 🎮 Steam
+    type: select
+    proxies: [DIRECT, 🇭🇰 香港节点, 🇨🇳 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 狮城节点, 🇺🇸 美国节点, 🌏 东南亚节点, 🇪🇺 欧洲节点, 🌎 北美节点, 🏝️ 大洋洲节点, 🚀 手动切换, 🌐 故障转移]
   - name: 👨‍💻 开发服务
     type: select
     proxies: [🇺🇸 美国节点, 🇸🇬 狮城节点, 🇯🇵 日本节点, 🇭🇰 香港节点, 🇪🇺 欧洲节点, 🌎 北美节点, DIRECT]
@@ -360,6 +363,7 @@ rule-providers:
   Lan: {type: http, behavior: ipcidr, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.yaml}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
+  SteamDownload: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/steam_download.yaml", path: ./cache/rulesets/SteamDownload.yaml}
   IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
   HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
@@ -370,8 +374,12 @@ rule-providers:
   GameExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/game_extra.yaml", path: ./cache/rulesets/GameExtra.yaml}
 
 rules:
+  - PROCESS-NAME,steam.exe,🎮 Steam
+  - PROCESS-NAME,steamwebhelper.exe,🎮 Steam
+  - PROCESS-NAME,steamservice.exe,🎮 Steam
   - RULE-SET,LocalNetwork,DIRECT
   - RULE-SET,Lan,DIRECT
+  - RULE-SET,SteamDownload,🎮 Steam
   - RULE-SET,DownloadExtra,DIRECT
   - RULE-SET,HkBanks,DIRECT
   - RULE-SET,IntlBrokers,🇭🇰 香港节点
@@ -435,7 +443,7 @@ rules:
   - RULE-SET,Download,DIRECT
   - RULE-SET,ChinaDirect,🇨🇳 国内服务
   - RULE-SET,ChinaCompany,🇨🇳 国内服务
-  - RULE-SET,Steam,🎮 游戏平台
+  - RULE-SET,Steam,🎮 Steam
   - RULE-SET,Game,🎮 游戏平台
   - RULE-SET,GameExtra,🎮 游戏平台
   - RULE-SET,ProxyLite,🌏 全球加速

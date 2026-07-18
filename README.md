@@ -131,6 +131,8 @@ AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemin
 
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余归入东南亚、中东中亚、亚洲其他、欧洲、北美、南美、大洋洲和非洲。南亚、蒙古与澳门属于“亚洲其他”，土耳其属于“中东中亚”，墨西哥、中美洲和加勒比属于“北美”；澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
+`🎮 Steam` 同时控制 Steam 客户端进程、平台域名和下载 CDN，默认选择 `DIRECT`。在 Windows 上，三个 `PROCESS-NAME` 规则只对已经进入 Mihomo 的流量生效；当前 TUN 关闭时，不遵循系统代理的 Steam 流量可能绕过 Windows Mihomo。ShellCrash 看不到局域网客户端的进程名，但仍会通过 Steam 域名与 CDN 规则提供全局基础覆盖。将该组切换到代理会同时消耗游戏下载的节点流量；保持直连最快，但商店或社区不可用时需要临时切换到合适节点。Microsoft、Visual Studio、Office、winget 与 npm 下载始终保持 `DIRECT`，不受 Steam 组影响。
+
 ---
 
 **关于 Clash 主配置远程更新**
@@ -278,6 +280,7 @@ proxy-config/
 │   ├── stack_overflow.yaml         # Stack Exchange 规则
 │   ├── speedtest.yaml              # 网络测速规则
 │   ├── game_extra.yaml             # 游戏平台补充规则
+│   ├── steam_download.yaml         # Steam 下载 CDN 专用规则
 │   └── local_network.yaml          # 局域网 / 本地直连规则
 │
 ├── quantumultx/                    # Quantumult X 客户端层
@@ -303,7 +306,8 @@ proxy-config/
 │   ├── deploy_shellcrash_config.sh # 路由器本地私密注入与部署脚本
 │   ├── test_deploy_shellcrash.py   # 部署事务与回滚测试
 │   ├── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
-│   └── test_region_groups.py       # Clash/QX 地区正则与地理边界回归测试
+│   ├── test_region_groups.py       # Clash/QX 地区正则与地理边界回归测试
+│   └── test_steam_policy.py        # Steam 与非 Steam 下载策略回归测试
 │
 ├── .gitignore                      # 排除本地私密文件
 ├── AGENTS.md                       # AI 代理操作规范
