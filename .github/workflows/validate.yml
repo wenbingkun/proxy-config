@@ -37,6 +37,7 @@ jobs:
               ".gitignore",
               "clash/config.yaml",
               "clash/config-router.template.yaml",
+              "clash/config-router-single.template.yaml",
               "clash/shellcrash/providers.env.example",
               "quantumultx/bootstrap.example.conf",
               "quantumultx/filter_remote.snippet",
@@ -134,7 +135,13 @@ jobs:
           chmod +x /tmp/proxy-config-mihomo/CrashCore
           /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config.yaml
           /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router.template.yaml
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router-single.template.yaml
           python3 scripts/test_shellcrash_override.py \
             --modify-script /tmp/proxy-config-mihomo/clash_modify.sh \
             --core /tmp/proxy-config-mihomo/CrashCore \
             --mmdb /tmp/proxy-config-mihomo/Country.mmdb
+          python3 scripts/test_shellcrash_override.py \
+            --modify-script /tmp/proxy-config-mihomo/clash_modify.sh \
+            --core /tmp/proxy-config-mihomo/CrashCore \
+            --mmdb /tmp/proxy-config-mihomo/Country.mmdb \
+            --template clash/config-router-single.template.yaml

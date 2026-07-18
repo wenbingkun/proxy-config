@@ -12,7 +12,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_PATH = ROOT / "clash" / "config.yaml"
-OUTPUT_PATH = ROOT / "clash" / "config-router.template.yaml"
+DUAL_OUTPUT_PATH = ROOT / "clash" / "config-router.template.yaml"
+SINGLE_OUTPUT_PATH = ROOT / "clash" / "config-router-single.template.yaml"
 
 # ShellCrash keeps these sections when its default configuration override is enabled.
 POLICY_SECTIONS = (
@@ -56,7 +57,9 @@ def load_source() -> dict[str, object]:
     return data
 
 
-def validate_references(config: dict[str, object]) -> None:
+def validate_references(
+    config: dict[str, object], required_proxy_providers: set[str]
+) -> None:
     proxies = config.get("proxies", [])
     providers = config.get("proxy-providers")
     groups = config.get("proxy-groups")
@@ -72,7 +75,7 @@ def validate_references(config: dict[str, object]) -> None:
     if not isinstance(rules, list) or not rules:
         raise ValueError("router template requires a non-empty 'rules' list")
 
-    missing_placeholders = sorted(set(PROVIDER_PLACEHOLDERS) - set(providers))
+    missing_placeholders = sorted(required_proxy_providers - set(providers))
     if missing_placeholders:
         raise ValueError(
             "missing proxy providers required for local injection: "
@@ -145,7 +148,10 @@ def validate_references(config: dict[str, object]) -> None:
             raise ValueError(f"rule {index} references missing policy {policy!r}")
 
 
-def build_router_config() -> str:
+def build_router_config(subscription_count: int) -> str:
+    if subscription_count not in (1, 2):
+        raise ValueError("subscription_count must be 1 or 2")
+
     source = load_source()
     output: dict[str, object] = {}
     for section in POLICY_SECTIONS:
@@ -155,13 +161,24 @@ def build_router_config() -> str:
     providers = output.get("proxy-providers")
     if not isinstance(providers, dict):
         raise ValueError("source config must contain a 'proxy-providers' mapping")
-    for name, placeholder in PROVIDER_PLACEHOLDERS.items():
+    provider_names = {"Sub"} if subscription_count == 1 else {"Sub", "Sub2"}
+    if subscription_count == 1:
+        providers.pop("Sub2", None)
+        groups = output.get("proxy-groups")
+        if not isinstance(groups, list):
+            raise ValueError("source config must contain a 'proxy-groups' list")
+        for group in groups:
+            if isinstance(group, dict) and isinstance(group.get("use"), list):
+                group["use"] = [item for item in group["use"] if item != "Sub2"]
+
+    for name in provider_names:
+        placeholder = PROVIDER_PLACEHOLDERS[name]
         provider = providers.get(name)
         if not isinstance(provider, dict):
             raise ValueError(f"proxy provider {name!r} must be a mapping")
         provider["url"] = QuotedString(placeholder)
 
-    validate_references(output)
+    validate_references(output, provider_names)
 
     rendered = yaml.dump(
         output,
@@ -183,12 +200,12 @@ def build_router_config() -> str:
     return header + rendered
 
 
-def check_output(expected: str) -> int:
-    actual = OUTPUT_PATH.read_text(encoding="utf-8") if OUTPUT_PATH.exists() else None
+def check_output(path: Path, expected: str) -> bool:
+    actual = path.read_text(encoding="utf-8") if path.exists() else None
     if actual == expected:
-        return 0
-    print(f"Generated file is out of date: {OUTPUT_PATH.relative_to(ROOT)}", file=sys.stderr)
-    return 1
+        return True
+    print(f"Generated file is out of date: {path.relative_to(ROOT)}", file=sys.stderr)
+    return False
 
 
 def main() -> int:
@@ -199,20 +216,25 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        rendered = build_router_config()
+        outputs = {
+            DUAL_OUTPUT_PATH: build_router_config(2),
+            SINGLE_OUTPUT_PATH: build_router_config(1),
+        }
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"Router config build failed: {exc}", file=sys.stderr)
         return 1
 
     if args.check:
-        return check_output(rendered)
+        results = [check_output(path, rendered) for path, rendered in outputs.items()]
+        return 0 if all(results) else 1
 
-    current = OUTPUT_PATH.read_text(encoding="utf-8") if OUTPUT_PATH.exists() else None
-    if current == rendered:
-        print(f"Generated file is already up to date: {OUTPUT_PATH.relative_to(ROOT)}")
-        return 0
-    OUTPUT_PATH.write_text(rendered, encoding="utf-8")
-    print(f"Updated generated file: {OUTPUT_PATH.relative_to(ROOT)}")
+    for path, rendered in outputs.items():
+        current = path.read_text(encoding="utf-8") if path.exists() else None
+        if current == rendered:
+            print(f"Generated file is already up to date: {path.relative_to(ROOT)}")
+            continue
+        path.write_text(rendered, encoding="utf-8")
+        print(f"Updated generated file: {path.relative_to(ROOT)}")
     return 0
 
 

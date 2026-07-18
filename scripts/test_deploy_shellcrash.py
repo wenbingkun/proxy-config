@@ -35,6 +35,20 @@ rules:
   - MATCH,DIRECT
 """
 
+SINGLE_TEMPLATE = """\
+proxy-providers:
+  Sub:
+    type: http
+    url: "https://example.com/__SUB_URL_1__"
+proxy-groups:
+  - name: PROXY
+    type: select
+    use:
+      - Sub
+rules:
+  - MATCH,DIRECT
+"""
+
 
 def write_executable(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
@@ -160,6 +174,9 @@ exit 0
         )
 
         (fixtures_dir / "good.yaml").write_text(TEMPLATE, encoding="utf-8")
+        (fixtures_dir / "single.yaml").write_text(
+            SINGLE_TEMPLATE, encoding="utf-8"
+        )
         (fixtures_dir / "changed.yaml").write_text(
             "# changed template\n" + TEMPLATE, encoding="utf-8"
         )
@@ -182,11 +199,17 @@ exit 0
 
         # A brand-new install has neither config nor core. ShellCrash owns the
         # first core download, so deployment must still be able to bootstrap.
-        write_env(env_path, shellcrash_dir, "good.yaml")
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "single.yaml",
+            provider_url_2="",
+        )
         run_deploy(env_path, process_env, should_succeed=True)
         bootstrap_config = config_path.read_bytes()
         assert TEST_PROVIDER_URL_1.encode() in bootstrap_config
-        assert TEST_PROVIDER_URL_2.encode() in bootstrap_config
+        assert TEST_PROVIDER_URL_2.encode() not in bootstrap_config
+        assert b"Sub2" not in bootstrap_config
         assert stat.S_IMODE(config_path.stat().st_mode) == 0o600
         assert not backup_path.exists()
 
@@ -197,6 +220,21 @@ exit 0
         assert config_path.read_bytes() == b"# existing without core\n"
 
         write_executable(core_path, core_script)
+        config_path.write_bytes(original)
+        config_path.chmod(0o640)
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "single.yaml",
+            provider_url_2="",
+        )
+        run_deploy(env_path, process_env, should_succeed=True)
+        single_deployed = config_path.read_bytes()
+        assert TEST_PROVIDER_URL_1.encode() in single_deployed
+        assert TEST_PROVIDER_URL_2.encode() not in single_deployed
+        assert b"Sub2" not in single_deployed
+        assert backup_path.read_bytes() == original
+
         config_path.write_bytes(original)
         config_path.chmod(0o640)
         write_env(env_path, shellcrash_dir, "good.yaml")
