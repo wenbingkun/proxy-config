@@ -302,10 +302,12 @@ rule-providers:
   AdBlock: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt", path: ./cache/rulesets/AdBlock.yaml}
   AdGuard: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Advertising/Advertising.yaml", path: ./cache/rulesets/AdGuard.yaml}
   PrivateDomain: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt", path: ./cache/rulesets/PrivateDomain.yaml}
-  Tracking: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Privacy/Privacy.yaml", path: ./cache/rulesets/Tracking.yaml}
   Hijacking: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Hijacking/Hijacking.yaml", path: ./cache/rulesets/Hijacking.yaml}
   Malware: {type: http, behavior: domain, format: text, interval: 43200, url: "https://malware-filter.gitlab.io/malware-filter/urlhaus-filter-domains.txt", path: ./cache/rulesets/Malware.txt}
-  AI: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://gist.githubusercontent.com/ddgksf2013/cb4121e8b5c5d865cc949cb8120320c4/raw/Ai.yaml", path: ./cache/rulesets/AI.yaml}
+  OpenAI: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/openai.yaml", path: ./cache/rulesets/OpenAI.yaml}
+  Anthropic: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/anthropic.yaml", path: ./cache/rulesets/Anthropic.yaml}
+  GitHubCopilot: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github-copilot.yaml", path: ./cache/rulesets/GitHubCopilot.yaml}
+  Gemini: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google-gemini.yaml", path: ./cache/rulesets/Gemini.yaml}
   Slack: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Slack/Slack.yaml", path: ./cache/rulesets/Slack.yaml}
   Zoom: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/zoom.yaml", path: ./cache/rulesets/Zoom.yaml}
   WhatsApp: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Whatsapp/Whatsapp.yaml", path: ./cache/rulesets/WhatsApp.yaml}
@@ -353,11 +355,6 @@ rule-providers:
   ChinaDirect: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt", path: ./cache/rulesets/ChinaDirect.yaml}
   ChinaCompany: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/China/China.yaml", path: ./cache/rulesets/ChinaCompany.yaml}
   Steam: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Steam/Steam.yaml", path: ./cache/rulesets/Steam.yaml}
-  Epic: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Epic/Epic.yaml", path: ./cache/rulesets/Epic.yaml}
-  PlayStation: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/PlayStation/PlayStation.yaml", path: ./cache/rulesets/PlayStation.yaml}
-  Xbox: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Xbox/Xbox.yaml", path: ./cache/rulesets/Xbox.yaml}
-  Nintendo: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Nintendo/Nintendo.yaml", path: ./cache/rulesets/Nintendo.yaml}
-  BattleNet: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Blizzard/Blizzard.yaml", path: ./cache/rulesets/BattleNet.yaml}
   Game: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Game/Game.yaml", path: ./cache/rulesets/Game.yaml}
   ProxyLite: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt", path: ./cache/rulesets/ProxyLite.yaml}
   Lan: {type: http, behavior: ipcidr, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.yaml}
@@ -381,11 +378,13 @@ rules:
   - RULE-SET,AdBlock,🛡️ 安全防护
   - RULE-SET,AdGuard,🛡️ 安全防护
   - RULE-SET,PrivateDomain,DIRECT
-  - RULE-SET,Tracking,🛡️ 安全防护
   - RULE-SET,Hijacking,🛡️ 安全防护
   - RULE-SET,Malware,🛡️ 安全防护
+  - RULE-SET,OpenAI,🤖 人工智能
+  - RULE-SET,Anthropic,🤖 人工智能
+  - RULE-SET,GitHubCopilot,🤖 人工智能
+  - RULE-SET,Gemini,🤖 人工智能
   - RULE-SET,AIExtra,🤖 人工智能
-  - RULE-SET,AI,🤖 人工智能
   - RULE-SET,Crypto,💰 加密货币
   - RULE-SET,CryptoExtra,💰 加密货币
   - RULE-SET,Slack,🎙️ 商务协作
@@ -437,11 +436,6 @@ rules:
   - RULE-SET,ChinaDirect,🇨🇳 国内服务
   - RULE-SET,ChinaCompany,🇨🇳 国内服务
   - RULE-SET,Steam,🎮 游戏平台
-  - RULE-SET,Epic,🎮 游戏平台
-  - RULE-SET,PlayStation,🎮 游戏平台
-  - RULE-SET,Xbox,🎮 游戏平台
-  - RULE-SET,Nintendo,🎮 游戏平台
-  - RULE-SET,BattleNet,🎮 游戏平台
   - RULE-SET,Game,🎮 游戏平台
   - RULE-SET,GameExtra,🎮 游戏平台
   - RULE-SET,ProxyLite,🌏 全球加速
