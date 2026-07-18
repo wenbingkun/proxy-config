@@ -40,8 +40,26 @@ def check_architecture(failures: list[str]) -> None:
             providers = data.get("rule-providers")
             if not isinstance(providers, dict) or len(providers) == 0:
                 fail("clash/config.yaml: 'rule-providers' missing or empty", failures)
+            proxy_providers = data.get("proxy-providers")
+            if not isinstance(proxy_providers, dict) or set(proxy_providers) != {"Sub", "Sub2"}:
+                fail("clash/config.yaml: expected dual proxy providers Sub and Sub2", failures)
         except yaml.YAMLError as exc:
             fail(f"clash/config.yaml: YAML parse error: {exc}", failures)
+
+    single_config = ROOT / "clash" / "config-single.yaml"
+    if not single_config.exists():
+        fail("clash/config-single.yaml not found", failures)
+    else:
+        try:
+            raw = single_config.read_text(encoding="utf-8")
+            data = yaml.safe_load(raw) or {}
+            proxy_providers = data.get("proxy-providers")
+            if not isinstance(proxy_providers, dict) or set(proxy_providers) != {"Sub"}:
+                fail("clash/config-single.yaml: expected only proxy provider Sub", failures)
+            if "Sub2" in raw:
+                fail("clash/config-single.yaml: contains residual Sub2 reference", failures)
+        except yaml.YAMLError as exc:
+            fail(f"clash/config-single.yaml: YAML parse error: {exc}", failures)
 
     # bootstrap.example.conf has [filter_remote] and [mitm] sections
     bootstrap = ROOT / "quantumultx" / "bootstrap.example.conf"

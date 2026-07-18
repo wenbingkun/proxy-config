@@ -36,6 +36,7 @@ jobs:
               "AGENTS.md",
               ".gitignore",
               "clash/config.yaml",
+              "clash/config-single.yaml",
               "clash/config-router.template.yaml",
               "clash/config-router-single.template.yaml",
               "clash/shellcrash/providers.env.example",
@@ -134,6 +135,7 @@ jobs:
           tar -xzf /tmp/proxy-config-mihomo/core.tar.gz -C /tmp/proxy-config-mihomo
           chmod +x /tmp/proxy-config-mihomo/CrashCore
           /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config.yaml
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-single.yaml
           /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router.template.yaml
           /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router-single.template.yaml
           python3 scripts/test_shellcrash_override.py \
