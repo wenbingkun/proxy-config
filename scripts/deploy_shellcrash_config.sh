@@ -3,7 +3,8 @@
 set -eu
 umask 077
 
-DEFAULT_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config-router.template.yaml'
+DEFAULT_DUAL_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config-router.template.yaml'
+DEFAULT_SINGLE_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config-router-single.template.yaml'
 PLACEHOLDER_1='https://example.com/__SUB_URL_1__'
 PLACEHOLDER_2='https://example.com/__SUB_URL_2__'
 
@@ -116,7 +117,7 @@ env_file=$1
 
 : "${SHELLCRASH_DIR:?providers.env 中必须设置 SHELLCRASH_DIR}"
 : "${SUB_URL_1:?providers.env 中必须设置 SUB_URL_1}"
-: "${SUB_URL_2:?providers.env 中必须设置 SUB_URL_2}"
+SUB_URL_2=${SUB_URL_2:-}
 
 shellcrash_dir=${SHELLCRASH_DIR%/}
 case "$shellcrash_dir" in
@@ -127,9 +128,16 @@ esac
 [ -d "$shellcrash_dir" ] || fail "ShellCrash 目录不存在：$shellcrash_dir"
 
 validate_subscription_url SUB_URL_1 "$SUB_URL_1"
-validate_subscription_url SUB_URL_2 "$SUB_URL_2"
+if [ -n "$SUB_URL_2" ]; then
+    validate_subscription_url SUB_URL_2 "$SUB_URL_2"
+    subscription_count=2
+    default_template_url=$DEFAULT_DUAL_TEMPLATE_URL
+else
+    subscription_count=1
+    default_template_url=$DEFAULT_SINGLE_TEMPLATE_URL
+fi
 
-template_url=${TEMPLATE_URL:-$DEFAULT_TEMPLATE_URL}
+template_url=${TEMPLATE_URL:-$default_template_url}
 case "$template_url" in
     http://*|https://*) ;;
     *) fail 'TEMPLATE_URL 必须是 http:// 或 https:// URL' ;;
@@ -195,13 +203,19 @@ fi
 placeholder_1_count=$(count_fixed_occurrences "$PLACEHOLDER_1" "$downloaded_template")
 placeholder_2_count=$(count_fixed_occurrences "$PLACEHOLDER_2" "$downloaded_template")
 [ "$placeholder_1_count" = '1' ] || fail '模板中的 SUB_URL_1 占位符数量不是 1'
-[ "$placeholder_2_count" = '1' ] || fail '模板中的 SUB_URL_2 占位符数量不是 1'
+if [ "$subscription_count" = '2' ]; then
+    [ "$placeholder_2_count" = '1' ] || fail '双订阅模板中的 SUB_URL_2 占位符数量不是 1'
+else
+    [ "$placeholder_2_count" = '0' ] || fail '单订阅模板不应包含 SUB_URL_2 占位符'
+fi
 
 escaped_sub_url_1=$(escape_sed_replacement "$SUB_URL_1")
-escaped_sub_url_2=$(escape_sed_replacement "$SUB_URL_2")
 {
     printf 's|%s|%s|g\n' "$PLACEHOLDER_1" "$escaped_sub_url_1"
-    printf 's|%s|%s|g\n' "$PLACEHOLDER_2" "$escaped_sub_url_2"
+    if [ "$subscription_count" = '2' ]; then
+        escaped_sub_url_2=$(escape_sed_replacement "$SUB_URL_2")
+        printf 's|%s|%s|g\n' "$PLACEHOLDER_2" "$escaped_sub_url_2"
+    fi
 } >"$replacement_script"
 
 sed -f "$replacement_script" "$downloaded_template" >"$rendered_config"

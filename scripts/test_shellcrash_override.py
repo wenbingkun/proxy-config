@@ -14,7 +14,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE_PATH = ROOT / "clash" / "config-router.template.yaml"
+DEFAULT_TEMPLATE_PATH = ROOT / "clash" / "config-router.template.yaml"
 POLICY_SECTIONS = (
     "proxies",
     "proxy-providers",
@@ -60,18 +60,20 @@ def main() -> int:
     parser.add_argument("--modify-script", required=True, type=Path)
     parser.add_argument("--core", required=True, type=Path)
     parser.add_argument("--mmdb", required=True, type=Path)
+    parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE_PATH)
     args = parser.parse_args()
 
     modify_script = args.modify_script.resolve()
     core = args.core.resolve()
     mmdb = args.mmdb.resolve()
-    for path in (modify_script, core, mmdb):
+    template_path = args.template.resolve()
+    for path in (modify_script, core, mmdb, template_path):
         if not path.is_file():
             parser.error(f"required file does not exist: {path}")
     if not os.access(core, os.X_OK):
         parser.error(f"core is not executable: {core}")
 
-    template = load_yaml(TEMPLATE_PATH)
+    template = load_yaml(template_path)
 
     with tempfile.TemporaryDirectory(prefix="proxy-config-shellcrash-override-") as temp:
         base = Path(temp)
@@ -83,7 +85,7 @@ def main() -> int:
             directory.mkdir(parents=True, exist_ok=True)
 
         config_path = yamls_dir / "config.yaml"
-        shutil.copyfile(TEMPLATE_PATH, config_path)
+        shutil.copyfile(template_path, config_path)
         (runtime_dir / "CrashCore").symlink_to(core)
         shutil.copyfile(mmdb, data_dir / "Country.mmdb")
 
@@ -147,7 +149,10 @@ def main() -> int:
             [str(core), "-t", "-d", str(data_dir), "-f", str(merged_path)]
         )
 
-    print("ShellCrash official override integration test passed")
+    print(
+        "ShellCrash official override integration test passed: "
+        f"{template_path.name}"
+    )
     return 0
 
 

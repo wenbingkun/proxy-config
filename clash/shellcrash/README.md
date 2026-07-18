@@ -6,7 +6,8 @@
 - ShellCrash 继续负责端口、DNS、TUN、sniffer、控制器、管理密钥和防火墙。
 - 真实订阅 URL 只保存在路由器本地，不进入 Git。
 
-因此必须保持 ShellCrash 的默认“配置覆写”开启。`config-router.template.yaml` 是策略模板，不能在禁用覆写模式下作为完整 Mihomo 配置直接运行。
+因此必须保持 ShellCrash 的默认“配置覆写”开启。两个 `config-router*.template.yaml`
+都是策略模板，不能在禁用覆写模式下作为完整 Mihomo 配置直接运行。
 
 ## 1. 检查设备状态
 
@@ -38,12 +39,17 @@ python3 scripts/build_router_config.py
 python3 scripts/build_router_config.py --check
 ```
 
-生成的 `clash/config-router.template.yaml`：
+生成两个公开模板：
+
+- `clash/config-router-single.template.yaml`：只有 `Sub`；
+- `clash/config-router.template.yaml`：包含 `Sub` 和 `Sub2`。
+
+两个模板都：
 
 - 来自现有 `clash/config.yaml`，不是第二份手工维护的配置；
 - 展开了 YAML 锚点和合并键，避免 ShellCrash 拆分区块后引用失效；
 - 只包含 ShellCrash 默认覆写流程会保留的策略区块；
-- 使用两个公开占位 URL，通过 Mihomo 校验后才允许提交。
+- 只使用对应数量的公开占位 URL，通过 Mihomo 校验后才允许提交。
 
 ## 3. 全新安装
 
@@ -68,7 +74,9 @@ cp providers.env.example "$CRASHDIR/private/providers.env"
 chmod 600 "$CRASHDIR/private/providers.env"
 ```
 
-编辑 `providers.env`，设置实际的 `SHELLCRASH_DIR`、`SUB_URL_1` 和 `SUB_URL_2`。不要把该文件放回仓库或发送到日志。
+编辑 `providers.env`，设置实际的 `SHELLCRASH_DIR` 和 `SUB_URL_1`。
+`SUB_URL_2` 可选：留空时脚本自动下载单订阅模板；填写后自动使用双订阅模板。
+不要把该文件放回仓库或发送到日志。
 
 后续更新会依次检查 ShellCrash 运行时的 `CrashCore`，以及持久目录中的
 `CrashCore`、`CrashCore.raw` 和 `CrashCore.upx`。如果设备只保留了压缩的
@@ -87,7 +95,7 @@ chmod 700 /path/to/deploy_shellcrash_config.sh
 脚本会依次完成：
 
 1. 加锁并下载公开模板到临时目录；
-2. 检查两个占位符均只出现一次；
+2. 检查模板与单/双订阅模式匹配，且每个所需占位符只出现一次；
 3. 注入订阅 URL，但不在日志中输出它们；
 4. 使用设备上的 Mihomo/CrashCore 执行 `-t`；
 5. 备份并原子替换 `$CRASHDIR/yamls/config.yaml`；

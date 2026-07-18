@@ -141,7 +141,7 @@ Windows 当前仍采用“主配置保存在本地、rule-provider 自动更新�
 ```text
 clash/config.yaml
         ↓ 生成并展开 YAML 锚点
-clash/config-router.template.yaml（公开、无秘密）
+clash/config-router*.template.yaml（按单/双订阅选择，公开、无秘密）
         ↓ 路由器本地注入订阅 URL
 $CRASHDIR/yamls/config.yaml（私密）
         ↓ ShellCrash 生成最终运行配置
@@ -278,6 +278,7 @@ proxy-config/
 ├── clash/                          # Clash / Mihomo 客户端层
 │   ├── config.yaml                 # Clash 主配置（含 rule-providers 引用）
 │   ├── config-router.template.yaml # 生成的 ShellCrash 公开策略模板
+│   ├── config-router-single.template.yaml # 单订阅 ShellCrash 策略模板
 │   ├── shellcrash/                  # ShellCrash 接入说明和私密参数示例
 │   └── rulesets/                   # 由 build_rules.py 生成的 rule-provider 文件
 │       ├── ai_extra.yaml
@@ -399,7 +400,7 @@ git push
 
 - `bootstrap.example.conf`：去除所有私密信息的模板，用于首次配置参考
 - `config.yaml`：订阅链接以 `https://example.com/...?token=replace-me` 占位
-- `config-router.template.yaml`：ShellCrash 公开策略模板，订阅地址仍为占位符
+- `config-router*.template.yaml`：ShellCrash 单/双订阅公开策略模板，订阅地址仍为占位符
 - `providers.env.example`：只含示例值；真实 `providers.env` 仅保存在路由器本地并设置为 `600`
 
 在新设备上首次配置时，只需基于模板填写本地私密信息，后续规则更新完全自动化，无需再次操作。
