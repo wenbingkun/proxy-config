@@ -127,6 +127,8 @@ rule-providers:
 
 第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
 
+节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余归入东南亚、中东中亚、亚洲其他、欧洲、北美、南美、大洋洲和非洲。南亚、蒙古与澳门属于“亚洲其他”，土耳其属于“中东中亚”，墨西哥、中美洲和加勒比属于“北美”；澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
+
 ---
 
 **关于 Clash 主配置远程更新**
@@ -298,7 +300,8 @@ proxy-config/
 │   ├── build_router_config.py      # Windows 单订阅配置与路由器策略模板生成脚本
 │   ├── deploy_shellcrash_config.sh # 路由器本地私密注入与部署脚本
 │   ├── test_deploy_shellcrash.py   # 部署事务与回滚测试
-│   └── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
+│   ├── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
+│   └── test_region_groups.py       # Clash/QX 地区正则与地理边界回归测试
 │
 ├── .gitignore                      # 排除本地私密文件
 ├── AGENTS.md                       # AI 代理操作规范
