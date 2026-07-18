@@ -183,6 +183,50 @@ def check_documentation(failures: list[str]) -> None:
         fail("AGENTS.md not found", failures)
 
 
+def check_policy_references(failures: list[str]) -> None:
+    clash_data = yaml.safe_load((ROOT / "clash" / "config.yaml").read_text(encoding="utf-8")) or {}
+    clash_groups = {
+        group.get("name")
+        for group in clash_data.get("proxy-groups", [])
+        if isinstance(group, dict) and isinstance(group.get("name"), str)
+    }
+
+    qx_groups: set[str] = set()
+    in_policy = False
+    for raw_line in (ROOT / "quantumultx" / "bootstrap.example.conf").read_text(
+        encoding="utf-8"
+    ).splitlines():
+        line = raw_line.strip()
+        if line == "[policy]":
+            in_policy = True
+            continue
+        if line.startswith("["):
+            in_policy = False
+        if not in_policy or not line or line.startswith("#") or "=" not in line:
+            continue
+        value = line.split("=", 1)[1]
+        qx_groups.add(value.split(",", 1)[0].strip())
+
+    manifest = yaml.safe_load((ROOT / "rules" / "local_rules.yaml").read_text(encoding="utf-8")) or {}
+    builtin = {"DIRECT", "REJECT"}
+    for item in manifest.get("rule_sets", []):
+        if not isinstance(item, dict):
+            continue
+        rule_id = item.get("id", "<unknown>")
+        clash_policy = item.get("clash_policy")
+        if clash_policy not in clash_groups | builtin:
+            fail(
+                f"rules/local_rules.yaml: {rule_id} references missing Clash policy {clash_policy!r}",
+                failures,
+            )
+        qx_policy = item.get("qx_policy")
+        if qx_policy not in qx_groups | builtin:
+            fail(
+                f"rules/local_rules.yaml: {rule_id} references missing QX policy {qx_policy!r}",
+                failures,
+            )
+
+
 def main() -> int:
     failures: list[str] = []
 
@@ -194,6 +238,9 @@ def main() -> int:
 
     print("=== Documentation Completeness ===")
     check_documentation(failures)
+
+    print("=== Policy References ===")
+    check_policy_references(failures)
 
     if failures:
         print("\nAUDIT FAILED:")
