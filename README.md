@@ -82,13 +82,16 @@ Clash 采用 **rule-providers** 架构，规则文件托管在 GitHub，客户�
 
 **第一次配置（仅需一次）**
 
-**第 1 步：下载主配置文件**
+**第 1 步：按订阅数量下载主配置文件**
 
-将仓库中的 `clash/config.yaml` 下载到本机，放置在 Clash 的配置目录中（通常为 `%USERPROFILE%\.config\clash\` 或 Clash 客户端指定的目录）。
+- 只使用一个订阅：下载 `clash/config-single.yaml`。
+- 同时使用两个订阅：下载 `clash/config.yaml`。
+
+两份文件来自同一策略源；`config-single.yaml` 由脚本生成，不包含 `Sub2` 或第二个订阅占位符。
 
 **第 2 步：填写机场订阅链接**
 
-打开 `config.yaml`，找到 `proxy-providers` 部分，将占位符替换为你的真实订阅：
+打开下载的文件，找到 `proxy-providers` 部分，将占位符替换为你的真实订阅。单订阅文件只填写 `Sub.url`：
 
 ```yaml
 proxy-providers:
@@ -96,11 +99,13 @@ proxy-providers:
     url: "https://your-subscription-url.com/subscription.yaml?token=your-token"
 ```
 
+双订阅文件还需填写 `Sub2.url`；如果只有一个订阅，不要把 `Sub2` 留空或复制同一链接，请直接选择 `config-single.yaml`。
+
 > 此文件保存在本地，不要将真实订阅链接提交到 Git。
 
-**第 3 步：在 Clash 客户端中加载配置**
+**第 3 步：在 Clash Verge Rev 中导入本地配置**
 
-重启 Clash 或在客户端界面中选择该配置文件使其生效。
+进入左侧“订阅”页面，使用“新建”选择填写完成的 YAML 文件，或直接把文件拖入该页面，然后选中新增的配置卡片。Clash Verge Rev 会把所选文件复制到自己的 `profiles` 目录，之后移动原文件不会影响已导入副本；需要更换订阅 URL 时，应编辑 Verge 中的配置副本或重新导入。菜单行为以 [Clash Verge Rev 官方“本地配置”说明](https://www.clashverge.dev/guide/profile.html#本地配置) 为准。
 
 ---
 
@@ -279,6 +284,7 @@ proxy-config/
 │
 ├── clash/                          # Clash / Mihomo 客户端层
 │   ├── config.yaml                 # Clash 主配置（含 rule-providers 引用）
+│   ├── config-single.yaml          # 由脚本生成的 Windows 单订阅完整配置
 │   ├── config-router.template.yaml # 生成的 ShellCrash 公开策略模板
 │   ├── config-router-single.template.yaml # 单订阅 ShellCrash 策略模板
 │   ├── shellcrash/                  # ShellCrash 接入说明和私密参数示例
@@ -289,7 +295,7 @@ proxy-config/
 │
 ├── scripts/
 │   ├── build_rules.py              # 规则构建脚本
-│   ├── build_router_config.py      # 路由器策略模板生成脚本
+│   ├── build_router_config.py      # Windows 单订阅配置与路由器策略模板生成脚本
 │   ├── deploy_shellcrash_config.sh # 路由器本地私密注入与部署脚本
 │   ├── test_deploy_shellcrash.py   # 部署事务与回滚测试
 │   └── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
