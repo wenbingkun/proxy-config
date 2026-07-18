@@ -332,8 +332,10 @@ proxy-config/
 ├── scripts/
 │   ├── build_rules.py              # 规则构建脚本
 │   ├── build_router_config.py      # Windows 单订阅配置与路由器策略模板生成脚本
+│   ├── check_remote_resources.py   # 外部规则、脚本和图标轻量/完整巡检
 │   ├── deploy_shellcrash_config.sh # 路由器本地私密注入与部署脚本
 │   ├── test_deploy_shellcrash.py   # 部署事务与回滚测试
+│   ├── test_remote_resources.py    # 远程资源提取、脱敏和类型离线测试
 │   ├── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
 │   ├── test_region_groups.py       # Clash/QX 地区正则与地理边界回归测试
 │   └── test_steam_policy.py        # Steam 与非 Steam 下载策略回归测试
@@ -401,7 +403,7 @@ GitHub 管配置逻辑，设备管运行状态。MitM 证书和订阅链接永�
 
 **原则二：bootstrap + 远程模块（QX）**
 
-Quantumult X 本地持有一份轻量 bootstrap.conf，只包含私密信息和远程资源入口。规则、重写等内容全部通过远程 snippet 加载，GitHub 更新后 QX 自动拉取，本地证书不受任何影响。
+Quantumult X 本地持有一份 bootstrap.conf，包含本地私密信息、策略组和远程资源入口。仓库自维护的共享规则通过生成的远程 snippet 加载，第三方规则、重写和脚本通过 bootstrap 中的远程引用加载；GitHub 规则更新不会覆盖本地证书。
 
 **原则三：rule-providers（Clash）**
 
@@ -409,7 +411,7 @@ Clash 主配置只定义代理分组和规则引用结构，具体规则内容�
 
 **原则四：规则单源维护**
 
-`rules/` 目录是唯一的规则编辑入口。`build_rules.py` 负责将其转换为各客户端所需的格式，确保两端规则逻辑始终一致，不会出现 QX 和 Clash 规则各自为政的情况。
+`rules/` 目录是仓库自维护共享规则的唯一编辑入口。`build_rules.py` 负责将其转换为各客户端所需的格式，确保这部分规则在 QX、Windows 和路由器之间一致；第三方规则仍由各客户端配置显式引用，并由远程资源巡检持续检查。
 
 ### 更新流程
 
