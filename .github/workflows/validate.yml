@@ -36,10 +36,18 @@ jobs:
               "AGENTS.md",
               ".gitignore",
               "clash/config.yaml",
+              "clash/config-router.template.yaml",
+              "clash/shellcrash/providers.env.example",
               "quantumultx/bootstrap.example.conf",
               "quantumultx/filter_remote.snippet",
               "rules/local_rules.yaml",
               "scripts/build_rules.py",
+              "scripts/build_router_config.py",
+              "scripts/check_acceptance.py",
+              "scripts/check_hygiene.py",
+              "scripts/deploy_shellcrash_config.sh",
+              "scripts/test_deploy_shellcrash.py",
+              "scripts/test_shellcrash_override.py",
           ]
           missing = [p for p in required if not (ROOT / p).exists()]
           if missing:
@@ -94,4 +102,39 @@ jobs:
           EOF
 
       - name: Check generated files are up to date
-        run: python3 scripts/build_rules.py --check
+        run: |
+          python3 scripts/build_rules.py --check
+          python3 scripts/build_router_config.py --check
+
+      - name: Check repository hygiene and acceptance
+        run: |
+          python3 scripts/check_hygiene.py
+          python3 scripts/check_acceptance.py
+
+      - name: Check shell script syntax
+        run: sh -n scripts/deploy_shellcrash_config.sh
+
+      - name: Test ShellCrash deployment transaction
+        run: python3 scripts/test_deploy_shellcrash.py
+
+      - name: Validate configs with ShellCrash Mihomo
+        run: |
+          shellcrash_commit=71c21fa26d5a5f40e6c433234c415fa83b59b6b9
+          core_sha256=2328466d4c25b9f9e6adc542b8335630b73d6bf9a50b31d3b9bf23ae694f2614
+          mmdb_sha256=81dc10c4600d842ed25b482e27cff315b6112e1c268ceef563f4de532c3e4ef6
+          modify_sha256=44a9dc3bde3f46b37bdd16858488a4b6470dd7e92f97c068bb4d720ab3c155f3
+          mkdir -p /tmp/proxy-config-mihomo
+          curl -fsSL "https://raw.githubusercontent.com/juewuy/ShellCrash/${shellcrash_commit}/bin/meta/clash-linux-amd64.tar.gz" -o /tmp/proxy-config-mihomo/core.tar.gz
+          curl -fsSL "https://raw.githubusercontent.com/juewuy/ShellCrash/${shellcrash_commit}/bin/geodata/Country.mmdb" -o /tmp/proxy-config-mihomo/Country.mmdb
+          curl -fsSL "https://raw.githubusercontent.com/juewuy/ShellCrash/${shellcrash_commit}/scripts/starts/clash_modify.sh" -o /tmp/proxy-config-mihomo/clash_modify.sh
+          echo "${core_sha256}  /tmp/proxy-config-mihomo/core.tar.gz" | sha256sum -c -
+          echo "${mmdb_sha256}  /tmp/proxy-config-mihomo/Country.mmdb" | sha256sum -c -
+          echo "${modify_sha256}  /tmp/proxy-config-mihomo/clash_modify.sh" | sha256sum -c -
+          tar -xzf /tmp/proxy-config-mihomo/core.tar.gz -C /tmp/proxy-config-mihomo
+          chmod +x /tmp/proxy-config-mihomo/CrashCore
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config.yaml
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router.template.yaml
+          python3 scripts/test_shellcrash_override.py \
+            --modify-script /tmp/proxy-config-mihomo/clash_modify.sh \
+            --core /tmp/proxy-config-mihomo/CrashCore \
+            --mmdb /tmp/proxy-config-mihomo/Country.mmdb

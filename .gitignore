@@ -10,6 +10,10 @@ quantumultx/*.cer
 clash/cache/
 /cache/
 
+# ShellCrash device-local secrets
+clash/shellcrash/providers.env
+clash/shellcrash/*.local.env
+
 # Old config backups (kept locally for reference)
 old/
 
