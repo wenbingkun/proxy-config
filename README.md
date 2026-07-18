@@ -120,6 +120,8 @@ rule-providers:
 
 当你修改 `rules/` 下的规则并 `git push` 后，Clash 会在下次自动更新周期（每 24 小时）拉取最新规则集。你也可以在 Clash 面板中手动触发 Provider 刷新。
 
+第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
+
 ---
 
 **关于 Clash 主配置远程更新**
