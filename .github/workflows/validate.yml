@@ -47,6 +47,8 @@ jobs:
               "scripts/build_router_config.py",
               "scripts/check_acceptance.py",
               "scripts/check_hygiene.py",
+              "scripts/check_remote_resources.py",
+              "scripts/test_remote_resources.py",
               "scripts/deploy_shellcrash_config.sh",
               "scripts/test_deploy_shellcrash.py",
               "scripts/test_shellcrash_override.py",
@@ -115,6 +117,7 @@ jobs:
           python3 scripts/check_hygiene.py
           python3 scripts/check_acceptance.py
           python3 scripts/test_region_groups.py
+          python3 scripts/test_remote_resources.py
           python3 scripts/test_steam_policy.py
 
       - name: Check shell script syntax

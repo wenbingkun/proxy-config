@@ -61,6 +61,8 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 导入完成后，bootstrap 中已预配置的远程资源（规则、重写、脚本等）会在 QX 首次刷新时自动拉取。
 
+墨鱼规则继续使用其公开 GitHub 仓库中的有效资源。原先的 `StartUpAds.conf`、`XiaoHongShuAds.conf`、`zhihu.ads.js` 和 `bdpan.ads.js` 自建域名地址已经统一重定向到 HTML 首页，且公开仓库没有等价 Raw 文件，因此不再放入可执行配置；通用 blackmatrix7 去广告和其余可验证的墨鱼资源仍然保留。
+
 ---
 
 **后续更新（自动，无需操作）**
@@ -206,6 +208,9 @@ python3 scripts/build_rules.py --check
 python3 scripts/build_router_config.py --check
 python3 scripts/test_deploy_shellcrash.py
 
+# 轻量检查外部规则、QX 脚本和图标，不会保存下载内容
+python3 scripts/check_remote_resources.py --mode light
+
 # 5. 推送到 GitHub
 git add .
 git commit -m "feat: 添加 xxx 规则"
@@ -219,6 +224,8 @@ git push
 | Quantumult X | 自动拉取 `filter_remote.snippet` | 下次刷新（最长 24h），或手动触发「更新资源」 |
 | Clash / Mihomo | 自动拉取 `clash/rulesets/*.yaml` | 下次刷新（最长 24h），或手动触发 Provider 刷新 |
 | ShellCrash / Mihomo | 路由器本地部署任务拉取并注入 `config-router.template.yaml` | 按本地任务计划，或手动运行部署脚本 |
+
+远程资源轻量巡检每周由 GitHub Actions 自动执行：它只检查实际配置依赖，使用有限并发、超时和每项前 4 KiB 内容识别 404、HTML 错误页及错误图标类型，不 clone 上游仓库，也不把响应写入 Git。手工触发 `Remote Resources` workflow 时可选择 `full`，对 Clash 规则执行完整 YAML / 文本结构检查。失败日志会隐藏 URL 查询参数，避免泄漏可能存在的 token。
 
 ---
 
