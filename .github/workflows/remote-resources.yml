@@ -1,0 +1,36 @@
+name: Remote Resources
+
+on:
+  schedule:
+    - cron: "23 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Check depth
+        required: true
+        default: light
+        type: choice
+        options:
+          - light
+          - full
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Check remote resources
+        env:
+          CHECK_MODE: ${{ inputs.mode || 'light' }}
+        run: python3 scripts/check_remote_resources.py --mode "$CHECK_MODE"
