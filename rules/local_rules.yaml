@@ -9,6 +9,11 @@ rule_sets:
     source: download_extra.yaml
     clash_policy: DIRECT
     qx_policy: DIRECT
+  - id: steam_download
+    title: Steam 下载 CDN 规则
+    source: steam_download.yaml
+    clash_policy: 🎮 Steam
+    qx_policy: 🎮 游戏平台
   - id: intl_brokers
     title: 国际券商走香港节点规则
     source: intl_brokers.yaml

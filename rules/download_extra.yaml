@@ -1,28 +1,7 @@
 domain_suffix:
-  - cdn-ali.content.steamchina.com
-  - cdn-qc.content.steamchina.com
-  - cdn-ws.content.steamchina.com
-  - dl.steam.clngaa.com
-  - dl.steam.ksyna.com
   - download.microsoft.com
   - download.visualstudio.microsoft.com
-  - edge.steam-dns.top.comcast.net
-  - f3b7q2p3.ssl.hwcdn.net
   - officecdn.microsoft.com
-  - st.dl.bscstorage.net
-  - st.dl.eccdnx.com
-  - st.dl.pinyuncloud.com
-  - steam.apac.qtlglb.com
-  - steam.eca.qtlglb.com
-  - steam.naeu.qtlglb.com
-  - steam.ru.qtlglb.com
-  - steamcdn-a.akamaihd.net
-  - steamcontent.cc
-  - steamcontent.com
-  - steamcontent.tnkjmec.com
-  - steampipe-kr.akamaized.net
-  - steampipe-partner.akamaized.net
-  - steampipe.akamaized.net
   - winget.microsoft.com
 
 domain:
