@@ -107,6 +107,22 @@ proxy-providers:
 
 进入左侧“订阅”页面，使用“新建”选择填写完成的 YAML 文件，或直接把文件拖入该页面，然后选中新增的配置卡片。Clash Verge Rev 会把所选文件复制到自己的 `profiles` 目录，之后移动原文件不会影响已导入副本；需要更换订阅 URL 时，应编辑 Verge 中的配置副本或重新导入。菜单行为以 [Clash Verge Rev 官方“本地配置”说明](https://www.clashverge.dev/guide/profile.html#本地配置) 为准。
 
+**第 4 步：设置 Clash Verge Rev 开关**
+
+主配置是运行参数的唯一来源，Verge 中可能覆写配置的开关建议如下：
+
+| 开关 | 建议 | 原因 |
+|---|---:|---|
+| 系统代理 | 开启 | 让遵循系统代理的 Windows 应用进入 Mihomo |
+| 开机自启、静默启动 | 按需开启 | 不改变分流语义 |
+| 虚拟网卡 / TUN | 关闭 | 当前配置明确使用系统代理，不启用 TUN |
+| 局域网连接 | 关闭 | 配置使用 `allow-lan: false`，避免向局域网暴露代理端口 |
+| DNS 覆写 | 关闭 | 保留 YAML 中的 fake-ip、上游 DNS 和分流设置 |
+| IPv6 | 关闭 | 配置统一使用 `ipv6: false` 和 `dns.ipv6: false`，避免旁路与泄漏 |
+| 统一延迟 | 开启 | 与配置的 `unified-delay: true` 保持一致 |
+
+不要用 Verge 开关把这些值反向覆盖。控制器仅监听 `127.0.0.1:9090`；如无额外鉴权，不应改成局域网地址。WSL2 镜像网络环境可直接使用 Windows 回环代理，例如 `http://127.0.0.1:7897`，无需开启“局域网连接”；若 WSL 使用其他网络模式，则应先确认宿主机可达地址和防火墙边界，再决定是否单独开放。
+
 ---
 
 **后续更新（自动，无需操作）**
@@ -132,6 +148,10 @@ AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemin
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余归入东南亚、中东中亚、亚洲其他、欧洲、北美、南美、大洋洲和非洲。南亚、蒙古与澳门属于“亚洲其他”，土耳其属于“中东中亚”，墨西哥、中美洲和加勒比属于“北美”；澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
 `🎮 Steam` 同时控制 Steam 客户端进程、平台域名和下载 CDN，默认选择 `DIRECT`。在 Windows 上，三个 `PROCESS-NAME` 规则只对已经进入 Mihomo 的流量生效；当前 TUN 关闭时，不遵循系统代理的 Steam 流量可能绕过 Windows Mihomo。ShellCrash 看不到局域网客户端的进程名，但仍会通过 Steam 域名与 CDN 规则提供全局基础覆盖。将该组切换到代理会同时消耗游戏下载的节点流量；保持直连最快，但商店或社区不可用时需要临时切换到合适节点。Microsoft、Visual Studio、Office、winget 与 npm 下载始终保持 `DIRECT`，不受 Steam 组影响。
+
+**去广告能力边界**
+
+Mihomo 与 ShellCrash 的广告域名规则可以在 DNS / 域名层阻断已知广告和跟踪请求，但不能替代 Quantumult X 的 HTTPS MitM、rewrite 和脚本，也不能处理网页元素隐藏等内容层逻辑。Windows 建议组合使用本配置的域名分流和浏览器内容拦截扩展；不要把路由器规则等同于 QX 的完整去广告能力。
 
 ---
 
@@ -162,6 +182,8 @@ Mihomo
 ```
 
 仓库不接管路由器的端口、DNS、TUN、sniffer、控制器或防火墙，这些继续由 ShellCrash 管理。完整安装、首次部署、定时更新和回滚说明见 [`clash/shellcrash/README.md`](clash/shellcrash/README.md)。
+
+Quantumult X 可继续留在 iPhone / iPad 上承担 MitM、rewrite、脚本和内容层去广告；无需再维护第二份 QX 完整配置。由路由器负责外网分流时，QX 的常规代理出口应保持直连，让请求交给默认网关上的 ShellCrash，再由路由器决定直连或代理。只有确实需要 QX 本机能力的流量才由 QX 处理，避免形成“QX 代理到节点后又经过路由器代理”的嵌套链路。即使设备走路由器，ShellCrash 的域名级广告拦截仍然生效；QX 专属的 MitM、rewrite、脚本和页面净化则只有 QX 保持运行并接管相应请求时才生效。
 
 ---
 
