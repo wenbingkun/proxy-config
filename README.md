@@ -1,6 +1,6 @@
 # Proxy Config
 
-统一管理 **Quantumult X**（iPhone / iPad）和 **Clash / Mihomo**（Windows）代理配置的 Git 仓库。
+统一管理 **Quantumult X**（iPhone / iPad）、**Clash / Mihomo**（Windows）和 **ShellCrash / Mihomo**（路由器）代理配置的 Git 仓库。
 
 修改规则后只需 `git push`，所有设备在下次刷新周期内自动同步，无需手动操作。
 
@@ -11,6 +11,7 @@
 - [快速上手](#快速上手)
   - [Quantumult X（iPhone / iPad）](#quantumult-xiphone--ipad)
   - [Clash / Mihomo（Windows）](#clash--mihomowindows)
+  - [ShellCrash / Mihomo（路由器）](#shellcrash--mihomo路由器)
 - [日常维护](#日常维护)
 - [添加自定义规则](#添加自定义规则)
 - [目录结构](#目录结构)
@@ -121,15 +122,33 @@ rule-providers:
 
 ---
 
-**可选：让 Clash 主配置也随 git push 自动更新**
+**关于 Clash 主配置远程更新**
 
-如果你希望代理分组、DNS 设置等主配置变更也能自动同步到所有 Clash 设备，可以在 Clash 客户端中以 **远程订阅 URL** 方式加载配置，而非本地文件：
+公共 `config.yaml` 包含订阅占位符，不能在没有本地覆写或私密注入的情况下作为完整远程订阅直接运行：
 
 ```
 https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config.yaml
 ```
 
-配置好后，Clash 会定期从 GitHub 拉取最新的 `config.yaml`（需确保仓库为 public）。每次 `git push` 更新配置后，所有设备将在刷新周期内自动同步。
+Windows 当前仍采用“主配置保存在本地、rule-provider 自动更新”的方式。不要直接启用公共主配置自动覆盖，否则本地订阅 URL 会被占位符替换。
+
+---
+
+### ShellCrash / Mihomo（路由器）
+
+路由器采用 **公开策略模板 + 设备本地私密注入 + ShellCrash 运行参数覆写**：
+
+```text
+clash/config.yaml
+        ↓ 生成并展开 YAML 锚点
+clash/config-router.template.yaml（公开、无秘密）
+        ↓ 路由器本地注入订阅 URL
+$CRASHDIR/yamls/config.yaml（私密）
+        ↓ ShellCrash 生成最终运行配置
+Mihomo
+```
+
+仓库不接管路由器的端口、DNS、TUN、sniffer、控制器或防火墙，这些继续由 ShellCrash 管理。完整安装、首次部署、定时更新和回滚说明见 [`clash/shellcrash/README.md`](clash/shellcrash/README.md)。
 
 ---
 
@@ -144,10 +163,15 @@ vim rules/ai_extra.yaml
 # 2. 重新生成客户端专用文件
 python3 scripts/build_rules.py
 
-# 3. 可选：校验生成结果是否正确（返回 0 表示通过）
-python3 scripts/build_rules.py --check
+# 3. 生成 ShellCrash 路由器公开策略模板
+python3 scripts/build_router_config.py
 
-# 4. 推送到 GitHub
+# 4. 可选：校验生成结果是否正确（返回 0 表示通过）
+python3 scripts/build_rules.py --check
+python3 scripts/build_router_config.py --check
+python3 scripts/test_deploy_shellcrash.py
+
+# 5. 推送到 GitHub
 git add .
 git commit -m "feat: 添加 xxx 规则"
 git push
@@ -159,6 +183,7 @@ git push
 |---|---|---|
 | Quantumult X | 自动拉取 `filter_remote.snippet` | 下次刷新（最长 24h），或手动触发「更新资源」 |
 | Clash / Mihomo | 自动拉取 `clash/rulesets/*.yaml` | 下次刷新（最长 24h），或手动触发 Provider 刷新 |
+| ShellCrash / Mihomo | 路由器本地部署任务拉取并注入 `config-router.template.yaml` | 按本地任务计划，或手动运行部署脚本 |
 
 ---
 
@@ -252,13 +277,19 @@ proxy-config/
 │
 ├── clash/                          # Clash / Mihomo 客户端层
 │   ├── config.yaml                 # Clash 主配置（含 rule-providers 引用）
+│   ├── config-router.template.yaml # 生成的 ShellCrash 公开策略模板
+│   ├── shellcrash/                  # ShellCrash 接入说明和私密参数示例
 │   └── rulesets/                   # 由 build_rules.py 生成的 rule-provider 文件
 │       ├── ai_extra.yaml
 │       ├── crypto_extra.yaml
 │       └── ...（其余同 rules/ 中的规则集）
 │
 ├── scripts/
-│   └── build_rules.py              # 规则构建脚本
+│   ├── build_rules.py              # 规则构建脚本
+│   ├── build_router_config.py      # 路由器策略模板生成脚本
+│   ├── deploy_shellcrash_config.sh # 路由器本地私密注入与部署脚本
+│   ├── test_deploy_shellcrash.py   # 部署事务与回滚测试
+│   └── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
 │
 ├── .gitignore                      # 排除本地私密文件
 ├── AGENTS.md                       # AI 代理操作规范
@@ -368,5 +399,7 @@ git push
 
 - `bootstrap.example.conf`：去除所有私密信息的模板，用于首次配置参考
 - `config.yaml`：订阅链接以 `https://example.com/...?token=replace-me` 占位
+- `config-router.template.yaml`：ShellCrash 公开策略模板，订阅地址仍为占位符
+- `providers.env.example`：只含示例值；真实 `providers.env` 仅保存在路由器本地并设置为 `600`
 
 在新设备上首次配置时，只需基于模板填写本地私密信息，后续规则更新完全自动化，无需再次操作。

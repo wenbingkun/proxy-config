@@ -17,9 +17,10 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 
 PLACEHOLDER_PATTERNS = re.compile(
-    r"replace[-_]me|example\.com|your[-_]token|placeholder",
+    r"replace[-_]me|example\.com|\.test(?:[/:?]|$)|your[-_]token|placeholder",
     re.IGNORECASE,
 )
+TOKEN_QUERY_KEY = "token"
 
 
 def fail(msg: str, failures: list[str]) -> None:
@@ -82,22 +83,23 @@ def check_security(failures: list[str]) -> None:
             failures,
         )
 
-    # Scan all tracked files for sensitive patterns
-    tracked = subprocess.run(
-        ["git", "ls-files"],
+    # Scan tracked files and untracked candidates that are not gitignored.
+    candidates = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
         cwd=ROOT,
         capture_output=True,
         text=True,
     ).stdout.splitlines()
 
-    # Only scan config files, not documentation
-    SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt"}
+    # Scan executable/config formats where machine-local secrets are most likely.
+    SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt", ".py", ".sh"}
 
-    for rel_path in tracked:
+    for rel_path in candidates:
         path = ROOT / rel_path
         if not path.is_file():
             continue
-        if path.suffix.lower() not in SCAN_SUFFIXES:
+        is_env_example = path.name.endswith((".env", ".env.example"))
+        if path.suffix.lower() not in SCAN_SUFFIXES and not is_env_example:
             continue
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
@@ -125,11 +127,25 @@ def check_security(failures: list[str]) -> None:
                 )
 
         # subscription token that looks real (not a placeholder)
-        for match in re.finditer(r"token=([^\s&\"']+)", text):
+        token_pattern = rf"{TOKEN_QUERY_KEY}=([^\s&\"']+)"
+        for match in re.finditer(token_pattern, text):
             token_value = match.group(1)
             if not PLACEHOLDER_PATTERNS.search(token_value):
                 fail(
-                    f"{rel_path}: possible real subscription token: token={token_value!r} — "
+                    f"{rel_path}: possible real subscription token: "
+                    f"{TOKEN_QUERY_KEY}={token_value!r} — "
+                    "use a placeholder instead",
+                    failures,
+                )
+
+        # Device-local subscription variables must remain obvious placeholders.
+        for match in re.finditer(r"(?m)^SUB_URL_[0-9]+\s*=\s*['\"]?([^'\"\s]+)", text):
+            subscription_url = match.group(1)
+            if subscription_url.startswith(("http://", "https://")) and not PLACEHOLDER_PATTERNS.search(
+                subscription_url
+            ):
+                fail(
+                    f"{rel_path}: possible real subscription URL in {match.group(0).split('=', 1)[0].strip()} — "
                     "use a placeholder instead",
                     failures,
                 )
