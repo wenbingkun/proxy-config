@@ -127,6 +127,8 @@ rule-providers:
 
 第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
 
+AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemini 独立域名集，再由仓库的 `AIExtra` 补充其他服务，避免把整个支付、CDN 或通用云域名送入 AI 策略。Windows 端的 Epic、PlayStation、Xbox、Nintendo 和 Battle.net 已由 `Game` 聚合规则完整覆盖，因此不重复加载；QX 没有使用该 Clash 聚合 provider，仍保留各游戏平台的独立远程规则。V2EX 与 Linux.do 均归入 `👨‍💻 开发服务`。
+
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余归入东南亚、中东中亚、亚洲其他、欧洲、北美、南美、大洋洲和非洲。南亚、蒙古与澳门属于“亚洲其他”，土耳其属于“中东中亚”，墨西哥、中美洲和加勒比属于“北美”；澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
 ---

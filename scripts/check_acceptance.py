@@ -40,6 +40,12 @@ def check_architecture(failures: list[str]) -> None:
             providers = data.get("rule-providers")
             if not isinstance(providers, dict) or len(providers) == 0:
                 fail("clash/config.yaml: 'rule-providers' missing or empty", failures)
+            elif not {"OpenAI", "Anthropic", "GitHubCopilot", "Gemini", "AIExtra"} <= set(providers):
+                fail("clash/config.yaml: granular AI providers are incomplete", failures)
+            elif {"AI", "Tracking", "Epic", "PlayStation", "Xbox", "Nintendo", "BattleNet"} & set(
+                providers
+            ):
+                fail("clash/config.yaml: contains a superseded duplicate rule provider", failures)
             proxy_providers = data.get("proxy-providers")
             if not isinstance(proxy_providers, dict) or set(proxy_providers) != {"Sub", "Sub2"}:
                 fail("clash/config.yaml: expected dual proxy providers Sub and Sub2", failures)
