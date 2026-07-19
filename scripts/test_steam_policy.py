@@ -7,8 +7,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
-STEAM_POLICY = "🎮 Steam"
-QX_GAME_POLICY = "🎮 游戏平台"
+GAME_POLICY = "🎮 游戏平台"
 
 EXPECTED_NON_STEAM_DOWNLOADS = {
     "download.microsoft.com",
@@ -19,9 +18,9 @@ EXPECTED_NON_STEAM_DOWNLOADS = {
 }
 
 EXPECTED_PROCESS_RULES = [
-    "PROCESS-NAME,steam.exe,🎮 Steam",
-    "PROCESS-NAME,steamwebhelper.exe,🎮 Steam",
-    "PROCESS-NAME,steamservice.exe,🎮 Steam",
+    "PROCESS-NAME,steam.exe,🎮 游戏平台",
+    "PROCESS-NAME,steamwebhelper.exe,🎮 游戏平台",
+    "PROCESS-NAME,steamservice.exe,🎮 游戏平台",
 ]
 
 
@@ -57,46 +56,44 @@ def main() -> int:
     )
     if not steam_item:
         raise AssertionError("steam_download is missing from rules/local_rules.yaml")
-    if steam_item.get("clash_policy") != STEAM_POLICY:
+    if steam_item.get("clash_policy") != GAME_POLICY:
         raise AssertionError("steam_download has the wrong Clash policy")
-    if steam_item.get("qx_policy") != QX_GAME_POLICY:
+    if steam_item.get("qx_policy") != GAME_POLICY:
         raise AssertionError("steam_download has the wrong QX policy")
 
     config = yaml.safe_load((ROOT / "clash" / "config.yaml").read_text(encoding="utf-8")) or {}
-    steam_group = next(
-        (group for group in config.get("proxy-groups", []) if group.get("name") == STEAM_POLICY),
-        None,
-    )
-    if not steam_group:
-        raise AssertionError("Steam proxy group is missing")
-    if steam_group.get("proxies", [None])[0] != "DIRECT":
-        raise AssertionError("Steam proxy group must default to DIRECT")
-    for required in ("🚀 手动切换", "🌐 故障转移"):
-        if required not in steam_group.get("proxies", []):
-            raise AssertionError(f"Steam proxy group is missing {required}")
+    groups = {group.get("name") for group in config.get("proxy-groups", [])}
+    if GAME_POLICY not in groups:
+        raise AssertionError("Game platform proxy group is missing")
+    if "🎮 Steam" in groups:
+        raise AssertionError("standalone Steam proxy group must be removed")
 
     providers = config.get("rule-providers", {})
-    if "SteamDownload" not in providers or "Steam" not in providers:
-        raise AssertionError("Steam platform/download provider is missing")
+    if "SteamDownload" not in providers or "Game" not in providers:
+        raise AssertionError("Game platform or Steam download provider is missing")
+    if "Steam" in providers:
+        raise AssertionError("standalone Steam provider must be removed")
 
     rules = config.get("rules", [])
     if rules[:3] != EXPECTED_PROCESS_RULES:
         raise AssertionError("Steam process rules must be the first three rules")
     expected_targets = {
-        "RULE-SET,SteamDownload,🎮 Steam",
-        "RULE-SET,Steam,🎮 Steam",
+        "RULE-SET,SteamDownload,🎮 游戏平台",
+        "RULE-SET,Game,🎮 游戏平台",
         "RULE-SET,DownloadExtra,DIRECT",
         "RULE-SET,Download,DIRECT",
     }
     missing = sorted(expected_targets - set(rules))
     if missing:
         raise AssertionError(f"Steam/download rule targets are incomplete: {missing}")
+    if any(rule.startswith("RULE-SET,Steam,") for rule in rules):
+        raise AssertionError("standalone Steam rule must be removed")
 
     qx_lines = (ROOT / "quantumultx" / "filter_remote.snippet").read_text(
         encoding="utf-8"
     ).splitlines()
     for domain in steam_downloads:
-        if not any(domain in line and line.endswith(f", {QX_GAME_POLICY}") for line in qx_lines):
+        if not any(domain in line and line.endswith(f", {GAME_POLICY}") for line in qx_lines):
             raise AssertionError(f"QX Steam download rule has wrong policy: {domain}")
     for domain in other_downloads:
         if not any(domain in line and line.endswith(", DIRECT") for line in qx_lines):

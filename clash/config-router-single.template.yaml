@@ -37,11 +37,9 @@ proxy-groups:
   - 🇸🇬 狮城节点
   - 🇺🇸 美国节点
   - 🌏 东南亚节点
-  - 🕌 中东中亚节点
   - 🌏 亚洲其他节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
-  - 🌎 南美节点
+  - 🌎 美洲节点
   - 🏝️ 大洋洲节点
   - 🌍 非洲节点
   - 🌐 故障转移
@@ -56,9 +54,8 @@ proxy-groups:
   - 🇯🇵 日本节点
   - 🇰🇷 韩国节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
+  - 🌎 美洲节点
   - 🏝️ 大洋洲节点
-  - 🌎 南美节点
   - 🌐 故障转移
 - name: 📺 哔哩哔哩
   type: select
@@ -77,8 +74,7 @@ proxy-groups:
   - 🇭🇰 香港节点
   - 🇯🇵 日本节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
-  - 🌎 南美节点
+  - 🌎 美洲节点
   - 🌏 东南亚节点
   - 🌐 故障转移
 - name: 🤖 人工智能
@@ -100,25 +96,9 @@ proxy-groups:
   - 🇸🇬 狮城节点
   - 🇺🇸 美国节点
   - 🌏 东南亚节点
-  - 🕌 中东中亚节点
   - 🌏 亚洲其他节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
-  - 🌎 南美节点
-  - 🏝️ 大洋洲节点
-- name: 🎮 Steam
-  type: select
-  proxies:
-  - DIRECT
-  - 🇭🇰 香港节点
-  - 🇨🇳 台湾节点
-  - 🇯🇵 日本节点
-  - 🇰🇷 韩国节点
-  - 🇸🇬 狮城节点
-  - 🇺🇸 美国节点
-  - 🌏 东南亚节点
-  - 🇪🇺 欧洲节点
-  - 🌎 北美节点
+  - 🌎 美洲节点
   - 🏝️ 大洋洲节点
   - 🚀 手动切换
   - 🌐 故障转移
@@ -130,7 +110,7 @@ proxy-groups:
   - 🇯🇵 日本节点
   - 🇭🇰 香港节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
+  - 🌎 美洲节点
   - DIRECT
 - name: 💰 加密货币
   type: select
@@ -157,7 +137,7 @@ proxy-groups:
   - 🇺🇸 美国节点
   - 🇸🇬 狮城节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
+  - 🌎 美洲节点
   - 🇯🇵 日本节点
   - DIRECT
 - name: 🍎 苹果服务
@@ -210,11 +190,9 @@ proxy-groups:
   - 🇸🇬 狮城节点
   - 🇺🇸 美国节点
   - 🌏 东南亚节点
-  - 🕌 中东中亚节点
   - 🌏 亚洲其他节点
   - 🇪🇺 欧洲节点
-  - 🌎 北美节点
-  - 🌎 南美节点
+  - 🌎 美洲节点
   - 🏝️ 大洋洲节点
   - 🌍 非洲节点
   - 🌐 故障转移
@@ -310,21 +288,11 @@ proxy-groups:
   timeout: 5000
   use:
   - Sub
-  name: 🕌 中东中亚节点
-  tolerance: 50
-  filter: (?i:中东|中東|中亚|中亞|阿联酋|阿聯酋|沙特|土耳其|伊朗|伊拉克|以色列|巴勒斯坦|约旦|黎巴嫩|叙利亚|科威特|卡塔尔|巴林|阿曼|也门|哈萨克|乌兹别克|吉尔吉斯|塔吉克|土库曼|middle ?east|central
-    ?asia|united ?arab ?emirates|saudi|turkey|iran|iraq|israel|palestine|jordan|lebanon|syria|kuwait|qatar|bahrain|oman|yemen|kazakhstan|uzbekistan|kyrgyzstan|tajikistan|turkmenistan)|(^|[^A-Za-z])(AE|SA|TR|IR|IQ|IL|PS|JO|LB|SY|KW|QA|BH|OM|YE|KZ|UZ|KG|TJ|TM)([^A-Za-z]|$)
-- type: fallback
-  lazy: true
-  url: http://www.gstatic.com/generate_204
-  interval: 1800
-  timeout: 5000
-  use:
-  - Sub
   name: 🌏 亚洲其他节点
   tolerance: 50
-  filter: (?i:亚洲其他|亞洲其他|南亚|南亞|澳门|澳門|印度|马尔代夫|馬爾代夫|孟加拉|尼泊尔|尼泊爾|斯里兰卡|斯里蘭卡|不丹|阿富汗|巴基斯坦|蒙古|asia ?other|south ?asia|macao|macau|india|maldives|bangladesh|nepal|sri
-    ?lanka|bhutan|afghanistan|pakistan|mongolia)|(^|[^A-Za-z])(MAC|IND|MDV|BGD|NPL|LKA|BTN|AFG|PAK|MNG)([^A-Za-z]|$)
+  filter: (?i:亚洲其他|亞洲其他|南亚|南亞|中东|中東|中亚|中亞|澳门|澳門|印度|马尔代夫|馬爾代夫|孟加拉|尼泊尔|尼泊爾|斯里兰卡|斯里蘭卡|不丹|阿富汗|巴基斯坦|蒙古|阿联酋|阿聯酋|沙特|土耳其|伊朗|伊拉克|以色列|巴勒斯坦|约旦|黎巴嫩|叙利亚|科威特|卡塔尔|巴林|阿曼|也门|哈萨克|乌兹别克|吉尔吉斯|塔吉克|土库曼|asia
+    ?other|south ?asia|middle ?east|central ?asia|macao|macau|india|maldives|bangladesh|nepal|sri ?lanka|bhutan|afghanistan|pakistan|mongolia|united
+    ?arab ?emirates|saudi|turkey|iran|iraq|israel|palestine|jordan|lebanon|syria|kuwait|qatar|bahrain|oman|yemen|kazakhstan|uzbekistan|kyrgyzstan|tajikistan|turkmenistan)|(^|[^A-Za-z])(MAC|IND|MDV|BGD|NPL|LKA|BTN|AFG|PAK|MNG|AE|SA|TR|IR|IQ|IL|PS|JO|LB|SY|KW|QA|BH|OM|YE|KZ|UZ|KG|TJ|TM)([^A-Za-z]|$)
 - type: fallback
   lazy: true
   url: http://www.gstatic.com/generate_204
@@ -343,11 +311,12 @@ proxy-groups:
   timeout: 5000
   use:
   - Sub
-  name: 🌎 北美节点
+  name: 🌎 美洲节点
   tolerance: 50
-  filter: (?i:北美|加拿大|墨西哥|格陵兰|百慕大|中美洲|加勒比|巴拿马|哥斯达黎加|危地马拉|萨尔瓦多|伯利兹|洪都拉斯|尼加拉瓜|古巴|牙买加|巴哈马|波多黎各|多米尼克|多米尼加|巴巴多斯|格林纳达|开曼群岛|特立尼达|英属维尔京|美属维尔京|north
+  filter: (?i:南美|加拿大|墨西哥|格陵兰|百慕大|中美洲|加勒比|巴拿马|哥斯达黎加|危地马拉|萨尔瓦多|伯利兹|洪都拉斯|尼加拉瓜|古巴|牙买加|巴哈马|波多黎各|多米尼克|多米尼加|巴巴多斯|格林纳达|开曼群岛|特立尼达|英属维尔京|美属维尔京|巴西|智利|秘鲁|阿根廷|乌拉圭|巴拉圭|苏里南|圭亚那|法属圭亚那|哥伦比亚|厄瓜多尔|委内瑞拉|玻利维亚|福克兰|south
     ?america|canada|mexico|greenland|bermuda|central ?america|caribbean|panama|costa ?rica|guatemala|el ?salvador|belize|honduras|nicaragua|cuba|jamaica|bahamas|puerto
-    ?rico|dominica|dominican|barbados|grenada|cayman|trinidad|virgin ?islands)|(^|[^A-Za-z])(CA|MX)([^A-Za-z]|$)
+    ?rico|dominica|dominican|barbados|grenada|cayman|trinidad|virgin ?islands|brazil|chile|peru|argentina|uruguay|paraguay|suriname|guyana|french
+    ?guiana|colombia|ecuador|venezuela|bolivia|falkland)|(^|[^A-Za-z])(CAN|MX|BR|CL|PE|AR|UY|PY|SR|GY|GF|CO|EC|VE|BO|FK)([^A-Za-z]|$)
 - type: fallback
   lazy: true
   url: http://www.gstatic.com/generate_204
@@ -360,17 +329,6 @@ proxy-groups:
   filter: (?i:大洋洲|澳大利亚|澳大利亞|澳洲|新西兰|新西蘭|斐济|巴布亚新几内亚|新喀里多尼亚|法属波利尼西亚|萨摩亚|汤加|瓦努阿图|所罗门群岛|基里巴斯|瑙鲁|帕劳|密克罗尼西亚|马绍尔群岛|关岛|美属萨摩亚|北马里亚纳|库克群岛|纽埃|诺福克岛|托克劳|瓦立斯|oceania|australia|new
     ?zealand|fiji|papua|caledonia|polynesia|samoa|tonga|vanuatu|solomon|kiribati|nauru|palau|micronesia|marshall|guam|mariana|cook
     ?islands|niue|norfolk|tokelau|wallis)|(^|[^A-Za-z])(AU|NZ)([^A-Za-z]|$)
-- type: fallback
-  lazy: true
-  url: http://www.gstatic.com/generate_204
-  interval: 1800
-  timeout: 5000
-  use:
-  - Sub
-  name: 🌎 南美节点
-  tolerance: 50
-  filter: (?i:南美|巴西|智利|秘鲁|阿根廷|乌拉圭|巴拉圭|苏里南|圭亚那|法属圭亚那|哥伦比亚|厄瓜多尔|委内瑞拉|玻利维亚|福克兰|south ?america|brazil|chile|peru|argentina|uruguay|paraguay|suriname|guyana|french
-    ?guiana|colombia|ecuador|venezuela|bolivia|falkland)|(^|[^A-Za-z])(BR|CL|PE|AR|UY|PY|SR|GY|GF|CO|EC|VE|BO|FK)([^A-Za-z]|$)
 - type: fallback
   lazy: true
   url: http://www.gstatic.com/generate_204
@@ -771,13 +729,6 @@ rule-providers:
     interval: 86400
     url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/China/China.yaml
     path: ./cache/rulesets/ChinaCompany.yaml
-  Steam:
-    type: http
-    behavior: classical
-    format: yaml
-    interval: 86400
-    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Steam/Steam.yaml
-    path: ./cache/rulesets/Steam.yaml
   Game:
     type: http
     behavior: classical
@@ -877,12 +828,12 @@ rule-providers:
     url: https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/game_extra.yaml
     path: ./cache/rulesets/GameExtra.yaml
 rules:
-- PROCESS-NAME,steam.exe,🎮 Steam
-- PROCESS-NAME,steamwebhelper.exe,🎮 Steam
-- PROCESS-NAME,steamservice.exe,🎮 Steam
+- PROCESS-NAME,steam.exe,🎮 游戏平台
+- PROCESS-NAME,steamwebhelper.exe,🎮 游戏平台
+- PROCESS-NAME,steamservice.exe,🎮 游戏平台
 - RULE-SET,LocalNetwork,DIRECT
 - RULE-SET,Lan,DIRECT
-- RULE-SET,SteamDownload,🎮 Steam
+- RULE-SET,SteamDownload,🎮 游戏平台
 - RULE-SET,DownloadExtra,DIRECT
 - RULE-SET,HkBanks,DIRECT
 - RULE-SET,IntlBrokers,🇭🇰 香港节点
@@ -946,7 +897,6 @@ rules:
 - RULE-SET,Download,DIRECT
 - RULE-SET,ChinaDirect,🇨🇳 国内服务
 - RULE-SET,ChinaCompany,🇨🇳 国内服务
-- RULE-SET,Steam,🎮 Steam
 - RULE-SET,Game,🎮 游戏平台
 - RULE-SET,GameExtra,🎮 游戏平台
 - RULE-SET,ProxyLite,🌏 全球加速
