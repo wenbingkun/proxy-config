@@ -12,7 +12,7 @@ rule_sets:
   - id: steam_download
     title: Steam 下载 CDN 规则
     source: steam_download.yaml
-    clash_policy: 🎮 Steam
+    clash_policy: 🎮 游戏平台
     qx_policy: 🎮 游戏平台
   - id: intl_brokers
     title: 国际券商走香港节点规则

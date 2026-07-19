@@ -10,7 +10,8 @@ def main() -> int:
     urls = [resource.url for resource in resources]
     assert len(urls) == len(set(urls)), "extracted resource URLs must be unique"
     assert len(resources) >= 150, "unexpectedly few remote resources extracted"
-    assert sum(resource.kind == "icon" for resource in resources) == 37
+    icon_count = sum(resource.kind == "icon" for resource in resources)
+    assert icon_count == 36
     assert all(not check.is_skipped_url(url) for url in urls)
     assert any(resource.kind == "shellcrash-template" for resource in resources)
     assert any(resource.source.startswith("quantumultx/") for resource in resources)
@@ -31,7 +32,10 @@ def main() -> int:
     assert check.validate_body(yaml_rule, "text/plain", b"rules: []\n", "full") is not None
     assert check.validate_body(yaml_rule, "text/html", b"<!doctype html>", "light") is not None
 
-    print(f"Remote resource offline tests passed ({len(resources)} resources, 37 icons).")
+    print(
+        f"Remote resource offline tests passed "
+        f"({len(resources)} resources, {icon_count} icons)."
+    )
     return 0
 
 
