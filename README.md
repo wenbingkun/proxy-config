@@ -61,7 +61,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 导入完成后，bootstrap 中已预配置的远程资源（规则、重写、脚本等）会在 QX 首次刷新时自动拉取。
 
-墨鱼规则继续使用其公开 GitHub 仓库中的有效资源。原先的 `StartUpAds.conf`、`XiaoHongShuAds.conf`、`zhihu.ads.js` 和 `bdpan.ads.js` 自建域名地址已经统一重定向到 HTML 首页，且公开仓库没有等价 Raw 文件，因此不再放入可执行配置；通用 blackmatrix7 去广告和其余可验证的墨鱼资源仍然保留。
+墨鱼规则同时使用其公开 GitHub 仓库和自建域名资源。`StartUpAds.conf`、`XiaoHongShuAds.conf`、`zhihu.ads.js` 和 `bdpan.ads.js` 会根据客户端 User-Agent 返回不同内容：Quantumult X 请求可获取有效规则或脚本，普通浏览器请求则可能返回 HTML 页面。仓库的远程资源检查会对 QX 资源模拟 Quantumult X 请求。
 
 ---
 

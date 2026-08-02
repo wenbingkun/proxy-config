@@ -15,6 +15,25 @@ def main() -> int:
     assert all(not check.is_skipped_url(url) for url in urls)
     assert any(resource.kind == "shellcrash-template" for resource in resources)
     assert any(resource.source.startswith("quantumultx/") for resource in resources)
+    assert {
+        "https://ddgksf2013.top/rewrite/StartUpAds.conf",
+        "https://ddgksf2013.top/rewrite/XiaoHongShuAds.conf",
+        "https://ddgksf2013.top/scripts/zhihu.ads.js",
+        "https://ddgksf2013.top/scripts/bdpan.ads.js",
+    } <= set(urls)
+
+    qx_resource = check.Resource(
+        "https://resources.example/rewrite.conf",
+        "qx-resource",
+        "quantumultx/bootstrap.example.conf:1",
+    )
+    clash_resource = check.Resource(
+        "https://resources.example/rules.yaml",
+        "clash-rule",
+        "clash/config.yaml:rule-providers.Example",
+    )
+    assert check.user_agent_for(qx_resource) == check.QX_USER_AGENT
+    assert check.user_agent_for(clash_resource) == check.USER_AGENT
 
     private_url = "https://provider.example/resource?credential=fixture-value#fragment"
     redacted = check.redact_url(private_url)

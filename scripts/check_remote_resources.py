@@ -44,6 +44,7 @@ OPERATIONAL_HOSTS = {
 LIGHT_BYTES = 4096
 FULL_LIMIT = 16 * 1024 * 1024
 USER_AGENT = "proxy-config-remote-check/1.0"
+QX_USER_AGENT = "Quantumult X"
 
 
 @dataclass(frozen=True)
@@ -175,10 +176,17 @@ def validate_body(resource: Resource, content_type: str, body: bytes, mode: str)
     return None
 
 
+def user_agent_for(resource: Resource) -> str:
+    """Match the client used to fetch resources with conditional responses."""
+    if resource.source.startswith("quantumultx/"):
+        return QX_USER_AGENT
+    return USER_AGENT
+
+
 def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result:
     full_rule_check = mode == "full" and resource.kind == "clash-rule"
     limit = FULL_LIMIT if full_rule_check else LIGHT_BYTES
-    headers = {"User-Agent": USER_AGENT, "Accept": "*/*"}
+    headers = {"User-Agent": user_agent_for(resource), "Accept": "*/*"}
     if not full_rule_check:
         headers["Range"] = f"bytes=0-{LIGHT_BYTES - 1}"
     request = urllib.request.Request(resource.url, headers=headers, method="GET")
