@@ -17,6 +17,8 @@ provider_cache_backup_dir=''
 provider_cache_transaction_started=0
 invalidate_sub_cache=0
 invalidate_sub2_cache=0
+verify_sub_provider=0
+verify_sub2_provider=0
 sub_cache_path=''
 sub2_cache_path=''
 
@@ -154,6 +156,66 @@ restore_provider_caches() {
     provider_cache_transaction_started=0
 }
 
+provider_cache_has_nodes() {
+    cache_path=$1
+
+    [ -s "$cache_path" ] || return 1
+    awk '
+        /^[[:space:]]*proxies:[[:space:]]*/ {
+            value = $0
+            sub(/^[[:space:]]*proxies:[[:space:]]*/, "", value)
+            if (value != "") {
+                if (value ~ /^\[/ && value !~ /^\[[[:space:]]*\]$/) {
+                    found = 1
+                }
+                exit
+            }
+            in_proxies = 1
+            next
+        }
+        in_proxies && /^[^[:space:]]/ { exit }
+        in_proxies && /^[[:space:]]*-[[:space:]]+/ {
+            found = 1
+            exit
+        }
+        END { exit found ? 0 : 1 }
+    ' "$cache_path"
+}
+
+changed_provider_caches_ready() {
+    if [ "$verify_sub_provider" = '1' ] && ! provider_cache_has_nodes "$sub_cache_path"; then
+        return 1
+    fi
+    if [ "$verify_sub2_provider" = '1' ] && ! provider_cache_has_nodes "$sub2_cache_path"; then
+        return 1
+    fi
+    return 0
+}
+
+wait_for_changed_provider_caches() {
+    provider_elapsed=0
+    while ! changed_provider_caches_ready; do
+        [ "$provider_elapsed" -lt "$provider_wait" ] || return 1
+        sleep 1
+        provider_elapsed=$((provider_elapsed + 1))
+    done
+}
+
+failed_provider_names() {
+    failed_names=''
+    if [ "$verify_sub_provider" = '1' ] && ! provider_cache_has_nodes "$sub_cache_path"; then
+        failed_names='Sub'
+    fi
+    if [ "$verify_sub2_provider" = '1' ] && ! provider_cache_has_nodes "$sub2_cache_path"; then
+        if [ -n "$failed_names" ]; then
+            failed_names="$failed_names、Sub2"
+        else
+            failed_names='Sub2'
+        fi
+    fi
+    printf '%s' "$failed_names"
+}
+
 rollback_config() {
     rollback_reason=$1
     if [ "$had_previous_config" = '1' ] && [ -s "$backup_path" ]; then
@@ -211,6 +273,11 @@ esac
 startup_wait=${SHELLCRASH_STARTUP_WAIT:-10}
 case "$startup_wait" in
     ''|*[!0-9]*) fail 'SHELLCRASH_STARTUP_WAIT 必须是非负整数' ;;
+esac
+
+provider_wait=${SHELLCRASH_PROVIDER_WAIT:-60}
+case "$provider_wait" in
+    ''|*[!0-9]*) fail 'SHELLCRASH_PROVIDER_WAIT 必须是非负整数' ;;
 esac
 
 config_path=${SHELLCRASH_CONFIG_PATH:-$shellcrash_dir/yamls/config.yaml}
@@ -295,6 +362,12 @@ old_sub2_url=$(provider_url_from_config Sub2 "$config_path")
 new_sub2_url=$(provider_url_from_config Sub2 "$rendered_config")
 [ "$old_sub_url" = "$new_sub_url" ] || invalidate_sub_cache=1
 [ "$old_sub2_url" = "$new_sub2_url" ] || invalidate_sub2_cache=1
+if [ "$invalidate_sub_cache" = '1' ] && [ -n "$new_sub_url" ]; then
+    verify_sub_provider=1
+fi
+if [ "$invalidate_sub2_cache" = '1' ] && [ -n "$new_sub2_url" ]; then
+    verify_sub2_provider=1
+fi
 
 # Load ShellCrash's runtime and data directories without executing COMMAND.
 # shellcheck disable=SC1090
@@ -394,6 +467,14 @@ fi
 if [ "${SHELLCRASH_SKIP_PROCESS_CHECK:-0}" != '1' ] && command -v pidof >/dev/null 2>&1; then
     if ! pidof CrashCore >/dev/null 2>&1; then
         rollback_config 'ShellCrash 启动后未检测到 CrashCore 进程'
+    fi
+fi
+
+if [ "$verify_sub_provider" = '1' ] || [ "$verify_sub2_provider" = '1' ]; then
+    log '正在确认变更后的订阅已生成有效 provider 节点缓存……'
+    if ! wait_for_changed_provider_caches; then
+        provider_failures=$(failed_provider_names)
+        rollback_config "$provider_failures 订阅获取失败（未生成包含有效节点的 provider 缓存）；请检查机场后台是否已开启订阅导入或客户端导入开关、订阅链接是否有效，以及路由器能否访问机场订阅地址"
     fi
 fi
 
