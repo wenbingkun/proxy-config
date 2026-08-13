@@ -16,6 +16,9 @@ DEPLOY_SCRIPT = ROOT / "scripts" / "deploy_shellcrash_config.sh"
 
 TEST_PROVIDER_URL_1 = "https://provider.test/sub?auth=fixture-one&mode=clash|meta"
 TEST_PROVIDER_URL_2 = "https://provider.test/sub?auth=fixture-two&mode=clash|meta"
+TEST_PROVIDER_URL_1_CHANGED = (
+    "https://provider.test/sub?auth=fixture-one-changed&mode=clash|meta"
+)
 
 TEMPLATE = """\
 proxy-providers:
@@ -91,7 +94,12 @@ def run_deploy(env_path: Path, process_env: dict[str, str], should_succeed: bool
         check=False,
     )
     combined = result.stdout + result.stderr
-    if TEST_PROVIDER_URL_1 in combined or TEST_PROVIDER_URL_2 in combined:
+    provider_urls = (
+        TEST_PROVIDER_URL_1,
+        TEST_PROVIDER_URL_2,
+        TEST_PROVIDER_URL_1_CHANGED,
+    )
+    if any(provider_url in combined for provider_url in provider_urls):
         raise AssertionError("deployment output exposed a provider URL")
     if (result.returncode == 0) != should_succeed:
         raise AssertionError(
@@ -108,7 +116,15 @@ def main() -> int:
         configs_dir = shellcrash_dir / "configs"
         fixtures_dir = base / "fixtures"
         fake_path = base / "fake-path"
-        for directory in (yamls_dir, bin_dir, configs_dir, fixtures_dir, fake_path):
+        provider_cache_dir = shellcrash_dir / "cache" / "proxy-providers"
+        for directory in (
+            yamls_dir,
+            bin_dir,
+            configs_dir,
+            fixtures_dir,
+            fake_path,
+            provider_cache_dir,
+        ):
             directory.mkdir(parents=True, exist_ok=True)
 
         config_path = yamls_dir / "config.yaml"
@@ -166,7 +182,9 @@ done
             shellcrash_dir / "start.sh",
             """#!/bin/sh
 set -eu
-if [ -f "$(dirname "$0")/start_should_fail" ]; then
+action=${1:-}
+printf '%s\n' "$action" >>"$(dirname "$0")/start_calls"
+if [ "$action" = 'start' ] && [ -f "$(dirname "$0")/start_should_fail" ]; then
     exit 1
 fi
 exit 0
@@ -249,6 +267,62 @@ exit 0
         run_deploy(env_path, process_env, should_succeed=True)
         assert config_path.read_bytes() == deployed
 
+        # Unchanged provider URLs must preserve both caches and avoid an
+        # additional stop/start cycle solely for cache invalidation.
+        sub_cache = provider_cache_dir / "sub.yaml"
+        sub2_cache = provider_cache_dir / "sub2.yaml"
+        start_calls = shellcrash_dir / "start_calls"
+        sub_cache.write_bytes(b"sub-current\n")
+        sub2_cache.write_bytes(b"sub2-current\n")
+        start_calls.write_text("", encoding="utf-8")
+        run_deploy(env_path, process_env, should_succeed=True)
+        assert sub_cache.read_bytes() == b"sub-current\n"
+        assert sub2_cache.read_bytes() == b"sub2-current\n"
+        assert start_calls.read_text(encoding="utf-8").splitlines() == ["start"]
+
+        # Dual -> single keeps Sub unchanged and invalidates only stale Sub2.
+        start_calls.write_text("", encoding="utf-8")
+        write_env(env_path, shellcrash_dir, "single.yaml", provider_url_2="")
+        run_deploy(env_path, process_env, should_succeed=True)
+        assert sub_cache.read_bytes() == b"sub-current\n"
+        assert not sub2_cache.exists()
+        assert start_calls.read_text(encoding="utf-8").splitlines() == [
+            "stop",
+            "start",
+        ]
+
+        # Single -> dual keeps Sub unchanged and invalidates a stale Sub2 cache.
+        sub2_cache.write_bytes(b"sub2-stale\n")
+        start_calls.write_text("", encoding="utf-8")
+        write_env(env_path, shellcrash_dir, "good.yaml")
+        run_deploy(env_path, process_env, should_succeed=True)
+        assert sub_cache.read_bytes() == b"sub-current\n"
+        assert not sub2_cache.exists()
+        assert start_calls.read_text(encoding="utf-8").splitlines() == [
+            "stop",
+            "start",
+        ]
+
+        # Provider A -> B invalidates only Sub because Sub2's URL is unchanged.
+        sub_cache.write_bytes(b"sub-a\n")
+        sub2_cache.write_bytes(b"sub2-current\n")
+        start_calls.write_text("", encoding="utf-8")
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "good.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+        )
+        run_deploy(env_path, process_env, should_succeed=True)
+        deployed = config_path.read_bytes()
+        assert TEST_PROVIDER_URL_1_CHANGED.encode() in deployed
+        assert not sub_cache.exists()
+        assert sub2_cache.read_bytes() == b"sub2-current\n"
+        assert start_calls.read_text(encoding="utf-8").splitlines() == [
+            "stop",
+            "start",
+        ]
+
         write_env(env_path, shellcrash_dir, "broken.yaml")
         run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
@@ -266,10 +340,14 @@ exit 0
         run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
 
+        # A failed start restores both the previous config and the invalidated
+        # provider cache before attempting to restart the old configuration.
+        sub_cache.write_bytes(b"sub-before-failed-deploy\n")
         (shellcrash_dir / "start_should_fail").touch()
         write_env(env_path, shellcrash_dir, "changed.yaml")
         run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
+        assert sub_cache.read_bytes() == b"sub-before-failed-deploy\n"
 
         (shellcrash_dir / "start_should_fail").unlink()
         shellcrash_cfg.write_text("disoverride=1\n", encoding="utf-8")

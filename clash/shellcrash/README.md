@@ -98,9 +98,12 @@ chmod 700 /path/to/deploy_shellcrash_config.sh
 2. 检查模板与单/双订阅模式匹配，且每个所需占位符只出现一次；
 3. 注入订阅 URL，但不在日志中输出它们；
 4. 使用设备上的 Mihomo/CrashCore 执行 `-t`；
-5. 备份并原子替换 `$CRASHDIR/yamls/config.yaml`；
-6. 通过 ShellCrash 启动服务；
-7. 启动失败时恢复上一份配置。
+5. 备份当前配置，并比较旧、新配置中的 `Sub`/`Sub2` URL；仅当对应 URL
+   变化、增加或移除时，停止 ShellCrash，临时备份并失效相应的
+   `cache/proxy-providers/sub.yaml` 或 `sub2.yaml`，URL 未变化的缓存不会被清理；
+6. 原子替换 `$CRASHDIR/yamls/config.yaml`；
+7. 通过 ShellCrash 启动服务；
+8. 启动失败时同时恢复上一份配置和被失效的旧 provider 缓存。
 
 最近一次备份保存在：
 
@@ -109,6 +112,8 @@ $CRASHDIR/yamls/config.yaml.bak.proxy-config
 ```
 
 下载、占位符检查或 Mihomo 校验失败时，当前运行配置不会被修改。
+从机场 A 切换到机场 B、单订阅切双订阅或双订阅切回单订阅时，直接修改
+`providers.env` 后重新运行部署脚本即可，不需要手工停止 ShellCrash 或删除缓存。
 
 ## 6. 配置定时更新
 
