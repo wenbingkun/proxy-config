@@ -72,6 +72,7 @@ def write_env(
         "SUB_URL_1": provider_url_1,
         "SUB_URL_2": provider_url_2,
         "SHELLCRASH_STARTUP_WAIT": "0",
+        "SHELLCRASH_PROVIDER_WAIT": "0",
         "SHELLCRASH_SKIP_PROCESS_CHECK": "1",
     }
     if mihomo_bin is not None:
@@ -84,7 +85,9 @@ def write_env(
     path.chmod(0o600)
 
 
-def run_deploy(env_path: Path, process_env: dict[str, str], should_succeed: bool) -> None:
+def run_deploy(
+    env_path: Path, process_env: dict[str, str], should_succeed: bool
+) -> str:
     result = subprocess.run(
         ["sh", str(DEPLOY_SCRIPT), str(env_path)],
         cwd=ROOT,
@@ -105,6 +108,7 @@ def run_deploy(env_path: Path, process_env: dict[str, str], should_succeed: bool
         raise AssertionError(
             f"unexpected deployment exit code {result.returncode}\n{combined}"
         )
+    return combined
 
 
 def main() -> int:
@@ -183,9 +187,29 @@ done
             """#!/bin/sh
 set -eu
 action=${1:-}
-printf '%s\n' "$action" >>"$(dirname "$0")/start_calls"
-if [ "$action" = 'start' ] && [ -f "$(dirname "$0")/start_should_fail" ]; then
+root=$(dirname "$0")
+printf '%s\n' "$action" >>"$root/start_calls"
+if [ "$action" = 'start' ] && [ -f "$root/start_should_fail" ]; then
     exit 1
+fi
+if [ "$action" = 'start' ] && [ ! -f "$root/provider_fetch_should_fail" ]; then
+    cache_dir="$root/cache/proxy-providers"
+    config="$root/yamls/config.yaml"
+    mkdir -p "$cache_dir"
+    if grep -q '^  Sub:$' "$config" && [ ! -f "$cache_dir/sub.yaml" ]; then
+        if [ -f "$root/provider_fetch_empty" ]; then
+            printf '%s\n' 'proxies: []' >"$cache_dir/sub.yaml"
+        else
+            printf '%s\n' 'proxies:' '  - name: fixture-sub-node' >"$cache_dir/sub.yaml"
+        fi
+    fi
+    if grep -q '^  Sub2:$' "$config" && [ ! -f "$cache_dir/sub2.yaml" ]; then
+        if [ -f "$root/provider_fetch_empty" ]; then
+            printf '%s\n' 'proxies: []' >"$cache_dir/sub2.yaml"
+        else
+            printf '%s\n' 'proxies:' '  - name: fixture-sub2-node' >"$cache_dir/sub2.yaml"
+        fi
+    fi
 fi
 exit 0
 """,
@@ -272,19 +296,19 @@ exit 0
         sub_cache = provider_cache_dir / "sub.yaml"
         sub2_cache = provider_cache_dir / "sub2.yaml"
         start_calls = shellcrash_dir / "start_calls"
-        sub_cache.write_bytes(b"sub-current\n")
-        sub2_cache.write_bytes(b"sub2-current\n")
+        sub_cache.write_bytes(b"proxies:\n  - name: sub-current\n")
+        sub2_cache.write_bytes(b"proxies:\n  - name: sub2-current\n")
         start_calls.write_text("", encoding="utf-8")
         run_deploy(env_path, process_env, should_succeed=True)
-        assert sub_cache.read_bytes() == b"sub-current\n"
-        assert sub2_cache.read_bytes() == b"sub2-current\n"
+        assert sub_cache.read_bytes() == b"proxies:\n  - name: sub-current\n"
+        assert sub2_cache.read_bytes() == b"proxies:\n  - name: sub2-current\n"
         assert start_calls.read_text(encoding="utf-8").splitlines() == ["start"]
 
         # Dual -> single keeps Sub unchanged and invalidates only stale Sub2.
         start_calls.write_text("", encoding="utf-8")
         write_env(env_path, shellcrash_dir, "single.yaml", provider_url_2="")
         run_deploy(env_path, process_env, should_succeed=True)
-        assert sub_cache.read_bytes() == b"sub-current\n"
+        assert sub_cache.read_bytes() == b"proxies:\n  - name: sub-current\n"
         assert not sub2_cache.exists()
         assert start_calls.read_text(encoding="utf-8").splitlines() == [
             "stop",
@@ -292,20 +316,20 @@ exit 0
         ]
 
         # Single -> dual keeps Sub unchanged and invalidates a stale Sub2 cache.
-        sub2_cache.write_bytes(b"sub2-stale\n")
+        sub2_cache.write_bytes(b"proxies:\n  - name: sub2-stale\n")
         start_calls.write_text("", encoding="utf-8")
         write_env(env_path, shellcrash_dir, "good.yaml")
         run_deploy(env_path, process_env, should_succeed=True)
-        assert sub_cache.read_bytes() == b"sub-current\n"
-        assert not sub2_cache.exists()
+        assert sub_cache.read_bytes() == b"proxies:\n  - name: sub-current\n"
+        assert b"fixture-sub2-node" in sub2_cache.read_bytes()
         assert start_calls.read_text(encoding="utf-8").splitlines() == [
             "stop",
             "start",
         ]
 
         # Provider A -> B invalidates only Sub because Sub2's URL is unchanged.
-        sub_cache.write_bytes(b"sub-a\n")
-        sub2_cache.write_bytes(b"sub2-current\n")
+        sub_cache.write_bytes(b"proxies:\n  - name: sub-a\n")
+        sub2_cache.write_bytes(b"proxies:\n  - name: sub2-current\n")
         start_calls.write_text("", encoding="utf-8")
         write_env(
             env_path,
@@ -316,8 +340,8 @@ exit 0
         run_deploy(env_path, process_env, should_succeed=True)
         deployed = config_path.read_bytes()
         assert TEST_PROVIDER_URL_1_CHANGED.encode() in deployed
-        assert not sub_cache.exists()
-        assert sub2_cache.read_bytes() == b"sub2-current\n"
+        assert b"fixture-sub-node" in sub_cache.read_bytes()
+        assert sub2_cache.read_bytes() == b"proxies:\n  - name: sub2-current\n"
         assert start_calls.read_text(encoding="utf-8").splitlines() == [
             "stop",
             "start",
@@ -342,14 +366,51 @@ exit 0
 
         # A failed start restores both the previous config and the invalidated
         # provider cache before attempting to restart the old configuration.
-        sub_cache.write_bytes(b"sub-before-failed-deploy\n")
+        sub_cache.write_bytes(b"proxies:\n  - name: sub-before-failed-deploy\n")
         (shellcrash_dir / "start_should_fail").touch()
         write_env(env_path, shellcrash_dir, "changed.yaml")
         run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
-        assert sub_cache.read_bytes() == b"sub-before-failed-deploy\n"
+        assert sub_cache.read_bytes() == (
+            b"proxies:\n  - name: sub-before-failed-deploy\n"
+        )
 
         (shellcrash_dir / "start_should_fail").unlink()
+
+        # A running core is not enough: a changed provider that cannot produce
+        # a non-empty proxies list must fail with a useful, secret-free hint and
+        # restore the previous config and provider cache.
+        previous_config = config_path.read_bytes()
+        previous_cache = sub_cache.read_bytes()
+        (shellcrash_dir / "provider_fetch_should_fail").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "good.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "Sub 订阅获取失败" in output
+        assert "订阅导入或客户端导入开关" in output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        (shellcrash_dir / "provider_fetch_should_fail").unlink()
+
+        # A fetched provider file with an empty proxies list is also a failed
+        # import, not a successful deployment.
+        (shellcrash_dir / "provider_fetch_empty").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "good.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "Sub 订阅获取失败" in output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        (shellcrash_dir / "provider_fetch_empty").unlink()
+
         shellcrash_cfg.write_text("disoverride=1\n", encoding="utf-8")
         write_env(env_path, shellcrash_dir, "good.yaml")
         run_deploy(env_path, process_env, should_succeed=False)

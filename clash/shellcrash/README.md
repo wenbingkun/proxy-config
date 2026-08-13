@@ -103,7 +103,8 @@ chmod 700 /path/to/deploy_shellcrash_config.sh
    `cache/proxy-providers/sub.yaml` 或 `sub2.yaml`，URL 未变化的缓存不会被清理；
 6. 原子替换 `$CRASHDIR/yamls/config.yaml`；
 7. 通过 ShellCrash 启动服务；
-8. 启动失败时同时恢复上一份配置和被失效的旧 provider 缓存。
+8. 对新增或 URL 变化的 provider，等待对应缓存生成并确认至少包含一个节点；
+9. 启动失败或 provider 获取超时时，同时恢复上一份配置和被失效的旧缓存。
 
 最近一次备份保存在：
 
@@ -114,6 +115,11 @@ $CRASHDIR/yamls/config.yaml.bak.proxy-config
 下载、占位符检查或 Mihomo 校验失败时，当前运行配置不会被修改。
 从机场 A 切换到机场 B、单订阅切双订阅或双订阅切回单订阅时，直接修改
 `providers.env` 后重新运行部署脚本即可，不需要手工停止 ShellCrash 或删除缓存。
+
+provider 获取默认最多等待 60 秒。若机场后台未开启“订阅导入”或“客户端导入”
+一类开关、链接失效，或路由器无法连接机场订阅地址，脚本会明确指出失败的是
+`Sub`、`Sub2` 或两者，并执行回滚；错误日志不会输出订阅 URL。可在
+`providers.env` 中通过 `SHELLCRASH_PROVIDER_WAIT` 调整等待秒数。
 
 ## 6. 配置定时更新
 
