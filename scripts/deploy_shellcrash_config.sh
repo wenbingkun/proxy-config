@@ -13,6 +13,12 @@ deploy_lock_dir=''
 deploy_stage_path=''
 deploy_backup_stage_path=''
 shellcrash_tmp_root=''
+provider_cache_backup_dir=''
+provider_cache_transaction_started=0
+invalidate_sub_cache=0
+invalidate_sub2_cache=0
+sub_cache_path=''
+sub2_cache_path=''
 
 log() {
     printf '%s\n' "$*"
@@ -91,6 +97,63 @@ download_template() {
     fi
 }
 
+provider_url_from_config() {
+    provider_name=$1
+    provider_config=$2
+
+    [ -f "$provider_config" ] || return 0
+    awk -v provider="$provider_name" '
+        $0 == "proxy-providers:" {
+            in_providers = 1
+            next
+        }
+        in_providers && /^[^[:space:]]/ { exit }
+        in_providers && $0 == "  " provider ":" {
+            in_provider = 1
+            next
+        }
+        in_provider && /^  [^[:space:]][^:]*:/ { exit }
+        in_provider && index($0, "    url: \"") == 1 {
+            value = $0
+            sub(/^    url: \"/, "", value)
+            sub(/\"[[:space:]]*$/, "", value)
+            print value
+            exit
+        }
+    ' "$provider_config"
+}
+
+stage_provider_cache_invalidation() {
+    cache_path=$1
+    cache_name=$2
+
+    [ -e "$cache_path" ] || [ -L "$cache_path" ] || return 0
+    [ -f "$cache_path" ] || return 1
+    mkdir -p "$provider_cache_backup_dir" || return 1
+    cp -p "$cache_path" "$provider_cache_backup_dir/$cache_name" || return 1
+    rm -f "$cache_path" || return 1
+}
+
+restore_provider_caches() {
+    [ "$provider_cache_transaction_started" = '1' ] || return 0
+
+    if [ "$invalidate_sub_cache" = '1' ]; then
+        rm -f "$sub_cache_path"
+        if [ -f "$provider_cache_backup_dir/sub.yaml" ]; then
+            mkdir -p "${sub_cache_path%/*}"
+            cp -p "$provider_cache_backup_dir/sub.yaml" "$sub_cache_path"
+        fi
+    fi
+    if [ "$invalidate_sub2_cache" = '1' ]; then
+        rm -f "$sub2_cache_path"
+        if [ -f "$provider_cache_backup_dir/sub2.yaml" ]; then
+            mkdir -p "${sub2_cache_path%/*}"
+            cp -p "$provider_cache_backup_dir/sub2.yaml" "$sub2_cache_path"
+        fi
+    fi
+    provider_cache_transaction_started=0
+}
+
 rollback_config() {
     rollback_reason=$1
     if [ "$had_previous_config" = '1' ] && [ -s "$backup_path" ]; then
@@ -98,9 +161,11 @@ rollback_config() {
         cp -p "$backup_path" "$deploy_stage_path"
         mv -f "$deploy_stage_path" "$config_path"
         deploy_stage_path=''
+        restore_provider_caches
         "$start_script" start >/dev/null 2>&1 || true
         fail "$rollback_reason；已恢复上一份配置"
     fi
+    restore_provider_caches
     fail "$rollback_reason；没有可恢复的旧配置，已保留通过校验的新配置供排查"
 }
 
@@ -224,11 +289,22 @@ if grep -Eq '__SUB_URL_[0-9]+__' "$rendered_config"; then
     fail '私密参数注入后仍有订阅占位符残留'
 fi
 
+old_sub_url=$(provider_url_from_config Sub "$config_path")
+new_sub_url=$(provider_url_from_config Sub "$rendered_config")
+old_sub2_url=$(provider_url_from_config Sub2 "$config_path")
+new_sub2_url=$(provider_url_from_config Sub2 "$rendered_config")
+[ "$old_sub_url" = "$new_sub_url" ] || invalidate_sub_cache=1
+[ "$old_sub2_url" = "$new_sub2_url" ] || invalidate_sub2_cache=1
+
 # Load ShellCrash's runtime and data directories without executing COMMAND.
 # shellcheck disable=SC1090
 . "$command_env"
 shellcrash_runtime_dir=${TMPDIR:-/tmp/ShellCrash}
 shellcrash_bind_dir=${BINDIR:-$shellcrash_dir}
+provider_cache_dir="$shellcrash_bind_dir/cache/proxy-providers"
+provider_cache_backup_dir="$deploy_tmp_dir/provider-cache-backup"
+sub_cache_path="$provider_cache_dir/sub.yaml"
+sub2_cache_path="$provider_cache_dir/sub2.yaml"
 mihomo_bin=''
 bootstrap_without_core=0
 
@@ -277,6 +353,34 @@ else
     cp "$rendered_config" "$deploy_stage_path"
     chmod 600 "$deploy_stage_path"
 fi
+
+if [ "$invalidate_sub_cache" = '1' ] || [ "$invalidate_sub2_cache" = '1' ]; then
+    log '检测到订阅来源变化，正在失效对应 provider 缓存……'
+    if [ "$had_previous_config" = '1' ]; then
+        if ! "$start_script" stop; then
+            "$start_script" start >/dev/null 2>&1 || true
+            fail 'ShellCrash 停止命令失败，当前配置和 provider 缓存未改动'
+        fi
+    fi
+    provider_cache_transaction_started=1
+    if [ "$invalidate_sub_cache" = '1' ] && \
+        ! stage_provider_cache_invalidation "$sub_cache_path" sub.yaml; then
+        restore_provider_caches
+        if [ "$had_previous_config" = '1' ]; then
+            "$start_script" start >/dev/null 2>&1 || true
+        fi
+        fail '无法失效 Sub provider 缓存，当前配置未改动'
+    fi
+    if [ "$invalidate_sub2_cache" = '1' ] && \
+        ! stage_provider_cache_invalidation "$sub2_cache_path" sub2.yaml; then
+        restore_provider_caches
+        if [ "$had_previous_config" = '1' ]; then
+            "$start_script" start >/dev/null 2>&1 || true
+        fi
+        fail '无法失效 Sub2 provider 缓存，当前配置未改动'
+    fi
+fi
+
 mv -f "$deploy_stage_path" "$config_path"
 deploy_stage_path=''
 
@@ -293,4 +397,5 @@ if [ "${SHELLCRASH_SKIP_PROCESS_CHECK:-0}" != '1' ] && command -v pidof >/dev/nu
     fi
 fi
 
+provider_cache_transaction_started=0
 log "ShellCrash 配置部署成功：$config_path"
