@@ -622,18 +622,18 @@ rule-providers:
     path: ./cache/rulesets/Crunchyroll.yaml
   DAZN:
     type: http
-    behavior: classical
+    behavior: domain
     format: yaml
     interval: 86400
-    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/DAZN/DAZN.yaml
-    path: ./cache/rulesets/DAZN.yaml
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dazn.yaml
+    path: ./cache/rulesets/DAZN_Domain.yaml
   GlobalMedia:
     type: http
-    behavior: classical
+    behavior: domain
     format: yaml
     interval: 86400
-    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GlobalMedia/GlobalMedia_Classical.yaml
-    path: ./cache/rulesets/GlobalMedia.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GlobalMedia/GlobalMedia_Domain.yaml
+    path: ./cache/rulesets/GlobalMedia_Domain.yaml
   Apple:
     type: http
     behavior: classical
@@ -685,11 +685,11 @@ rule-providers:
     path: ./cache/rulesets/StackOverflow.yaml
   Cloudflare:
     type: http
-    behavior: classical
+    behavior: domain
     format: yaml
     interval: 86400
-    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Cloudflare/Cloudflare.yaml
-    path: ./cache/rulesets/Cloudflare.yaml
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cloudflare.yaml
+    path: ./cache/rulesets/Cloudflare_Domain.yaml
   Developer:
     type: http
     behavior: classical
@@ -699,11 +699,11 @@ rule-providers:
     path: ./cache/rulesets/Developer.yaml
   Amazon:
     type: http
-    behavior: classical
+    behavior: domain
     format: yaml
     interval: 86400
-    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Amazon/Amazon.yaml
-    path: ./cache/rulesets/Amazon.yaml
+    url: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.yaml
+    path: ./cache/rulesets/Amazon_Domain.yaml
   PayPal:
     type: http
     behavior: classical

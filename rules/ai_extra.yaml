@@ -10,6 +10,10 @@ domain_suffix:
   - codeium.com
   - windsurf.com
   - huggingface.co
+  - immersivetranslate.com
+  - jetbrains.ai
+  - grazie.ai
+  - grazie.aws.intellij.net
   - groq.com
   - together.ai
   - replicate.com
