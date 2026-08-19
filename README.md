@@ -145,7 +145,9 @@ rule-providers:
 
 第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
 
-AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemini 独立域名集，再由仓库的 `AIExtra` 补充其他服务，避免把整个支付、CDN 或通用云域名送入 AI 策略。Windows 和路由器端的 Steam、Epic、PlayStation、Xbox、Nintendo 和 Battle.net 统一由 `Game` 聚合规则送入 `🎮 游戏平台`，不再重复加载覆盖不完整的 Steam 独立 provider；QX 没有使用该 Clash 聚合 provider，仍保留各游戏平台的独立远程规则。V2EX 与 Linux.do 均归入 `👨‍💻 开发服务`。
+AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemini 独立域名集，再由仓库的 `AIExtra` 补充其他服务（包括 JetBrains AI / Grazie 和沉浸式翻译），避免把整个支付、CDN 或通用云域名送入 AI 策略。Windows 和路由器端的 Steam、Epic、PlayStation、Xbox、Nintendo 和 Battle.net 统一由 `Game` 聚合规则送入 `🎮 游戏平台`，不再重复加载覆盖不完整的 Steam 独立 provider；QX 没有使用该 Clash 聚合 provider，仍保留各游戏平台的独立远程规则。V2EX（含 `v2ex.pro` 静态资源）与 Linux.do（含 `ldstatic.com` 静态资源）均归入 `👨‍💻 开发服务`，`redditspace.com` 归入 `🌐 社交平台`。
+
+Clash 的 `GlobalMedia`、DAZN、Cloudflare 和 Amazon provider 只使用域名规则，不加载第三方 IP 段。这样仍可按服务域名分流，同时避免 Akamai、CloudFront、Cloudflare 等共享 CDN IP 地址把 JetBrains AI、RevenueCat、Sentry、Intercom、Let's Encrypt CRL 或 Bing 等无关请求误判为流媒体、电商或开发服务；未被专用域名规则命中的共享基础设施请求继续交给后续通用规则处理。上游域名规则仍包含 `+.cloudfront.net`、`+.akamaized.net` 和 `+.llnwd.net` 等 CDN 域名通配，直接使用这些裸主机名的请求仍可能归入流媒体或电商策略；已确认的业务域名应继续通过更靠前的本地规则精确覆盖。四个 provider 的纯域名版本使用独立缓存文件名，升级后不会误用原 classical 缓存。
 
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余收敛为东南亚、亚洲其他、欧洲、美洲、大洋洲和非洲。南亚、中东、中亚、蒙古与澳门均属于“亚洲其他”；加拿大、墨西哥、中美洲、加勒比和南美洲均属于“美洲”，已独立的美国不会重复命中。澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
@@ -207,6 +209,7 @@ python3 scripts/build_router_config.py
 python3 scripts/build_rules.py --check
 python3 scripts/build_router_config.py --check
 python3 scripts/test_deploy_shellcrash.py
+python3 scripts/test_rule_provider_scope.py
 
 # 轻量检查外部规则、QX 脚本和图标，不会保存下载内容
 python3 scripts/check_remote_resources.py --mode light
@@ -336,6 +339,7 @@ proxy-config/
 │   ├── deploy_shellcrash_config.sh # 路由器本地私密注入与部署脚本
 │   ├── test_deploy_shellcrash.py   # 部署事务与回滚测试
 │   ├── test_remote_resources.py    # 远程资源提取、脱敏和类型离线测试
+│   ├── test_rule_provider_scope.py # 共享 CDN 规则误捕与专用域名覆盖回归测试
 │   ├── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
 │   ├── test_region_groups.py       # Clash/QX 地区正则与地理边界回归测试
 │   └── test_steam_policy.py        # Steam 与非 Steam 下载策略回归测试

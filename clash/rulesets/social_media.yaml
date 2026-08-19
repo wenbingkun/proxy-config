@@ -4,6 +4,7 @@ payload:
   - DOMAIN-SUFFIX,threads.net
   - DOMAIN-SUFFIX,bsky.app
   - DOMAIN-SUFFIX,pixiv.net
+  - DOMAIN-SUFFIX,redditspace.com
   - DOMAIN-SUFFIX,mastodon.social
   - DOMAIN-SUFFIX,mastodon.online
   - DOMAIN-SUFFIX,pawoo.net

@@ -12,6 +12,10 @@ payload:
   - DOMAIN-SUFFIX,codeium.com
   - DOMAIN-SUFFIX,windsurf.com
   - DOMAIN-SUFFIX,huggingface.co
+  - DOMAIN-SUFFIX,immersivetranslate.com
+  - DOMAIN-SUFFIX,jetbrains.ai
+  - DOMAIN-SUFFIX,grazie.ai
+  - DOMAIN-SUFFIX,grazie.aws.intellij.net
   - DOMAIN-SUFFIX,groq.com
   - DOMAIN-SUFFIX,together.ai
   - DOMAIN-SUFFIX,replicate.com

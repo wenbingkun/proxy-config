@@ -9,5 +9,7 @@ payload:
   - DOMAIN-SUFFIX,vscode.dev
   - DOMAIN-SUFFIX,vsassets.io
   - DOMAIN-SUFFIX,jetbrains.com
+  - DOMAIN-SUFFIX,ldstatic.com
   - DOMAIN-SUFFIX,linux.do
   - DOMAIN-SUFFIX,v2ex.com
+  - DOMAIN-SUFFIX,v2ex.pro

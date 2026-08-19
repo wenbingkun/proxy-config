@@ -118,6 +118,7 @@ jobs:
           python3 scripts/check_acceptance.py
           python3 scripts/test_region_groups.py
           python3 scripts/test_remote_resources.py
+          python3 scripts/test_rule_provider_scope.py
           python3 scripts/test_steam_policy.py
 
       - name: Check shell script syntax
