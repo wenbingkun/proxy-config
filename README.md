@@ -147,7 +147,9 @@ rule-providers:
 
 AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemini 独立域名集，再由仓库的 `AIExtra` 补充其他服务（包括 JetBrains AI / Grazie 和沉浸式翻译），避免把整个支付、CDN 或通用云域名送入 AI 策略。Windows 和路由器端的 Steam、Epic、PlayStation、Xbox、Nintendo 和 Battle.net 统一由 `Game` 聚合规则送入 `🎮 游戏平台`，不再重复加载覆盖不完整的 Steam 独立 provider；QX 没有使用该 Clash 聚合 provider，仍保留各游戏平台的独立远程规则。V2EX（含 `v2ex.pro` 静态资源）与 Linux.do（含 `ldstatic.com` 静态资源）均归入 `👨‍💻 开发服务`，`redditspace.com` 归入 `🌐 社交平台`。
 
-Clash 的 `GlobalMedia`、DAZN、Cloudflare 和 Amazon provider 只使用域名规则，不加载第三方 IP 段。这样仍可按服务域名分流，同时避免 Akamai、CloudFront、Cloudflare 等共享 CDN IP 地址把 JetBrains AI、RevenueCat、Sentry、Intercom、Let's Encrypt CRL 或 Bing 等无关请求误判为流媒体、电商或开发服务；未被专用域名规则命中的共享基础设施请求继续交给后续通用规则处理。上游域名规则仍包含 `+.cloudfront.net`、`+.akamaized.net` 和 `+.llnwd.net` 等 CDN 域名通配，直接使用这些裸主机名的请求仍可能归入流媒体或电商策略；已确认的业务域名应继续通过更靠前的本地规则精确覆盖。四个 provider 的纯域名版本使用独立缓存文件名，升级后不会误用原 classical 缓存。
+Clash 的 DAZN、Cloudflare 和 Amazon provider 只使用域名规则，不加载第三方 IP 段。这样仍可按服务域名分流，同时避免 Akamai、CloudFront、Cloudflare 等共享 CDN IP 地址把 JetBrains AI、RevenueCat、Sentry、Intercom、Let's Encrypt CRL 或 Bing 等无关请求误判为流媒体、电商或开发服务；未被专用域名规则命中的共享基础设施请求继续交给后续通用规则处理。纯域名版本使用独立缓存文件名，升级后不会误用原 classical 缓存。
+
+不使用 GlobalMedia 聚合 provider：本轮 10 分钟路由器监看样本中，其命中的连接全部是误归类（Cloudflare Challenge、微软 Akamai 图片 CDN 等）或 `+.cloudfront.net`、`+.akamaized.net`、`+.llnwd.net` 一类的宽泛 CDN 通配，而 Netflix、Disney+、YouTube、HBO、Hulu、Prime Video、巴哈姆特、DAZN 等常用媒体均有独立 provider 覆盖。移除后 Cloudflare Challenge 由 Cloudflare 规则归入 `👨‍💻 开发服务`，微软 CDN 由 Microsoft 规则接管；仓库的 `MicrosoftExtra` 同时固定覆盖实测的微软 Akamai 图片域名，并补充上游缺失的 `msftstatic.com`。没有独立规则的冷门媒体服务会落入通用代理规则而非 `🎬 流媒体`，这是有意的取舍。
 
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余收敛为东南亚、亚洲其他、欧洲、美洲、大洋洲和非洲。南亚、中东、中亚、蒙古与澳门均属于“亚洲其他”；加拿大、墨西哥、中美洲、加勒比和南美洲均属于“美洲”，已独立的美国不会重复命中。澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 

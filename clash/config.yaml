@@ -322,10 +322,10 @@ rule-providers:
   Hulu: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Hulu/Hulu.yaml", path: ./cache/rulesets/Hulu.yaml}
   Crunchyroll: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/crunchyroll.yaml", path: ./cache/rulesets/Crunchyroll.yaml}
   DAZN: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dazn.yaml", path: ./cache/rulesets/DAZN_Domain.yaml}
-  GlobalMedia: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GlobalMedia/GlobalMedia_Domain.yaml", path: ./cache/rulesets/GlobalMedia_Domain.yaml}
   Apple: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Apple/Apple_Classical.yaml", path: ./cache/rulesets/Apple.yaml}
   Google: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Google/Google.yaml", path: ./cache/rulesets/Google.yaml}
   Microsoft: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml", path: ./cache/rulesets/Microsoft.yaml}
+  MicrosoftExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/microsoft_extra.yaml", path: ./cache/rulesets/MicrosoftExtra.yaml}
   GitHub: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GitHub/GitHub.yaml", path: ./cache/rulesets/GitHub.yaml}
   GitLab: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GitLab/GitLab.yaml", path: ./cache/rulesets/GitLab.yaml}
   Docker: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Docker/Docker.yaml", path: ./cache/rulesets/Docker.yaml}
@@ -406,10 +406,10 @@ rules:
   - RULE-SET,Hulu,🎬 流媒体
   - RULE-SET,Crunchyroll,🎬 流媒体
   - RULE-SET,DAZN,🎬 流媒体
-  - RULE-SET,GlobalMedia,🎬 流媒体
   - RULE-SET,Apple,🍎 苹果服务
   - RULE-SET,Google,🌌 谷歌服务
   - RULE-SET,Microsoft,Ⓜ️ 微软服务
+  - RULE-SET,MicrosoftExtra,Ⓜ️ 微软服务
   - RULE-SET,GitHub,👨‍💻 开发服务
   - RULE-SET,GitLab,👨‍💻 开发服务
   - RULE-SET,Docker,👨‍💻 开发服务
