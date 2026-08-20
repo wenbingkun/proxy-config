@@ -74,3 +74,8 @@ rule_sets:
     source: game_extra.yaml
     clash_policy: 🎮 游戏平台
     qx_policy: 🎮 游戏平台
+  - id: microsoft_extra
+    title: 微软服务补充规则
+    source: microsoft_extra.yaml
+    clash_policy: Ⓜ️ 微软服务
+    qx_policy: Ⓜ️ 微软服务

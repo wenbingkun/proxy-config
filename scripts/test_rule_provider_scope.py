@@ -19,10 +19,6 @@ DOMAIN_ONLY_PROVIDERS = {
         "MetaCubeX/meta-rules-dat@meta/geo/geosite/dazn.yaml",
         "./cache/rulesets/DAZN_Domain.yaml",
     ),
-    "GlobalMedia": (
-        "blackmatrix7/ios_rule_script@master/rule/Clash/GlobalMedia/GlobalMedia_Domain.yaml",
-        "./cache/rulesets/GlobalMedia_Domain.yaml",
-    ),
     "Cloudflare": (
         "MetaCubeX/meta-rules-dat@meta/geo/geosite/cloudflare.yaml",
         "./cache/rulesets/Cloudflare_Domain.yaml",
@@ -42,6 +38,10 @@ REQUIRED_LOCAL_DOMAINS = {
     },
     ROOT / "rules" / "social_media.yaml": {"redditspace.com"},
     ROOT / "rules" / "dev_extra.yaml": {"ldstatic.com", "v2ex.pro"},
+    ROOT / "rules" / "microsoft_extra.yaml": {
+        "img-s-msn-com.akamaized.net",
+        "msftstatic.com",
+    },
 }
 
 
@@ -70,13 +70,19 @@ def assert_domain_only_providers(path: Path) -> None:
             f"{path.relative_to(ROOT)}:{name} must not reuse its former classical cache"
         )
 
+    assert "GlobalMedia" not in providers, (
+        f"{path.relative_to(ROOT)} must not reintroduce the GlobalMedia provider"
+    )
+
     rules = config.get("rules")
     assert isinstance(rules, list), f"{path.relative_to(ROOT)} has no rules"
-    ai_index = rules.index("RULE-SET,AIExtra,🤖 人工智能")
-    social_index = rules.index("RULE-SET,SocialMedia,🌐 社交平台")
-    media_index = rules.index("RULE-SET,GlobalMedia,🎬 流媒体")
-    assert ai_index < media_index, f"{path.relative_to(ROOT)} must prioritize AIExtra"
-    assert social_index < media_index, f"{path.relative_to(ROOT)} must prioritize SocialMedia"
+    assert not any("GlobalMedia" in rule for rule in rules), (
+        f"{path.relative_to(ROOT)} must not reference GlobalMedia rules"
+    )
+    assert "RULE-SET,AIExtra,🤖 人工智能" in rules, f"{path.relative_to(ROOT)} is missing AIExtra"
+    assert "RULE-SET,MicrosoftExtra,Ⓜ️ 微软服务" in rules, (
+        f"{path.relative_to(ROOT)} is missing MicrosoftExtra"
+    )
 
 
 def assert_local_domain_coverage() -> None:
