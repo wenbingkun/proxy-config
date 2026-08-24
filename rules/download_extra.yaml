@@ -3,6 +3,3 @@ domain_suffix:
   - download.visualstudio.microsoft.com
   - officecdn.microsoft.com
   - winget.microsoft.com
-
-domain:
-  - registry.npmjs.org

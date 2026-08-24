@@ -14,7 +14,6 @@ EXPECTED_NON_STEAM_DOWNLOADS = {
     "download.visualstudio.microsoft.com",
     "officecdn.microsoft.com",
     "winget.microsoft.com",
-    "registry.npmjs.org",
 }
 
 EXPECTED_PROCESS_RULES = [

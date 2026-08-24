@@ -830,6 +830,13 @@ rule-providers:
     interval: 86400
     url: https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/crypto_extra.yaml
     path: ./cache/rulesets/CryptoExtra.yaml
+  EcommerceExtra:
+    type: http
+    behavior: classical
+    format: yaml
+    interval: 86400
+    url: https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ecommerce_extra.yaml
+    path: ./cache/rulesets/EcommerceExtra.yaml
   CollaborationExtra:
     type: http
     behavior: classical
@@ -921,6 +928,7 @@ rules:
 - RULE-SET,DevExtra,👨‍💻 开发服务
 - RULE-SET,Amazon,🛒 电商支付
 - RULE-SET,PayPal,🛒 电商支付
+- RULE-SET,EcommerceExtra,🛒 电商支付
 - RULE-SET,WeChat,🇨🇳 国内服务
 - RULE-SET,Alibaba,🇨🇳 国内服务
 - RULE-SET,Tencent,🇨🇳 国内服务

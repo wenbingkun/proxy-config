@@ -5,6 +5,15 @@ payload:
   - DOMAIN-SUFFIX,pypi.org
   - DOMAIN-SUFFIX,python.org
   - DOMAIN-SUFFIX,brew.sh
+  - DOMAIN-SUFFIX,ubuntu.com
+  - DOMAIN-SUFFIX,canonical.com
+  - DOMAIN-SUFFIX,debian.org
+  - DOMAIN-SUFFIX,archlinux.org
+  - DOMAIN-SUFFIX,fedoraproject.org
+  - DOMAIN-SUFFIX,opensuse.org
+  - DOMAIN-SUFFIX,rockylinux.org
+  - DOMAIN-SUFFIX,almalinux.org
+  - DOMAIN-SUFFIX,centos.org
   - DOMAIN-SUFFIX,marketplace.visualstudio.com
   - DOMAIN-SUFFIX,vscode.dev
   - DOMAIN-SUFFIX,vsassets.io
@@ -13,3 +22,12 @@ payload:
   - DOMAIN-SUFFIX,linux.do
   - DOMAIN-SUFFIX,v2ex.com
   - DOMAIN-SUFFIX,v2ex.pro
+  - DOMAIN-SUFFIX,gradle.org
+  - DOMAIN-SUFFIX,eclipse.org
+  - DOMAIN-SUFFIX,helm.sh
+  - DOMAIN-SUFFIX,bun.sh
+  - DOMAIN-SUFFIX,cmake.org
+  - DOMAIN-SUFFIX,llvm.org
+  - DOMAIN-SUFFIX,supabase.com
+  - DOMAIN-SUFFIX,render.com
+  - DOMAIN-SUFFIX,railway.app

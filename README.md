@@ -306,6 +306,7 @@ proxy-config/
 │   ├── local_rules.yaml            # 规则清单：ID、策略名映射
 │   ├── ai_extra.yaml               # AI 服务补充规则
 │   ├── crypto_extra.yaml           # 加密货币补充规则
+│   ├── ecommerce_extra.yaml        # 电商支付补充规则
 │   ├── collaboration_extra.yaml    # 商务协作补充规则
 │   ├── zoom.yaml                   # Zoom 规则
 │   ├── social_media.yaml           # 社交平台补充规则

@@ -37,7 +37,31 @@ REQUIRED_LOCAL_DOMAINS = {
         "grazie.aws.intellij.net",
     },
     ROOT / "rules" / "social_media.yaml": {"redditspace.com"},
-    ROOT / "rules" / "dev_extra.yaml": {"ldstatic.com", "v2ex.pro"},
+    ROOT / "rules" / "dev_extra.yaml": {
+        "ldstatic.com",
+        "v2ex.pro",
+        "gradle.org",
+        "eclipse.org",
+        "helm.sh",
+        "bun.sh",
+        "cmake.org",
+        "llvm.org",
+        "supabase.com",
+        "render.com",
+        "railway.app",
+    },
+    ROOT / "rules" / "collaboration_extra.yaml": {
+        "miro.com",
+        "asana.com",
+        "monday.com",
+        "airtable.com",
+        "clickup.com",
+        "loom.com",
+        "calendly.com",
+        "box.com",
+    },
+    ROOT / "rules" / "ecommerce_extra.yaml": {"revolut.com"},
+    ROOT / "rules" / "speedtest.yaml": {"librespeed.org"},
     ROOT / "rules" / "microsoft_extra.yaml": {
         "img-s-msn-com.akamaized.net",
         "msftstatic.com",
@@ -82,6 +106,12 @@ def assert_domain_only_providers(path: Path) -> None:
     assert "RULE-SET,AIExtra,🤖 人工智能" in rules, f"{path.relative_to(ROOT)} is missing AIExtra"
     assert "RULE-SET,MicrosoftExtra,Ⓜ️ 微软服务" in rules, (
         f"{path.relative_to(ROOT)} is missing MicrosoftExtra"
+    )
+    assert "EcommerceExtra" in providers, (
+        f"{path.relative_to(ROOT)} is missing EcommerceExtra"
+    )
+    assert "RULE-SET,EcommerceExtra,🛒 电商支付" in rules, (
+        f"{path.relative_to(ROOT)} is missing EcommerceExtra routing"
     )
 
 
