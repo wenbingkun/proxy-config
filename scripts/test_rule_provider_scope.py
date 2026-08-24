@@ -35,6 +35,12 @@ REQUIRED_LOCAL_DOMAINS = {
         "jetbrains.ai",
         "grazie.ai",
         "grazie.aws.intellij.net",
+        "openrouter.ai",
+        "cohere.com",
+        "ollama.com",
+        "cursor.sh",
+        "civitai.com",
+        "lmarena.ai",
     },
     ROOT / "rules" / "social_media.yaml": {"redditspace.com"},
     ROOT / "rules" / "dev_extra.yaml": {

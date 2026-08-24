@@ -20,11 +20,17 @@ domain_suffix:
   - runwayml.com
   - elevenlabs.io
   - cohere.ai
+  - cohere.com
   - jasper.ai
   - grok.com
   - x.ai
   - mistral.ai
   - cursor.com
+  - cursor.sh
+  - openrouter.ai
+  - ollama.com
+  - civitai.com
+  - lmarena.ai
   - kimi.ai
   - moonshot.cn
   - doubao.com
