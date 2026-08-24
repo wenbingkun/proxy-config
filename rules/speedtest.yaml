@@ -1,6 +1,7 @@
 domain_suffix:
   - speedtest.net
   - fast.com
+  - librespeed.org
 
 domain_keyword:
   - speedtest

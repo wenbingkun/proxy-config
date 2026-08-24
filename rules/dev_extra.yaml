@@ -3,6 +3,15 @@ domain_suffix:
   - pypi.org
   - python.org
   - brew.sh
+  - ubuntu.com
+  - canonical.com
+  - debian.org
+  - archlinux.org
+  - fedoraproject.org
+  - opensuse.org
+  - rockylinux.org
+  - almalinux.org
+  - centos.org
   - marketplace.visualstudio.com
   - vscode.dev
   - vsassets.io
@@ -11,3 +20,12 @@ domain_suffix:
   - linux.do
   - v2ex.com
   - v2ex.pro
+  - gradle.org
+  - eclipse.org
+  - helm.sh
+  - bun.sh
+  - cmake.org
+  - llvm.org
+  - supabase.com
+  - render.com
+  - railway.app

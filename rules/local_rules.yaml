@@ -34,6 +34,11 @@ rule_sets:
     source: crypto_extra.yaml
     clash_policy: 💰 加密货币
     qx_policy: 💰 加密货币
+  - id: ecommerce_extra
+    title: 电商支付补充规则
+    source: ecommerce_extra.yaml
+    clash_policy: 🛒 电商支付
+    qx_policy: 🛒 电商支付
   - id: collaboration_extra
     title: 商务协作补充规则
     source: collaboration_extra.yaml

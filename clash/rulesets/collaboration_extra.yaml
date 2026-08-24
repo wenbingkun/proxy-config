@@ -4,3 +4,11 @@ payload:
   - DOMAIN-SUFFIX,notion.so
   - DOMAIN-SUFFIX,figma.com
   - DOMAIN-SUFFIX,linear.app
+  - DOMAIN-SUFFIX,miro.com
+  - DOMAIN-SUFFIX,asana.com
+  - DOMAIN-SUFFIX,monday.com
+  - DOMAIN-SUFFIX,airtable.com
+  - DOMAIN-SUFFIX,clickup.com
+  - DOMAIN-SUFFIX,loom.com
+  - DOMAIN-SUFFIX,calendly.com
+  - DOMAIN-SUFFIX,box.com
