@@ -61,6 +61,9 @@ EXPECTED_SAMPLES = {
     "Brazil Sao Paulo": "🌎 美洲节点",
     "Australia Sydney": "🏝️ 大洋洲节点",
     "Fiji Suva": "🏝️ 大洋洲节点",
+    "Papua New Guinea PG": "🏝️ 大洋洲节点",
+    "巴布亚新几内亚丨3x PG": "🏝️ 大洋洲节点",
+    "Guinea Conakry GN": "🌍 非洲节点",
     "South Africa Johannesburg": "🌍 非洲节点",
 }
 
@@ -85,6 +88,20 @@ def load_clash_filters() -> dict[str, str]:
     missing = sorted(set(REGION_GROUPS) - set(filters))
     if missing:
         raise AssertionError(f"Clash missing region filters: {missing}")
+
+    group_types = {
+        group["name"]: group.get("type")
+        for group in groups
+        if isinstance(group, dict) and group.get("name") in REGION_GROUPS
+    }
+    expected_types = {
+        name: "select" if name == "🇺🇸 美国节点" else "url-test"
+        for name in REGION_GROUPS
+    }
+    if group_types != expected_types:
+        raise AssertionError(
+            f"Clash region group types mismatch: expected {expected_types}, got {group_types}"
+        )
     return filters
 
 
