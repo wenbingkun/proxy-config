@@ -10,3 +10,6 @@ payload:
   - DOMAIN-SUFFIX,pawoo.net
   - DOMAIN-SUFFIX,misskey.io
   - DOMAIN-SUFFIX,misskey.cloud
+  - DOMAIN-SUFFIX,imgur.com
+  - DOMAIN-SUFFIX,imgur.io
+  - DOMAIN-SUFFIX,imgurinc.com

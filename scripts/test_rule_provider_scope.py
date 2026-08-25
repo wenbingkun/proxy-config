@@ -42,9 +42,15 @@ REQUIRED_LOCAL_DOMAINS = {
         "civitai.com",
         "lmarena.ai",
     },
-    ROOT / "rules" / "social_media.yaml": {"redditspace.com"},
+    ROOT / "rules" / "social_media.yaml": {
+        "redditspace.com",
+        "imgur.com",
+        "imgur.io",
+        "imgurinc.com",
+    },
     ROOT / "rules" / "dev_extra.yaml": {
         "ldstatic.com",
+        "v2ex.co",
         "v2ex.pro",
         "gradle.org",
         "eclipse.org",
@@ -128,6 +134,11 @@ def assert_local_domain_coverage() -> None:
         assert isinstance(suffixes, list), f"{path.relative_to(ROOT)} has no domain_suffix list"
         missing = expected - set(suffixes)
         assert not missing, f"{path.relative_to(ROOT)} is missing {sorted(missing)}"
+
+    stack_overflow = load_yaml(ROOT / "rules" / "stack_overflow.yaml")
+    assert "stack.imgur.com" not in stack_overflow.get("domain", []), (
+        "stack.imgur.com must be covered by the shared Imgur social-media suffix rule"
+    )
 
 
 def main() -> int:

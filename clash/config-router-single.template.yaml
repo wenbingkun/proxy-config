@@ -216,133 +216,133 @@ proxy-groups:
   - Sub
   name: 🌐 故障转移
   filter: .*
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🇭🇰 香港节点
-  tolerance: 50
   filter: (?i)香港|港|(^|[^a-z])(hk|hong ?kong)([^a-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🇨🇳 台湾节点
-  tolerance: 50
   filter: (?i)台湾|臺灣|台|臺|(^|[^a-z])(tw|taiwan)([^a-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🇯🇵 日本节点
-  tolerance: 50
   filter: (?i)日本|(^|[^a-z])(jp|japan)([^a-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🇰🇷 韩国节点
-  tolerance: 50
   filter: (?i)韩国|韓國|韩|韓|(^|[^a-z])(kr|korea|south ?korea)([^a-z]|$)
 - name: 🇺🇸 美国节点
   type: select
   use:
   - Sub
   filter: (?i)美国|美國|(^|[^a-z])(us|usa|united ?states)([^a-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🇸🇬 狮城节点
-  tolerance: 50
   filter: (?i)新加坡|狮城|獅城|(^|[^a-z])(sg|singapore)([^a-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🌏 东南亚节点
-  tolerance: 50
   filter: (?i:东南亚|東南亞|马来西亚|馬來西亞|泰国|泰國|越南|菲律宾|菲律賓|印度尼西亚|印度尼西亞|印尼|柬埔寨|缅甸|緬甸|老挝|寮國|文莱|汶萊|东帝汶|東帝汶|southeast ?asia|malaysia|thailand|vietnam|philippines|indonesia|cambodia|myanmar|laos|brunei|timor(?:-leste)?)|(^|[^A-Za-z])(MY|TH|VN|PH|ID|KH|MM|BN|TL)([^A-Za-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🌏 亚洲其他节点
-  tolerance: 50
   filter: (?i:亚洲其他|亞洲其他|南亚|南亞|中东|中東|中亚|中亞|澳门|澳門|印度|马尔代夫|馬爾代夫|孟加拉|尼泊尔|尼泊爾|斯里兰卡|斯里蘭卡|不丹|阿富汗|巴基斯坦|蒙古|阿联酋|阿聯酋|沙特|土耳其|伊朗|伊拉克|以色列|巴勒斯坦|约旦|黎巴嫩|叙利亚|科威特|卡塔尔|巴林|阿曼|也门|哈萨克|乌兹别克|吉尔吉斯|塔吉克|土库曼|asia
     ?other|south ?asia|middle ?east|central ?asia|macao|macau|india|maldives|bangladesh|nepal|sri ?lanka|bhutan|afghanistan|pakistan|mongolia|united
     ?arab ?emirates|saudi|turkey|iran|iraq|israel|palestine|jordan|lebanon|syria|kuwait|qatar|bahrain|oman|yemen|kazakhstan|uzbekistan|kyrgyzstan|tajikistan|turkmenistan)|(^|[^A-Za-z])(MAC|IND|MDV|BGD|NPL|LKA|BTN|AFG|PAK|MNG|AE|SA|TR|IR|IQ|IL|PS|JO|LB|SY|KW|QA|BH|OM|YE|KZ|UZ|KG|TJ|TM)([^A-Za-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🇪🇺 欧洲节点
-  tolerance: 50
   filter: (?i:欧洲|歐洲|英国|英國|法国|德国|荷兰|意大利|西班牙|瑞士|俄罗斯|丹麦|挪威|瑞典|芬兰|捷克|波兰|比利时|奥地利|匈牙利|斯洛伐克|斯洛文尼亚|克罗地亚|波黑|塞尔维亚|黑山|北马其顿|阿尔巴尼亚|保加利亚|罗马尼亚|乌克兰|白俄罗斯|立陶宛|拉脱维亚|爱沙尼亚|冰岛|爱尔兰|葡萄牙|希腊|马耳他|塞浦路斯|卢森堡|摩纳哥|安道尔|圣马力诺|梵蒂冈|列支敦士登|摩尔多瓦|格鲁吉亚|亚美尼亚|阿塞拜疆|直布罗陀|法罗群岛|奥兰群岛|马恩岛|根西岛|泽西岛|europe|britain|united
     ?kingdom|england|france|germany|netherlands|italy|spain|switzerland|russia|denmark|norway|sweden|finland|czech|poland|belgium|austria|hungary|slovakia|slovenia|croatia|bosnia|serbia|montenegro|macedonia|albania|bulgaria|romania|ukraine|belarus|lithuania|latvia|estonia|iceland|ireland|portugal|greece|malta|cyprus|luxembourg|monaco|andorra|vatican|liechtenstein|moldova|georgia|armenia|azerbaijan|gibraltar)|(^|[^A-Za-z])(EU|UK|GB|FR|DE|NL|IT|ES|CH|RU|DK|NO|SE|FI|CZ|PL|BE|AT|HU|SK|SI|HR|BA|RS|ME|MK|AL|BG|RO|UA|BY|LT|LV|EE|IS|IE|PT|GR|MT|CY|LU|MC|AD|SM|VA|LI|MD|GE|AM|AZ)([^A-Za-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🌎 美洲节点
-  tolerance: 50
   filter: (?i:南美|加拿大|墨西哥|格陵兰|百慕大|中美洲|加勒比|巴拿马|哥斯达黎加|危地马拉|萨尔瓦多|伯利兹|洪都拉斯|尼加拉瓜|古巴|牙买加|巴哈马|波多黎各|多米尼克|多米尼加|巴巴多斯|格林纳达|开曼群岛|特立尼达|英属维尔京|美属维尔京|巴西|智利|秘鲁|阿根廷|乌拉圭|巴拉圭|苏里南|圭亚那|法属圭亚那|哥伦比亚|厄瓜多尔|委内瑞拉|玻利维亚|福克兰|south
     ?america|canada|mexico|greenland|bermuda|central ?america|caribbean|panama|costa ?rica|guatemala|el ?salvador|belize|honduras|nicaragua|cuba|jamaica|bahamas|puerto
     ?rico|dominica|dominican|barbados|grenada|cayman|trinidad|virgin ?islands|brazil|chile|peru|argentina|uruguay|paraguay|suriname|guyana|french
     ?guiana|colombia|ecuador|venezuela|bolivia|falkland)|(^|[^A-Za-z])(CAN|MX|BR|CL|PE|AR|UY|PY|SR|GY|GF|CO|EC|VE|BO|FK)([^A-Za-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🏝️ 大洋洲节点
-  tolerance: 50
   filter: (?i:大洋洲|澳大利亚|澳大利亞|澳洲|新西兰|新西蘭|斐济|巴布亚新几内亚|新喀里多尼亚|法属波利尼西亚|萨摩亚|汤加|瓦努阿图|所罗门群岛|基里巴斯|瑙鲁|帕劳|密克罗尼西亚|马绍尔群岛|关岛|美属萨摩亚|北马里亚纳|库克群岛|纽埃|诺福克岛|托克劳|瓦立斯|oceania|australia|new
     ?zealand|fiji|papua|caledonia|polynesia|samoa|tonga|vanuatu|solomon|kiribati|nauru|palau|micronesia|marshall|guam|mariana|cook
     ?islands|niue|norfolk|tokelau|wallis)|(^|[^A-Za-z])(AU|NZ)([^A-Za-z]|$)
-- type: fallback
+- type: url-test
   lazy: true
   url: http://www.gstatic.com/generate_204
   interval: 1800
+  tolerance: 50
   timeout: 5000
   use:
   - Sub
   name: 🌍 非洲节点
-  tolerance: 50
-  filter: (?i:非洲|埃及|加纳|多哥|南非|贝宁|苏丹|马里|刚果|加蓬|乍得|摩洛哥|突尼斯|利比亚|肯尼亚|卢旺达|佛得角|安哥拉|喀麦隆|布隆迪|索马里|吉布提|冈比亚|几内亚|莱索托|马拉维|尼日尔|乌干达|马约特|赞比亚|南苏丹|塞舌尔|科摩罗|尼日利亚|莫桑比克|毛里求斯|科特迪瓦|坦桑尼亚|津巴布韦|塞内加尔|博茨瓦纳|纳米比亚|塞拉利昂|斯威士兰|利比里亚|阿尔及利亚|马达加斯加|赤道几内亚|布基纳法索|厄立特里亚|埃塞俄比亚|毛里塔尼亚|中非|几内亚比绍|圣多美|留尼汪|加那利|africa|egypt|ghana|togo|south
-    ?africa|benin|sudan|mali|congo|gabon|chad|morocco|tunisia|libya|kenya|rwanda|cape ?verde|angola|cameroon|burundi|somalia|djibouti|gambia|guinea|lesotho|malawi|niger|uganda|mayotte|zambia|south
-    ?sudan|seychelles|comoros|nigeria|mozambique|mauritius|ivory ?coast|tanzania|zimbabwe|senegal|botswana|namibia|sierra
-    ?leone|eswatini|liberia|algeria|madagascar|equatorial ?guinea|burkina ?faso|eritrea|ethiopia|central ?african|sao ?tome|reunion|canary
-    ?islands)
+  filter: (?i:非洲|埃及|加纳|多哥|南非|贝宁|苏丹|马里|刚果|加蓬|乍得|摩洛哥|突尼斯|利比亚|肯尼亚|卢旺达|佛得角|安哥拉|喀麦隆|布隆迪|索马里|吉布提|冈比亚|莱索托|马拉维|尼日尔|乌干达|马约特|赞比亚|南苏丹|塞舌尔|科摩罗|尼日利亚|莫桑比克|毛里求斯|科特迪瓦|坦桑尼亚|津巴布韦|塞内加尔|博茨瓦纳|纳米比亚|塞拉利昂|斯威士兰|利比里亚|阿尔及利亚|马达加斯加|赤道几内亚|布基纳法索|厄立特里亚|埃塞俄比亚|毛里塔尼亚|中非|几内亚比绍|圣多美|留尼汪|加那利|africa|egypt|ghana|togo|south
+    ?africa|benin|sudan|mali|congo|gabon|chad|morocco|tunisia|libya|kenya|rwanda|cape ?verde|angola|cameroon|burundi|somalia|djibouti|gambia|guinea
+    ?-?bissau|lesotho|malawi|niger|uganda|mayotte|zambia|south ?sudan|seychelles|comoros|nigeria|mozambique|mauritius|ivory
+    ?coast|tanzania|zimbabwe|senegal|botswana|namibia|sierra ?leone|eswatini|liberia|algeria|madagascar|equatorial ?guinea|burkina
+    ?faso|eritrea|ethiopia|central ?african|sao ?tome|reunion|canary ?islands)|(^|[^A-Za-z])(GN|GQ|GW)([^A-Za-z]|$)
 rule-providers:
   AdBlock:
     type: http
