@@ -145,7 +145,7 @@ rule-providers:
 
 第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
 
-AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemini 独立域名集，再由仓库的 `AIExtra` 补充其他服务（包括 JetBrains AI / Grazie 和沉浸式翻译），避免把整个支付、CDN 或通用云域名送入 AI 策略。Windows 和路由器端的 Steam、Epic、PlayStation、Xbox、Nintendo 和 Battle.net 统一由 `Game` 聚合规则送入 `🎮 游戏平台`，不再重复加载覆盖不完整的 Steam 独立 provider；QX 没有使用该 Clash 聚合 provider，仍保留各游戏平台的独立远程规则。V2EX（含 `v2ex.co`、`v2ex.pro` 静态资源）与 Linux.do（含 `ldstatic.com` 静态资源）均归入 `👨‍💻 开发服务`；Imgur（`imgur.com`、`imgur.io`、`imgurinc.com`）与 `redditspace.com` 统一归入 `🌐 社交平台`。
+AI 分流使用 MetaCubeX 的 OpenAI、Anthropic、GitHub Copilot、Google Gemini 独立域名集，再由仓库的 `AIExtra` 补充其他服务（包括 JetBrains AI / Grazie 和沉浸式翻译），避免把整个支付、CDN 或通用云域名送入 AI 策略。Windows 和路由器端的 Steam、Epic、PlayStation、Xbox、Nintendo 和 Battle.net 统一由 `Game` 聚合规则送入 `🎮 游戏平台`，不再重复加载覆盖不完整的 Steam 独立 provider；Just Dance 新版主机服务（`just-dance.com`）和 Just Dance Now（`justdancenow.com`）由 `GameExtra` 补齐，Ubisoft 登录、`cdn.ubi.com` 内容和 Nintendo 平台域名继续由 `Game` 接管。QX 没有使用该 Clash 聚合 provider，仍保留各游戏平台的独立远程规则，并通过生成的本地补充规则覆盖 Just Dance。V2EX（含 `v2ex.co`、`v2ex.pro` 静态资源）与 Linux.do（含 `ldstatic.com` 静态资源）均归入 `👨‍💻 开发服务`；Imgur（`imgur.com`、`imgur.io`、`imgurinc.com`）与 `redditspace.com` 统一归入 `🌐 社交平台`。
 
 Clash 的 DAZN、Cloudflare 和 Amazon provider 只使用域名规则，不加载第三方 IP 段。这样仍可按服务域名分流，同时避免 Akamai、CloudFront、Cloudflare 等共享 CDN IP 地址把 JetBrains AI、RevenueCat、Sentry、Intercom、Let's Encrypt CRL 或 Bing 等无关请求误判为流媒体、电商或开发服务；未被专用域名规则命中的共享基础设施请求继续交给后续通用规则处理。纯域名版本使用独立缓存文件名，升级后不会误用原 classical 缓存。
 

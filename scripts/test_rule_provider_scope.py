@@ -78,6 +78,10 @@ REQUIRED_LOCAL_DOMAINS = {
         "img-s-msn-com.akamaized.net",
         "msftstatic.com",
     },
+    ROOT / "rules" / "game_extra.yaml": {
+        "just-dance.com",
+        "justdancenow.com",
+    },
 }
 
 
