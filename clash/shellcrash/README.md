@@ -144,6 +144,8 @@ $CRASHDIR/yamls/user.yaml
 
 先通过日志区分 DNS/fake-IP、sniffer 和路由策略问题，再决定是否向共享 `rules/` 增加米家直连规则。不要一次性加入未经验证的广泛域名清单。
 
+历史排查与设备修复记录见 [2026-09-17 DNS 误分流归档](archive/2026-09-17-dns-routing-review.md)，包含实际变更、回滚点和验收边界。
+
 ## 8. 更新与回滚验证
 
 设备验收进度：
