@@ -344,13 +344,6 @@ proxy-groups:
     ?coast|tanzania|zimbabwe|senegal|botswana|namibia|sierra ?leone|eswatini|liberia|algeria|madagascar|equatorial ?guinea|burkina
     ?faso|eritrea|ethiopia|central ?african|sao ?tome|reunion|canary ?islands)|(^|[^A-Za-z])(GN|GQ|GW)([^A-Za-z]|$)
 rule-providers:
-  AdBlock:
-    type: http
-    behavior: domain
-    format: yaml
-    interval: 86400
-    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt
-    path: ./cache/rulesets/AdBlock.yaml
   AdGuard:
     type: http
     behavior: classical
@@ -844,7 +837,6 @@ rules:
 - RULE-SET,DownloadExtra,DIRECT
 - RULE-SET,HkBanks,DIRECT
 - RULE-SET,IntlBrokers,🇭🇰 香港节点
-- RULE-SET,AdBlock,🛡️ 安全防护
 - RULE-SET,AdGuard,🛡️ 安全防护
 - RULE-SET,PrivateDomain,DIRECT
 - RULE-SET,Hijacking,🛡️ 安全防护
