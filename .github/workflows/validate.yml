@@ -155,3 +155,71 @@ jobs:
             --core /tmp/proxy-config-mihomo/CrashCore \
             --mmdb /tmp/proxy-config-mihomo/Country.mmdb \
             --template clash/config-router-single.template.yaml
+
+  # Candidate router core: slim Mihomo v1.19.31 built from source with the same
+  # parameters as the local reproducible build. Kept alongside the v1.19.17 job
+  # until the router upgrade is accepted.
+  validate-slim-core:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Build slim Mihomo v1.19.31 and check hash
+        run: |
+          mihomo_commit=ab405bad5beeeac8b003bb01f60f134f6df54471
+          image='golang:1.26.8-alpine@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c'
+          core_sha256=1a5ecc949fddd757cc7655079f38e72ee681b602b00c3ed6fde9696f17c598d0
+          mkdir -p /tmp/slim/src /tmp/slim/out
+          git -C /tmp/slim/src init -q
+          # Fetch the tag (not just the commit): Go derives the embedded module version from it.
+          git -C /tmp/slim/src fetch -q --depth 1 https://github.com/MetaCubeX/mihomo.git refs/tags/v1.19.31:refs/tags/v1.19.31
+          git -C /tmp/slim/src checkout -q v1.19.31
+          test "$(git -C /tmp/slim/src rev-parse HEAD)" = "${mihomo_commit}"
+          docker run --rm -v /tmp/slim/src:/src:ro -v /tmp/slim/out:/out -w /tmp \
+            -e GOOS=linux -e GOARCH=amd64 -e GOAMD64=v1 -e CGO_ENABLED=0 -e GOFLAGS=-mod=readonly \
+            -e GOTOOLCHAIN=local \
+            "${image}" sh -c "
+              set -e
+              apk add --no-cache git >/dev/null
+              cp -a /src /tmp/src && cd /tmp/src
+              git config --global --add safe.directory /tmp/src
+              go version
+              go build -tags 'no_tailscale no_zerotier no_easytier no_fake_tcp' -trimpath \
+                -ldflags \"-extldflags --static -X 'github.com/metacubex/mihomo/constant.Version=v1.19.31' -X 'github.com/metacubex/mihomo/constant.BuildTime=Mon Sep 14 11:59:30 UTC 2026' -w -s -buildid=\" \
+                -o /out/CrashCore .
+              chown $(id -u):$(id -g) /out/CrashCore
+            "
+          echo "${core_sha256}  /tmp/slim/out/CrashCore" | sha256sum -c -
+          /tmp/slim/out/CrashCore -v
+
+      - name: Validate configs with slim Mihomo
+        run: |
+          shellcrash_commit=71c21fa26d5a5f40e6c433234c415fa83b59b6b9
+          mmdb_sha256=81dc10c4600d842ed25b482e27cff315b6112e1c268ceef563f4de532c3e4ef6
+          modify_sha256=44a9dc3bde3f46b37bdd16858488a4b6470dd7e92f97c068bb4d720ab3c155f3
+          curl -fsSL "https://raw.githubusercontent.com/juewuy/ShellCrash/${shellcrash_commit}/bin/geodata/Country.mmdb" -o /tmp/slim/out/Country.mmdb
+          curl -fsSL "https://raw.githubusercontent.com/juewuy/ShellCrash/${shellcrash_commit}/scripts/starts/clash_modify.sh" -o /tmp/slim/out/clash_modify.sh
+          echo "${mmdb_sha256}  /tmp/slim/out/Country.mmdb" | sha256sum -c -
+          echo "${modify_sha256}  /tmp/slim/out/clash_modify.sh" | sha256sum -c -
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config.yaml
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config-single.yaml
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config-router.template.yaml
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config-router-single.template.yaml
+          python3 scripts/test_shellcrash_override.py \
+            --modify-script /tmp/slim/out/clash_modify.sh \
+            --core /tmp/slim/out/CrashCore \
+            --mmdb /tmp/slim/out/Country.mmdb
+          python3 scripts/test_shellcrash_override.py \
+            --modify-script /tmp/slim/out/clash_modify.sh \
+            --core /tmp/slim/out/CrashCore \
+            --mmdb /tmp/slim/out/Country.mmdb \
+            --template clash/config-router-single.template.yaml
