@@ -11,7 +11,7 @@ def main() -> int:
     assert len(urls) == len(set(urls)), "extracted resource URLs must be unique"
     assert len(resources) >= 150, "unexpectedly few remote resources extracted"
     icon_count = sum(resource.kind == "icon" for resource in resources)
-    assert icon_count == 36
+    assert icon_count == 33
     assert all(not check.is_skipped_url(url) for url in urls)
     assert any(resource.kind == "shellcrash-template" for resource in resources)
     assert any(resource.source.startswith("quantumultx/") for resource in resources)

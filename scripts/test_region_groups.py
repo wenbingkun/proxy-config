@@ -105,21 +105,42 @@ def load_clash_filters() -> dict[str, str]:
     return filters
 
 
+QX_BENCHMARK_SUFFIX = ", check-interval=1800, tolerance=50"
+
+
 def load_qx_filters() -> dict[str, str]:
     filters: dict[str, str] = {}
+    group_types: dict[str, str] = {}
     for line in QX_CONFIG.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("static=") or ", server-tag-regex=" not in line:
+        group_type, separator, rest = line.partition("=")
+        if not separator or ", server-tag-regex=" not in rest:
             continue
-        name, rest = line.removeprefix("static=").split(", server-tag-regex=", 1)
+        name, rest = rest.split(", server-tag-regex=", 1)
         if name not in REGION_GROUPS:
             continue
         regex, separator, _ = rest.rpartition(", img-url=")
         if not separator:
             raise AssertionError(f"QX region group {name!r} has no img-url")
+        if group_type == "url-latency-benchmark":
+            if not regex.endswith(QX_BENCHMARK_SUFFIX):
+                raise AssertionError(
+                    f"QX region group {name!r} must end with {QX_BENCHMARK_SUFFIX!r}"
+                )
+            regex = regex.removesuffix(QX_BENCHMARK_SUFFIX)
+        group_types[name] = group_type
         filters[name] = regex
     missing = sorted(set(REGION_GROUPS) - set(filters))
     if missing:
         raise AssertionError(f"QX missing region filters: {missing}")
+
+    expected_types = {
+        name: "static" if name == "🇺🇸 美国节点" else "url-latency-benchmark"
+        for name in REGION_GROUPS
+    }
+    if group_types != expected_types:
+        raise AssertionError(
+            f"QX region group types mismatch: expected {expected_types}, got {group_types}"
+        )
     return filters
 
 
