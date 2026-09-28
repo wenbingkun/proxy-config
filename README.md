@@ -2,7 +2,7 @@
 
 统一管理 **Quantumult X**（iPhone / iPad）、**Clash / Mihomo**（Windows）和 **ShellCrash / Mihomo**（路由器）代理配置的 Git 仓库。
 
-修改规则后只需 `git push`，所有设备在下次刷新周期内自动同步，无需手动操作。
+修改已被客户端引用的共享规则后，先生成并提交客户端产物，再合入设备资源 URL 指向的分支（本仓库示例为 `main`）；设备在后续成功刷新时加载更新。策略组、资源引用及其他主配置的同步方式因客户端而异，见[日常维护](#日常维护)。
 
 ---
 
@@ -65,7 +65,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 ---
 
-**后续更新（自动，无需操作）**
+**后续更新（已引用规则内容自动刷新）**
 
 仓库中的规则文件（`quantumultx/filter_remote.snippet`）已在 bootstrap 中配置为远程资源：
 
@@ -74,7 +74,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filter_remote.snippet, tag=仓库自定义规则, update-interval=86400, enabled=true
 ```
 
-当你修改 `rules/` 下的规则并 `git push` 后，QX 会在下次自动更新周期（每 24 小时）拉取最新规则。你也可以在 QX 中手动触发「更新资源」强制立即刷新。
+修改 `rules/` 下的规则后，按[日常维护](#日常维护)生成 `filter_remote.snippet` 并合入 `main`，QX 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则；也可手动触发「更新资源」。这只更新 snippet 的内容；本地 `bootstrap.conf` 的策略组和资源行不会随之改变，见[日常维护](#日常维护)末尾的同步边界说明。
 
 ---
 
@@ -127,7 +127,7 @@ proxy-providers:
 
 ---
 
-**后续更新（自动，无需操作）**
+**后续更新（已引用规则内容自动刷新）**
 
 `config.yaml` 中所有自维护的规则集都通过 `rule-providers` 引用 GitHub Raw 地址：
 
@@ -141,7 +141,7 @@ rule-providers:
     # ...
 ```
 
-当你修改 `rules/` 下的规则并 `git push` 后，Clash 会在下次自动更新周期（每 24 小时）拉取最新规则集。你也可以在 Clash 面板中手动触发 Provider 刷新。
+修改 `rules/` 下的规则后，按[日常维护](#日常维护)生成 `clash/rulesets/*.yaml` 并合入 `main`，Clash 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则集；也可在面板中手动触发 Provider 刷新。这只更新已引用规则集的内容；Verge 中配置副本的策略组、`rule-providers` 与 `rules` 定义不会随之改变，见[日常维护](#日常维护)末尾的同步边界说明。
 
 第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
 
@@ -226,9 +226,22 @@ git push
 
 | 客户端 | 同步方式 | 生效时间 |
 |---|---|---|
-| Quantumult X | 自动拉取 `filter_remote.snippet` | 下次刷新（最长 24h），或手动触发「更新资源」 |
-| Clash / Mihomo | 自动拉取 `clash/rulesets/*.yaml` | 下次刷新（最长 24h），或手动触发 Provider 刷新 |
+| Quantumult X | 自动拉取 `filter_remote.snippet` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发「更新资源」 |
+| Clash / Mihomo | 自动拉取 `clash/rulesets/*.yaml` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发 Provider 刷新 |
 | ShellCrash / Mihomo | 路由器本地部署任务拉取并注入 `config-router.template.yaml` | 按本地任务计划，或手动运行部署脚本 |
+
+**主配置与远程资源内容的同步边界**
+
+上表说明已配置资源或部署任务的更新方式，不代表推送任意文件都会更新设备。按本仓库的本地导入方式使用 QX、Clash Verge Rev 时，还需区分：
+
+| 改动类型 | Quantumult X | Clash Verge Rev（Windows） | ShellCrash（路由器） |
+|---|---|---|---|
+| 已引用的远程规则内容 | 资源成功刷新后加载；引用的策略组须已存在 | 对应 rule-provider 成功刷新后加载 | 对应 rule-provider 成功刷新后加载 |
+| 策略组名称、候选、类型和测速参数 | 更新本地配置的 `[policy]` | 编辑 Verge 中的配置副本，或重新导入对应完整配置 | 由已配置的部署任务成功应用策略模板；否则手动执行部署流程 |
+| 增删资源引用、调整主配置中的规则映射 | 更新 `[filter_remote]` 资源行及 `force-policy`，或相应 `[filter_local]` | 更新配置副本中的 `rule-providers`、`rules` 等定义 | 同上，仅限策略模板管理的部分 |
+| 其他本地主配置 | `[general]`、`[dns]`、`[rewrite_remote]`、`[task_local]` 等条目需按修改内容手动同步；已有远程内容仍按各自机制更新 | 主配置运行参数及 Verge 本地覆写分别按实际来源修改 | ShellCrash 本地 DNS、TUN、sniffer、任务及覆写设置按各自部署说明处理，不由策略模板统一覆盖 |
+
+手动同步时只改对应条目，保留 QX 的订阅、MitM 私密材料及其他本地设置；Windows 重新导入前也需保留或重新填写本地订阅及必要设置。设备已保存的组选择不保证随候选顺序变化而重置；原候选被删除时，需检查客户端实际回退到哪一项。
 
 远程资源轻量巡检每周由 GitHub Actions 自动执行：它只检查实际配置依赖，使用有限并发、超时和每项前 4 KiB 内容识别 404、HTML 错误页及错误图标类型，不 clone 上游仓库，也不把响应写入 Git。手工触发 `Remote Resources` workflow 时可选择 `full`，对 Clash 规则执行完整 YAML / 文本结构检查。失败日志会隐藏 URL 查询参数，避免泄漏可能存在的 token。
 
