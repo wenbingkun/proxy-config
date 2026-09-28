@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -85,6 +86,36 @@ REQUIRED_LOCAL_DOMAINS = {
 }
 
 
+QX_CONFIG = ROOT / "quantumultx" / "bootstrap.example.conf"
+
+# blackmatrix7 lists that exist on both clients under the same name; QX must
+# route them to the same policy as the router template.
+SHARED_SERVICES = (
+    "YouTube",
+    "Netflix",
+    "Disney",
+    "TikTok",
+    "Discord",
+    "Bahamut",
+    "AppleTV",
+    "Pinterest",
+    "Developer",
+)
+
+# (earlier, later) pairs whose relative order decides overlapping domains.
+# Each side is (QX list name, Clash provider name).
+SHARED_ORDER = (
+    (("YouTube", "YouTube"), ("Bahamut", "Bahamut")),
+    (("Bahamut", "Bahamut"), ("Apple", "Apple")),
+    (("Netflix", "Netflix"), ("Developer", "Developer")),
+    (("Apple", "Apple"), ("Developer", "Developer")),
+    (("Google", "Google"), ("Developer", "Developer")),
+    (("Microsoft", "Microsoft"), ("Developer", "Developer")),
+    (("Developer", "Developer"), ("Amazon", "Amazon")),
+    (("Developer", "Developer"), ("China", "ChinaDirect")),
+)
+
+
 def load_yaml(path: Path) -> dict[str, object]:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     assert isinstance(data, dict), f"{path.relative_to(ROOT)} must contain a mapping"
@@ -145,10 +176,72 @@ def assert_local_domain_coverage() -> None:
     )
 
 
+def load_qx_remote_filters() -> list[tuple[str, str]]:
+    """Return (list name, force-policy) for enabled blackmatrix7 QX lists, in file order."""
+    filters: list[tuple[str, str]] = []
+    in_section = False
+    for raw_line in QX_CONFIG.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line.startswith("["):
+            in_section = line == "[filter_remote]"
+            continue
+        if not in_section or not line or line.startswith(("#", ";")):
+            continue
+        params = dict(
+            part.strip().split("=", 1) for part in line.split(",")[1:] if "=" in part
+        )
+        # QX loads a remote resource unless it is explicitly disabled.
+        if params.get("enabled", "true").strip().lower() == "false":
+            continue
+        match = re.search(r"/rule/QuantumultX/([^/]+)/\1\.list$", line.split(",")[0])
+        if match and "force-policy" in params:
+            filters.append((match.group(1), params["force-policy"].strip()))
+    return filters
+
+
+def clash_rule_sets(path: Path) -> list[tuple[str, str]]:
+    rules = load_yaml(path).get("rules")
+    assert isinstance(rules, list), f"{path.relative_to(ROOT)} has no rules"
+    return [
+        (parts[1], parts[2])
+        for parts in (rule.split(",") for rule in rules)
+        if parts[0] == "RULE-SET"
+    ]
+
+
+def assert_shared_service_policies() -> None:
+    qx = load_qx_remote_filters()
+    qx_policy = dict(qx)
+    qx_order = [name for name, _ in qx]
+    for name in SHARED_SERVICES:
+        assert qx_order.count(name) == 1, f"QX must load {name} exactly once"
+
+    for path in CONFIG_PATHS:
+        clash = clash_rule_sets(path)
+        clash_policy = dict(clash)
+        clash_order = [name for name, _ in clash]
+        where = path.relative_to(ROOT)
+        for name in SHARED_SERVICES:
+            assert clash_policy.get(name) == qx_policy[name], (
+                f"{name}: {where} routes to {clash_policy.get(name)!r}, "
+                f"QX routes to {qx_policy[name]!r}"
+            )
+        for (qx_first, clash_first), (qx_second, clash_second) in SHARED_ORDER:
+            assert clash_order.index(clash_first) < clash_order.index(clash_second), (
+                f"{where}: {clash_first} must precede {clash_second}"
+            )
+            assert qx_order.index(qx_first) < qx_order.index(qx_second), (
+                f"QX: {qx_first} must precede {qx_second} to match {where}"
+            )
+
+    assert qx_policy["AppleTV"] == "🍎 苹果服务", "Apple TV must follow the Apple services group"
+
+
 def main() -> int:
     for path in CONFIG_PATHS:
         assert_domain_only_providers(path)
     assert_local_domain_coverage()
+    assert_shared_service_policies()
     print("Rule provider scope tests passed.")
     return 0
 
