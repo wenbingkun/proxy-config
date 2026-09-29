@@ -2,7 +2,55 @@
 """Offline tests for remote resource extraction and response validation."""
 from __future__ import annotations
 
+import email.message
+import urllib.request
+
 import check_remote_resources as check
+
+
+class FakeResponse:
+    def __init__(self, status: int, body: bytes, url: str) -> None:
+        self.status = status
+        self.headers = email.message.Message()
+        self.headers["Content-Type"] = "text/plain"
+        self._body = body
+        self._url = url
+
+    def read(self, amount: int) -> bytes:
+        return self._body[:amount]
+
+    def geturl(self) -> str:
+        return self._url
+
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+
+def test_empty_range_falls_back_to_plain_get() -> None:
+    """A 206 with an empty body (seen on cdn.jsdelivr.net) must not fail the check."""
+    resource = check.Resource(
+        "https://cdn.example/rules.txt", "qx-resource", "quantumultx/bootstrap.example.conf:1"
+    )
+    sent_ranges: list[str | None] = []
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> FakeResponse:
+        sent_ranges.append(request.get_header("Range"))
+        if request.get_header("Range"):
+            return FakeResponse(206, b"", request.full_url)
+        return FakeResponse(200, b"payload:\n  - '+.ads.example'\n" * 500, request.full_url)
+
+    original = check.urllib.request.urlopen
+    check.urllib.request.urlopen = fake_urlopen
+    try:
+        result = check.fetch(resource, "light", timeout=1, retries=0)
+    finally:
+        check.urllib.request.urlopen = original
+    assert sent_ranges == [f"bytes=0-{check.LIGHT_BYTES - 1}", None], sent_ranges
+    assert result.ok and result.status == 200, result
+    assert result.bytes_read == check.LIGHT_BYTES
 
 
 def main() -> int:
@@ -51,6 +99,8 @@ def main() -> int:
     assert check.validate_body(yaml_rule, "text/plain", b"payload:\n  - DOMAIN,example.com\n", "full") is None
     assert check.validate_body(yaml_rule, "text/plain", b"rules: []\n", "full") is not None
     assert check.validate_body(yaml_rule, "text/html", b"<!doctype html>", "light") is not None
+
+    test_empty_range_falls_back_to_plain_get()
 
     print(
         f"Remote resource offline tests passed "
