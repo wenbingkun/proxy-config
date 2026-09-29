@@ -92,9 +92,26 @@ chmod 700 /path/to/deploy_shellcrash_config.sh
 /path/to/deploy_shellcrash_config.sh "$CRASHDIR/private/providers.env"
 ```
 
+路由器无法访问 `raw.githubusercontent.com` 时，可以在 `providers.env` 中临时把
+`TEMPLATE_URL` 指向 jsDelivr 上的**固定提交**（不要用会被缓存的 `@main`），模板文件须与订阅数一致。
+下面两行**只选一行**并替换 `<commit>`，不要同时复制，否则后一行会覆盖前一行：
+
+```sh
+# 单订阅（SUB_URL_2 为空）
+TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/clash/config-router-single.template.yaml'
+# 双订阅
+TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/clash/config-router.template.yaml'
+```
+
+这是固定版本的应急方式：之后每次部署都只会拿到该提交的模板，不会跟进 `main` 上的后续策略更新。
+需要更新时手动改成新的提交，或在网络恢复后删除这一行，恢复默认的 `main` 来源。
+
 脚本会依次完成：
 
-1. 加锁并下载公开模板到临时目录；
+1. 加锁并用 curl 下载公开模板到临时目录（需要 curl，不再回退到 wget）。
+   下载限时为连接 15 秒、整次 120 秒；失败时只报告 curl 退出码（28 为超时），
+   不输出模板地址，并在停止或替换任何东西之前退出。该时限只覆盖模板下载阶段，
+   不代表整次部署有总时限；
 2. 检查模板与单/双订阅模式匹配，且每个所需占位符只出现一次；
 3. 注入订阅 URL，但不在日志中输出它们；
 4. 使用设备上的 Mihomo/CrashCore 执行 `-t`；
