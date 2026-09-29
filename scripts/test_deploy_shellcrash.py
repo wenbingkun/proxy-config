@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import shlex
+import signal
 import stat
 import subprocess
 import tempfile
@@ -13,6 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY_SCRIPT = ROOT / "scripts" / "deploy_shellcrash_config.sh"
+DEPLOY_TIMEOUT = 60
+SYSTEM_BIN_DIRS = ("/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")
 
 TEST_PROVIDER_URL_1 = "https://provider.test/sub?auth=fixture-one&mode=clash|meta"
 TEST_PROVIDER_URL_2 = "https://provider.test/sub?auth=fixture-two&mode=clash|meta"
@@ -65,10 +68,11 @@ def write_env(
     provider_url_1: str = TEST_PROVIDER_URL_1,
     provider_url_2: str = TEST_PROVIDER_URL_2,
     mihomo_bin: Path | None = None,
+    template_url: str | None = None,
 ) -> None:
     values = {
         "SHELLCRASH_DIR": str(shellcrash_dir),
-        "TEMPLATE_URL": f"https://fixture.invalid/{template_name}",
+        "TEMPLATE_URL": template_url or f"https://fixture.invalid/{template_name}",
         "SUB_URL_1": provider_url_1,
         "SUB_URL_2": provider_url_2,
         "SHELLCRASH_STARTUP_WAIT": "0",
@@ -88,15 +92,24 @@ def write_env(
 def run_deploy(
     env_path: Path, process_env: dict[str, str], should_succeed: bool
 ) -> str:
-    result = subprocess.run(
+    # Run in its own process group so a hung deployment and every child it
+    # spawned (curl, sleep, ...) are killed together on timeout.
+    process = subprocess.Popen(
         ["sh", str(DEPLOY_SCRIPT), str(env_path)],
         cwd=ROOT,
         env=process_env,
         text=True,
-        capture_output=True,
-        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
     )
-    combined = result.stdout + result.stderr
+    try:
+        stdout, stderr = process.communicate(timeout=DEPLOY_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
+        raise AssertionError(f"deployment did not finish within {DEPLOY_TIMEOUT} seconds")
+    combined = stdout + stderr
     provider_urls = (
         TEST_PROVIDER_URL_1,
         TEST_PROVIDER_URL_2,
@@ -104,9 +117,9 @@ def run_deploy(
     )
     if any(provider_url in combined for provider_url in provider_urls):
         raise AssertionError("deployment output exposed a provider URL")
-    if (result.returncode == 0) != should_succeed:
+    if (process.returncode == 0) != should_succeed:
         raise AssertionError(
-            f"unexpected deployment exit code {result.returncode}\n{combined}"
+            f"unexpected deployment exit code {process.returncode}\n{combined}"
         )
     return combined
 
@@ -148,10 +161,20 @@ def main() -> int:
 set -eu
 output=''
 url=''
+connect_timeout=''
+max_time=''
 while [ "$#" -gt 0 ]; do
     case "$1" in
         -o)
             output=$2
+            shift 2
+            ;;
+        --connect-timeout)
+            connect_timeout=$2
+            shift 2
+            ;;
+        --max-time)
+            max_time=$2
             shift 2
             ;;
         -*)
@@ -164,7 +187,31 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 [ -n "$output" ] && [ -n "$url" ]
-cp "$FAKE_HTTP_ROOT/${url##*/}" "$output"
+# A real curl without both limits can block forever on an unreachable host.
+for limit in "$connect_timeout" "$max_time"; do
+    case "$limit" in
+        ''|*[!0-9]*) limit=0 ;;
+    esac
+    if [ "$limit" -le 0 ]; then
+        printf 'fake curl: missing or non-positive timeout\\n' >&2
+        exit 97
+    fi
+done
+printf '%s %s\\n' "$connect_timeout" "$max_time" >>"$FAKE_HTTP_ROOT/curl_limits"
+name=${url%%\\?*}
+name=${name##*/}
+case "$name" in
+    unreachable.yaml)
+        printf 'curl: (28) Failed to connect to %s\\n' "$url" >&2
+        exit 28
+        ;;
+    partial.yaml)
+        printf 'payload:\\n  - partial' >"$output"
+        printf 'curl: (18) transfer closed for %s\\n' "$url" >&2
+        exit 18
+        ;;
+esac
+cp "$FAKE_HTTP_ROOT/$name" "$output"
 """,
         )
         core_path = shellcrash_dir / "CrashCore.raw"
@@ -350,6 +397,69 @@ exit 0
         write_env(env_path, shellcrash_dir, "broken.yaml")
         run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
+
+        # Every download must pass positive curl limits (15s connect, 120s total).
+        curl_limits = fixtures_dir / "curl_limits"
+        assert set(curl_limits.read_text(encoding="utf-8").splitlines()) == {"15 120"}
+
+        # Download failures (unreachable host, partial transfer) must leave the
+        # config, provider caches, lock and temp dir untouched, never restart
+        # ShellCrash, and never echo a credential-bearing TEMPLATE_URL.
+        secret_parts = ("fake-user", "fake-pass", "secret-path-7f3a", "placeholder-9c1e")
+        tmp_root = base / "deploy-tmp"
+        tmp_root.mkdir()
+        process_env["SHELLCRASH_TMP_ROOT"] = str(tmp_root)
+        lock_dir = configs_dir / ".proxy-config-deploy.lock"
+        caches_before = {p.name: p.read_bytes() for p in provider_cache_dir.iterdir()}
+        for template_name, status in (("unreachable.yaml", 28), ("partial.yaml", 18)):
+            start_calls.write_text("", encoding="utf-8")
+            write_env(
+                env_path,
+                shellcrash_dir,
+                template_name,
+                template_url=(
+                    "https://fake-user:fake-pass@fixture.invalid/secret-path-7f3a/"
+                    f"{template_name}?token=placeholder-9c1e"
+                ),
+            )
+            output = run_deploy(env_path, process_env, should_succeed=False)
+            assert f"curl 退出码 {status}" in output, output
+            assert not any(part in output for part in secret_parts), output
+            assert config_path.read_bytes() == deployed
+            assert {p.name: p.read_bytes() for p in provider_cache_dir.iterdir()} == caches_before
+            assert start_calls.read_text(encoding="utf-8") == ""
+            assert not lock_dir.exists()
+            assert list(tmp_root.iterdir()) == []
+
+        # The lock was released: the next run acquires it and proceeds to
+        # template validation, which rejects this fixture later on.
+        write_env(env_path, shellcrash_dir, "broken.yaml")
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "已有配置部署任务正在运行" not in output, output
+        assert "curl 退出码" not in output, output
+        assert config_path.read_bytes() == deployed
+        assert not lock_dir.exists()
+        assert list(tmp_root.iterdir()) == []
+        del process_env["SHELLCRASH_TMP_ROOT"]
+
+        # Without curl (and with no wget fallback) the script stops before
+        # locking or touching anything.
+        no_curl_path = base / "no-curl-path"
+        no_curl_path.mkdir()
+        for directory in SYSTEM_BIN_DIRS:
+            if not os.path.isdir(directory):
+                continue
+            for entry in os.scandir(directory):
+                link = no_curl_path / entry.name
+                if entry.name in ("curl", "wget") or link.exists() or link.is_symlink():
+                    continue
+                if entry.is_file() and os.access(entry.path, os.X_OK):
+                    link.symlink_to(entry.path)
+        no_curl_env = dict(process_env, PATH=str(no_curl_path))
+        output = run_deploy(env_path, no_curl_env, should_succeed=False)
+        assert "未找到 curl" in output, output
+        assert config_path.read_bytes() == deployed
+        assert not lock_dir.exists()
 
         write_env(env_path, shellcrash_dir, "duplicate-placeholder.yaml")
         run_deploy(env_path, process_env, should_succeed=False)

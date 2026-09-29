@@ -90,13 +90,9 @@ download_template() {
     download_url=$1
     download_path=$2
 
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL -o "$download_path" "$download_url"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -O "$download_path" "$download_url"
-    else
-        fail '未找到 curl 或 wget'
-    fi
+    # curl enforces a whole-transfer limit; wget -T only bounds idle reads.
+    # stderr is discarded because a custom TEMPLATE_URL may carry credentials.
+    curl -fsL --connect-timeout 15 --max-time 120 -o "$download_path" "$download_url" 2>/dev/null
 }
 
 provider_url_from_config() {
@@ -269,6 +265,7 @@ case "$template_url" in
     http://*|https://*) ;;
     *) fail 'TEMPLATE_URL 必须是 http:// 或 https:// URL' ;;
 esac
+command -v curl >/dev/null 2>&1 || fail '未找到 curl；模板下载需要 curl 的整次超时，当前配置未改动'
 
 startup_wait=${SHELLCRASH_STARTUP_WAIT:-10}
 case "$startup_wait" in
@@ -327,8 +324,10 @@ rendered_config="$deploy_tmp_dir/config-router.yaml"
 replacement_script="$deploy_tmp_dir/replace.sed"
 
 log '正在下载公开路由器策略模板……'
-if ! download_template "$template_url" "$downloaded_template"; then
-    fail '模板下载失败，当前配置未改动'
+download_status=0
+download_template "$template_url" "$downloaded_template" || download_status=$?
+if [ "$download_status" -ne 0 ]; then
+    fail "模板下载失败（curl 退出码 $download_status，28 为超时），当前配置未改动；若路由器无法访问模板地址，可临时设置 TEMPLATE_URL，见 clash/shellcrash/README.md"
 fi
 [ -s "$downloaded_template" ] || fail '下载到的模板为空，当前配置未改动'
 
