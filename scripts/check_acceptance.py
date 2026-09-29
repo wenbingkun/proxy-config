@@ -286,6 +286,12 @@ def check_qx_runtime_defaults(failures: list[str]) -> None:
             "(udp_whitelist = 1-65535, no udp_drop_list)",
             failures,
         )
+    if "fallback_udp_policy = reject" not in general:
+        fail(
+            "quantumultx/bootstrap.example.conf: [general] fallback_udp_policy must be reject "
+            "so UDP never goes direct when a node lacks UDP relay",
+            failures,
+        )
 
 
 def main() -> int:
