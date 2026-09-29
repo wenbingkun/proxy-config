@@ -70,7 +70,7 @@ function cleanMine(data) {
 
   if (Array.isArray(data.sections_v2)) {
     data.sections_v2 = data.sections_v2
-      .filter((section) => !MINE_DROP_SECTIONS.includes(section.title) && !MINE_DROP_SECTIONS.includes(section.up_title))
+      .filter((section) => section && !MINE_DROP_SECTIONS.includes(section.title) && !MINE_DROP_SECTIONS.includes(section.up_title))
       .map((section) => {
         if (Array.isArray(section.items)) section.items = section.items.filter((item) => !isPromo(item));
         return section;
