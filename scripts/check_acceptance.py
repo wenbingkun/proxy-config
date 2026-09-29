@@ -256,6 +256,29 @@ def check_windows_runtime_defaults(failures: list[str]) -> None:
         fail("clash/config.yaml: TUN must remain disabled by default", failures)
 
 
+def qx_section_lines(section: str) -> list[str]:
+    lines: list[str] = []
+    in_section = False
+    text = (ROOT / "quantumultx" / "bootstrap.example.conf").read_text(encoding="utf-8")
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("["):
+            in_section = line == f"[{section}]"
+            continue
+        if in_section and line and not line.startswith(("#", ";")):
+            lines.append(line)
+    return lines
+
+
+def check_qx_runtime_defaults(failures: list[str]) -> None:
+    if "no-ipv6" in qx_section_lines("dns"):
+        fail(
+            "quantumultx/bootstrap.example.conf: [dns] must not set no-ipv6 "
+            "(IPv6 is enabled on all clients)",
+            failures,
+        )
+
+
 def main() -> int:
     failures: list[str] = []
 
@@ -273,6 +296,9 @@ def main() -> int:
 
     print("=== Windows Runtime Defaults ===")
     check_windows_runtime_defaults(failures)
+
+    print("=== Quantumult X Runtime Defaults ===")
+    check_qx_runtime_defaults(failures)
 
     if failures:
         print("\nAUDIT FAILED:")
