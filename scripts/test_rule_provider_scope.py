@@ -79,6 +79,12 @@ REQUIRED_LOCAL_DOMAINS = {
         "img-s-msn-com.akamaized.net",
         "msftstatic.com",
     },
+    ROOT / "rules" / "apple_extra.yaml": {
+        "apple-relay.cloudflare.com",
+        "apple-relay.fastly-edge.com",
+        "apple-relay.akamaized.net",
+        "cp4.cloudflare.com",
+    },
     ROOT / "rules" / "game_extra.yaml": {
         "just-dance.com",
         "justdancenow.com",
@@ -154,6 +160,14 @@ def assert_domain_only_providers(path: Path) -> None:
     assert "RULE-SET,MicrosoftExtra,Ⓜ️ 微软服务" in rules, (
         f"{path.relative_to(ROOT)} is missing MicrosoftExtra"
     )
+    assert "RULE-SET,AppleExtra,🍎 苹果服务" in rules, (
+        f"{path.relative_to(ROOT)} is missing AppleExtra"
+    )
+    rule_sets = [rule.split(",")[1] for rule in rules if rule.startswith("RULE-SET,")]
+    for later in ("Cloudflare", "ProxyLite"):
+        assert rule_sets.index("AppleExtra") < rule_sets.index(later), (
+            f"{path.relative_to(ROOT)}: AppleExtra must precede {later}"
+        )
     assert "EcommerceExtra" in providers, (
         f"{path.relative_to(ROOT)} is missing EcommerceExtra"
     )
@@ -199,6 +213,31 @@ def load_qx_remote_filters() -> list[tuple[str, str]]:
     return filters
 
 
+APPLE_INTELLIGENCE_URL = (
+    "https://raw.githubusercontent.com/ddgksf2013/Filter/refs/heads/master/AppleIntelligence.list"
+)
+
+
+def load_qx_enabled_filters() -> list[tuple[str, dict[str, str]]]:
+    """Return (url, params) for every enabled QX [filter_remote] resource, in file order."""
+    entries: list[tuple[str, dict[str, str]]] = []
+    in_section = False
+    for raw_line in QX_CONFIG.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line.startswith("["):
+            in_section = line == "[filter_remote]"
+            continue
+        if not in_section or not line or line.startswith(("#", ";")):
+            continue
+        parts = [part.strip() for part in line.split(",")]
+        params = dict(part.split("=", 1) for part in parts[1:] if "=" in part)
+        params = {key.strip(): value.strip() for key, value in params.items()}
+        if params.get("enabled", "true").lower() == "false":
+            continue
+        entries.append((parts[0], params))
+    return entries
+
+
 def clash_rule_sets(path: Path) -> list[tuple[str, str]]:
     rules = load_yaml(path).get("rules")
     assert isinstance(rules, list), f"{path.relative_to(ROOT)} has no rules"
@@ -235,6 +274,21 @@ def assert_shared_service_policies() -> None:
             )
 
     assert qx_policy["AppleTV"] == "🍎 苹果服务", "Apple TV must follow the Apple services group"
+
+    assert qx_policy["Gemini"] == "🤖 人工智能", "Gemini must stay in the AI group"
+
+    enabled = load_qx_enabled_filters()
+    urls = [url for url, _ in enabled]
+    matches = [i for i, url in enumerate(urls) if url == APPLE_INTELLIGENCE_URL]
+    assert len(matches) == 1, "QX must load the Apple Intelligence list exactly once"
+    params = enabled[matches[0]][1]
+    assert params.get("force-policy") == "🍎 苹果服务", (
+        "Apple Intelligence must follow the Apple services group"
+    )
+    apple = [i for i, url in enumerate(urls) if url.endswith("/rule/QuantumultX/Apple/Apple.list")]
+    assert len(apple) == 1 and matches[0] < apple[0], (
+        "Apple Intelligence must load before the generic Apple list"
+    )
 
 
 def main() -> int:

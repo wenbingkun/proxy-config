@@ -84,3 +84,8 @@ rule_sets:
     source: microsoft_extra.yaml
     clash_policy: Ⓜ️ 微软服务
     qx_policy: Ⓜ️ 微软服务
+  - id: apple_extra
+    title: 苹果服务补充规则
+    source: apple_extra.yaml
+    clash_policy: 🍎 苹果服务
+    qx_policy: 🍎 苹果服务

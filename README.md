@@ -151,6 +151,8 @@ Clash 的 DAZN、Cloudflare 和 Amazon provider 只使用域名规则，不加�
 
 不使用 GlobalMedia 聚合 provider：本轮 10 分钟路由器监看样本中，其命中的连接全部是误归类（Cloudflare Challenge、微软 Akamai 图片 CDN 等）或 `+.cloudfront.net`、`+.akamaized.net`、`+.llnwd.net` 一类的宽泛 CDN 通配，而 Netflix、Disney+、YouTube、HBO、Hulu、Prime Video、巴哈姆特、DAZN 等常用媒体均有独立 provider 覆盖。移除后 Cloudflare Challenge 由 Cloudflare 规则归入 `👨‍💻 开发服务`，微软 CDN 由 Microsoft 规则接管；仓库的 `MicrosoftExtra` 同时固定覆盖实测的微软 Akamai 图片域名，并补充上游缺失的 `msftstatic.com`。没有独立规则的冷门媒体服务会落入通用代理规则而非 `🎬 流媒体`，这是有意的取舍。
 
+Apple 相关服务统一归入 `🍎 苹果服务`：QX 的 Apple Intelligence 远程清单改为强制该组；Apple Intelligence / Private Cloud Compute 托管在第三方 CDN 上的中继（`apple-relay.cloudflare.com`、`apple-relay.fastly-edge.com`、`apple-relay.akamaized.net`、`cp4.cloudflare.com`）不在 blackmatrix7 Apple 列表中，由仓库的 `AppleExtra` 补齐，并排在 Cloudflare 与 ProxyLite 之前，避免被送往开发服务或全球加速。
+
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余收敛为东南亚、亚洲其他、欧洲、美洲、大洋洲和非洲。南亚、中东、中亚、蒙古与澳门均属于“亚洲其他”；加拿大、墨西哥、中美洲、加勒比和南美洲均属于“美洲”，已独立的美国不会重复命中。澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。除美国节点组保留手动固定选择外，其余地区组均按健康检查延迟自动优选；故障转移组仍按可用性切换。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
 Steam 不再单设策略组：客户端进程、平台域名和 21 条下载 CDN 补充规则均进入 `🎮 游戏平台`。平时可选择合适地区代理改善商店和社区访问；下载时临时切换为 `DIRECT`，完成后再切回。这会同时改变 Epic、Xbox、PlayStation 等其他游戏平台的出口。在 Windows 上，三个 `PROCESS-NAME` 规则只对已经进入 Mihomo 的流量生效；ShellCrash 看不到局域网客户端进程名，但会通过 `Game` 聚合规则和 Steam CDN 补充规则提供域名覆盖。Microsoft、Visual Studio、Office、winget 与 npm 下载仍始终保持 `DIRECT`，不受游戏平台组影响。
