@@ -63,6 +63,8 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 墨鱼规则同时使用其公开 GitHub 仓库和自建域名资源。`StartUpAds.conf`、`XiaoHongShuAds.conf`、`zhihu.ads.js` 和 `bdpan.ads.js` 会根据客户端 User-Agent 返回不同内容：Quantumult X 请求可获取有效规则或脚本，普通浏览器请求则可能返回 HTML 页面。仓库的远程资源检查会对 QX 资源模拟 Quantumult X 请求。
 
+哔哩哔哩：墨鱼已于 2026-01 从 GitHub 删除 `BilibiliAds.conf` 及其 `bilibili_json.js`，旧的 deezertidal 转载版也因脚本 404 失效。现改为 Biliverse ADBlock（去广告）+ 仓库自定义重写 `rewrite_remote.snippet`（调用 `quantumultx/scripts/bilibili_layout.js`，把底部栏精简为「首页 / 动态 / 我的」，并去掉「我的」页中的会员购、游戏中心、创作中心等入口）。两者需同时启用。
+
 ---
 
 **后续更新（已引用规则内容自动刷新）**
@@ -339,7 +341,8 @@ proxy-config/
 │   ├── bootstrap.example.conf      # bootstrap 模板（提交到 Git）
 │   ├── bootstrap.conf              # 本地实际配置（gitignore，含私密信息）
 │   ├── filter_remote.snippet       # 由 build_rules.py 生成，QX filter 格式
-│   └── rewrite_remote.snippet      # QX 自定义 rewrite 规则片段
+│   ├── rewrite_remote.snippet      # QX 自定义 rewrite 规则片段
+│   └── scripts/                    # rewrite_remote.snippet 引用的 QX 脚本
 │
 ├── clash/                          # Clash / Mihomo 客户端层
 │   ├── config.yaml                 # Clash 主配置（含 rule-providers 引用）
