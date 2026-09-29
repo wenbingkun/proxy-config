@@ -183,22 +183,34 @@ def user_agent_for(resource: Resource) -> str:
     return USER_AGENT
 
 
+def read_response(url: str, headers: dict[str, str], timeout: float, limit: int) -> tuple[int, str, bytes, str]:
+    request = urllib.request.Request(url, headers=headers, method="GET")
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return (
+            response.status,
+            response.headers.get_content_type().lower(),
+            response.read(limit + 1),
+            response.geturl(),
+        )
+
+
 def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result:
     full_rule_check = mode == "full" and resource.kind == "clash-rule"
     limit = FULL_LIMIT if full_rule_check else LIGHT_BYTES
     headers = {"User-Agent": user_agent_for(resource), "Accept": "*/*"}
     if not full_rule_check:
         headers["Range"] = f"bytes=0-{LIGHT_BYTES - 1}"
-    request = urllib.request.Request(resource.url, headers=headers, method="GET")
     last_error = "unknown error"
 
     for attempt in range(retries + 1):
         try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
-                status = response.status
-                content_type = response.headers.get_content_type().lower()
-                body = response.read(limit + 1)
-                final_url = response.geturl()
+            status, content_type, body, final_url = read_response(resource.url, headers, timeout, limit)
+            if not body and "Range" in headers:
+                # cdn.jsdelivr.net has intermittently answered a ranged GET with an
+                # empty body while a plain GET of the same URL returned the file, so
+                # retry once without Range and still read only the first bytes.
+                plain_headers = {key: value for key, value in headers.items() if key != "Range"}
+                status, content_type, body, final_url = read_response(resource.url, plain_headers, timeout, limit)
             if not 200 <= status < 300:
                 last_error = f"HTTP {status}"
             elif full_rule_check and len(body) > limit:
