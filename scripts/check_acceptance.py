@@ -241,7 +241,7 @@ def check_windows_runtime_defaults(failures: list[str]) -> None:
         "allow-lan": False,
         "external-controller": "127.0.0.1:9090",
         "unified-delay": True,
-        "ipv6": False,
+        "ipv6": True,
     }
     for key, value in expected.items():
         if data.get(key) != value:
@@ -250,8 +250,8 @@ def check_windows_runtime_defaults(failures: list[str]) -> None:
         fail("clash/config.yaml: bind-address must not be explicitly exposed", failures)
     if not isinstance(dns, dict) or dns.get("enable") is not True:
         fail("clash/config.yaml: DNS must be enabled", failures)
-    elif dns.get("enhanced-mode") != "fake-ip" or dns.get("ipv6") is not False:
-        fail("clash/config.yaml: expected fake-ip DNS with IPv6 disabled", failures)
+    elif dns.get("enhanced-mode") != "fake-ip" or dns.get("ipv6") is not True:
+        fail("clash/config.yaml: expected fake-ip DNS with IPv6 enabled", failures)
     if not isinstance(tun, dict) or tun.get("enable") is not False:
         fail("clash/config.yaml: TUN must remain disabled by default", failures)
 
