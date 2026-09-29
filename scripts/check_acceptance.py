@@ -277,6 +277,15 @@ def check_qx_runtime_defaults(failures: list[str]) -> None:
             "(IPv6 is enabled on all clients)",
             failures,
         )
+    general = qx_section_lines("general")
+    if "udp_whitelist = 1-65535" not in general or any(
+        line.startswith("udp_drop_list") for line in general
+    ):
+        fail(
+            "quantumultx/bootstrap.example.conf: [general] must allow all UDP ports "
+            "(udp_whitelist = 1-65535, no udp_drop_list)",
+            failures,
+        )
 
 
 def main() -> int:
