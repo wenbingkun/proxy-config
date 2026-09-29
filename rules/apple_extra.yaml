@@ -1,0 +1,8 @@
+# Apple Intelligence / Private Cloud Compute relays hosted on third-party
+# CDNs. The blackmatrix7 Apple list misses them, so they would otherwise fall
+# through to the Cloudflare or ProxyLite rules instead of the Apple group.
+domain_suffix:
+  - apple-relay.cloudflare.com
+  - apple-relay.fastly-edge.com
+  - apple-relay.akamaized.net
+  - cp4.cloudflare.com
