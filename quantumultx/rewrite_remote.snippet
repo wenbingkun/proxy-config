@@ -3,4 +3,8 @@
 # QX treats an empty rewrite resource as invalid, so keep one harmless
 # never-used rule to make this remote snippet parseable.
 ^https?:\/\/proxy-config\.invalid\/__noop__$ url reject
-hostname = proxy-config.invalid
+# MitM hosts for ddgksf2013 BiliBiliAds.conf. The bootstrap loads that conf with
+# #outhn=* to drop its wildcard hostnames (*.bilibili.com, *.bili*.*, ...); the
+# conf still lists app.bilibili.com, api.live.bilibili.com and grpc.biliapi.net,
+# and its other active rules need the hosts below.
+hostname = proxy-config.invalid, api.bilibili.com, manga.bilibili.com, api.biliapi.net, api.biliapi.com

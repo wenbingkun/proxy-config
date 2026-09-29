@@ -63,7 +63,9 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 墨鱼规则同时使用其公开 GitHub 仓库和自建域名资源。`StartUpAds.conf`、`XiaoHongShuAds.conf`、`BiliBiliAds.conf`、`zhihu.ads.js` 和 `bdpan.ads.js` 会根据客户端 User-Agent 返回不同内容：Quantumult X 请求可获取有效规则或脚本，普通浏览器请求则可能返回 HTML 页面。仓库的远程资源检查会对 QX 资源模拟 Quantumult X 请求。
 
-哔哩哔哩：墨鱼已于 2026-01 从 GitHub 删除 `BilibiliAds.conf`，改由自建域名 `https://ddgksf2013.top/rewrite/BiliBiliAds.conf` 继续维护（同样按 User-Agent 返回内容），bootstrap 已改为引用该地址。不要与 Biliverse ADBlock 同时启用，两者匹配相同接口会互相抢占。
+哔哩哔哩：墨鱼已于 2026-01 从 GitHub 删除 `BilibiliAds.conf`，改由自建域名 `https://ddgksf2013.top/rewrite/BiliBiliAds.conf` 继续维护（同样按 User-Agent 返回内容），bootstrap 已改为引用该地址。不要与 Biliverse ADBlock 同时启用，两者匹配相同接口，可能冲突。
+
+该资源的 hostname 含 `*.bilibili.com`、`*.bili*.*` 等通配项，bootstrap 用 `#outhn=*`（需 `opt-parser=true`）交给解析器删掉全部通配项；剩余规则还需要的 `api.bilibili.com`、`manga.bilibili.com`、`api.biliapi.net`、`api.biliapi.com` 由「仓库自定义重写」`rewrite_remote.snippet` 补上，因此两者要同时启用。脚本会把「我的」页会员字段改成大会员样式，这只影响客户端显示，不会获得服务端会员权益。若动态页加载慢或空白，可在链接后追加 `&out=Dyn` 停用综合动态和视频动态的 protobuf 过滤（代价是动态页广告不再过滤）；不能写成 `DynAll`，因为解析器按规则原文匹配，而原文是 `Dyn(All|Video)`。
 
 ---
 
