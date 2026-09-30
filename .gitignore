@@ -31,5 +31,5 @@ old/
 # Claude Code local settings
 .claude/
 
-# Private router incident evidence and review notes
-/.local/router-review-202609/
+# Private local notes (router incident evidence, client evaluations)
+/.local/
