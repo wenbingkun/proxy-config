@@ -56,10 +56,12 @@ def test_empty_range_falls_back_to_plain_get() -> None:
 def main() -> int:
     resources = check.extract_resources()
     urls = [resource.url for resource in resources]
-    assert len(urls) == len(set(urls)), "extracted resource URLs must be unique"
+    keys = [(resource.url, check.client_of(resource.source)) for resource in resources]
+    assert len(keys) == len(set(keys)), "a URL must be checked once per client"
     assert len(resources) >= 150, "unexpectedly few remote resources extracted"
     icon_count = sum(resource.kind == "icon" for resource in resources)
-    assert icon_count == 33
+    qx_icons = sum(r.kind == "icon" and check.client_of(r.source) == "qx" for r in resources)
+    assert qx_icons == 33, qx_icons
     assert all(not check.is_skipped_url(url) for url in urls)
     assert any(resource.kind == "shellcrash-template" for resource in resources)
     assert any(resource.source.startswith("quantumultx/") for resource in resources)
@@ -69,6 +71,31 @@ def main() -> int:
         "https://ddgksf2013.top/scripts/zhihu.ads.js",
         "https://ddgksf2013.top/scripts/bdpan.ads.js",
     } <= set(urls)
+
+    # A URL used by both QX and Loon is checked once for each client, each with its own UA.
+    shared = {r.url for r in resources if check.client_of(r.source) == "qx"} & {
+        r.url for r in resources if check.client_of(r.source) == "loon"
+    }
+    assert shared, "expected at least one URL shared by QX and Loon (e.g. icons)"
+    # The frozen Loon plugins are scanned, so the pinned scripts they load are checked too.
+    loon_sources = {r.url: r.source for r in resources if check.client_of(r.source) == "loon"}
+    for script in (
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/819a88e0efbfeb5dfdb15e93c6d007a5e790a15f/amdc.js",
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/5bfa7fad4d262740131334169c222ca9ac2d353a/douban.js",
+    ):
+        assert loon_sources.get(script, "").startswith("loon/plugins/"), script
+    assert any(url.startswith("https://kelee.one/") for url in loon_sources)
+    # Redirect targets inside hosted plugins (Q-Search, General) are not resources.
+    plugin_urls = {url for url, source in loon_sources.items() if source.startswith("loon/plugins/")}
+    assert plugin_urls == {
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/819a88e0efbfeb5dfdb15e93c6d007a5e790a15f/amdc.js",
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/5bfa7fad4d262740131334169c222ca9ac2d353a/douban.js",
+    }, plugin_urls
+
+    loon_resource = check.Resource(
+        "https://kelee.one/Tool/Loon/Lpx/Example.lpx", "loon-resource", "loon/bootstrap.example.conf:1"
+    )
+    assert check.user_agent_for(loon_resource) == check.LOON_USER_AGENT
 
     qx_resource = check.Resource(
         "https://resources.example/rewrite.conf",
