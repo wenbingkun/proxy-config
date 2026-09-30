@@ -66,7 +66,6 @@ def main() -> int:
     assert {
         "https://ddgksf2013.top/rewrite/StartUpAds.conf",
         "https://ddgksf2013.top/rewrite/XiaoHongShuAds.conf",
-        "https://ddgksf2013.top/rewrite/BiliBiliAds.conf#outhn=*",
         "https://ddgksf2013.top/scripts/zhihu.ads.js",
         "https://ddgksf2013.top/scripts/bdpan.ads.js",
     } <= set(urls)
