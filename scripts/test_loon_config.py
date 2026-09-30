@@ -137,8 +137,11 @@ def check_home_and_away(loon: dict, failures: list[str]) -> None:
     # A plugin's own PROXY rules go to the policy= set on its [Plugin] line. Plugins known to carry
     # PROXY rules must set exactly one policy when enabled, or they would bypass the home check.
     for line in loon["sections"].get("Plugin", []):
-        parts = [p.strip() for p in line.split(",")]
-        if "enabled=true" not in parts or not any(key in parts[0] for key in PLUGINS_WITH_PROXY_RULES):
+        parts = [re.sub(r"\s*=\s*", "=", p.strip(), count=1) for p in line.split(",")]
+        # Anything but an explicit enabled=false counts as enabled.
+        if "enabled=false" in (p.lower() for p in parts):
+            continue
+        if not any(key in parts[0] for key in PLUGINS_WITH_PROXY_RULES):
             continue
         plugin_policies = [p.split("=", 1)[1] for p in parts if p.startswith("policy=")]
         if len(plugin_policies) != 1 or not plugin_policies[0]:
@@ -146,7 +149,7 @@ def check_home_and_away(loon: dict, failures: list[str]) -> None:
     policies |= {
         part.split("=", 1)[1]
         for line in loon["sections"].get("Plugin", [])
-        for part in (p.strip() for p in line.split(","))
+        for part in (re.sub(r"\s*=\s*", "=", p.strip(), count=1) for p in line.split(","))
         if part.startswith("policy=")
     }
     for policy in sorted(policies):
