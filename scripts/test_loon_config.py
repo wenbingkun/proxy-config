@@ -22,6 +22,8 @@ AWAY_SUFFIX = " · 外出"
 BUILTIN = {"DIRECT", "REJECT", "REJECT-IMG", "REJECT-DICT", "REJECT-ARRAY", "REJECT-DROP"}
 REPO_RAW = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/"
 QX_KINDS = {"static": "select", "url-latency-benchmark": "url-test", "available": "fallback"}
+# Plugins whose own rules use PROXY (kokoryh Sparkle: bsbsb.top for the sponsor-block lookup).
+PLUGINS_WITH_PROXY_RULES = ("kokoryh/Sparkle/",)
 
 
 def sections(text: str) -> dict[str, list[str]]:
@@ -132,6 +134,24 @@ def check_home_and_away(loon: dict, failures: list[str]) -> None:
     # router does all proxying there.
     policies = {opts["policy"] for _, opts in loon["remote_rules"]}
     policies |= {rule[-1] for rule in loon["local_rules"]}
+    # A plugin's own PROXY rules go to the policy= set on its [Plugin] line. Plugins known to carry
+    # PROXY rules must set exactly one policy when enabled, or they would bypass the home check.
+    for line in loon["sections"].get("Plugin", []):
+        parts = [re.sub(r"\s*=\s*", "=", p.strip(), count=1) for p in line.split(",")]
+        # Anything but an explicit enabled=false counts as enabled.
+        if "enabled=false" in (p.lower() for p in parts):
+            continue
+        if not any(key in parts[0] for key in PLUGINS_WITH_PROXY_RULES):
+            continue
+        plugin_policies = [p.split("=", 1)[1] for p in parts if p.startswith("policy=")]
+        if len(plugin_policies) != 1 or not plugin_policies[0]:
+            failures.append(f"plugin {parts[0]} must set exactly one policy=")
+    policies |= {
+        part.split("=", 1)[1]
+        for line in loon["sections"].get("Plugin", [])
+        for part in (re.sub(r"\s*=\s*", "=", p.strip(), count=1) for p in line.split(","))
+        if part.startswith("policy=")
+    }
     for policy in sorted(policies):
         if policy in BUILTIN or policy in ssid:
             continue
