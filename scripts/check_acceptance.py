@@ -278,12 +278,10 @@ def check_qx_runtime_defaults(failures: list[str]) -> None:
             failures,
         )
     general = qx_section_lines("general")
-    if "udp_whitelist = 1-65535" not in general or any(
-        line.startswith("udp_drop_list") for line in general
-    ):
+    if "udp_whitelist = 1-442, 444-65535" not in general or "udp_drop_list = 443" not in general:
         fail(
-            "quantumultx/bootstrap.example.conf: [general] must allow all UDP ports "
-            "(udp_whitelist = 1-65535, no udp_drop_list)",
+            "quantumultx/bootstrap.example.conf: [general] must keep UDP 443 (QUIC) out of the "
+            "tunnel so MitM rewrites apply (udp_whitelist = 1-442, 444-65535; udp_drop_list = 443)",
             failures,
         )
     if "fallback_udp_policy = reject" not in general:

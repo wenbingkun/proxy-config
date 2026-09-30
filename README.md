@@ -157,7 +157,7 @@ Clash 的 DAZN、Cloudflare 和 Amazon provider 只使用域名规则，不加�
 
 Apple 相关服务统一归入 `🍎 苹果服务`：QX 的 Apple Intelligence 远程清单改为强制该组；Apple Intelligence / Private Cloud Compute 托管在第三方 CDN 上的中继（`apple-relay.cloudflare.com`、`apple-relay.fastly-edge.com`、`apple-relay.akamaized.net`、`cp4.cloudflare.com`）不在 blackmatrix7 Apple 列表中，由仓库的 `AppleExtra` 补齐，并排在 Cloudflare 与 ProxyLite 之前，避免被送往开发服务或全球加速。
 
-UDP 与 IPv6 在各端统一放开（QX 不再屏蔽 UDP 443、不设 `no-ipv6`；Windows 配置开启 IPv6；路由器本已开启）。QX 固定 `fallback_udp_policy = reject`，节点不支持 UDP 转发时拒绝而不直连。**Mihomo（Windows 与路由器）目前不提供同等保证**：v1.19.31 遇到不支持 UDP 的节点会跳过该规则继续匹配，可能命中后续直连规则或最终回落 DIRECT；当前机场节点均声明支持 UDP，如以后出现不支持 UDP 的节点，需要另行设计。
+IPv6 在各端统一开启（QX 不设 `no-ipv6`；Windows 配置开启 IPv6；路由器本已开启）。QX 放行除 443 以外的全部 UDP 端口，并丢弃 UDP 443（QUIC），让 App 回退到 TCP，MitM 重写才能生效；2026-09-30 实测放开 QUIC 时 B 站去广告失效且关注页、热门页加载缓慢，恢复屏蔽后正常。QX 固定 `fallback_udp_policy = reject`，节点不支持 UDP 转发时拒绝而不直连。**Mihomo（Windows 与路由器）目前不提供同等保证**：v1.19.31 遇到不支持 UDP 的节点会跳过该规则继续匹配，可能命中后续直连规则或最终回落 DIRECT；当前机场节点均声明支持 UDP，如以后出现不支持 UDP 的节点，需要另行设计。
 
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余收敛为东南亚、亚洲其他、欧洲、美洲、大洋洲和非洲。南亚、中东、中亚、蒙古与澳门均属于“亚洲其他”；加拿大、墨西哥、中美洲、加勒比和南美洲均属于“美洲”，已独立的美国不会重复命中。澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。除美国节点组保留手动固定选择外，其余地区组均按健康检查延迟自动优选；故障转移组仍按可用性切换。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
