@@ -42,6 +42,8 @@ jobs:
               "clash/shellcrash/providers.env.example",
               "quantumultx/bootstrap.example.conf",
               "quantumultx/filter_remote.snippet",
+              "loon/bootstrap.example.conf",
+              "loon/geoip_cn.list",
               "rules/local_rules.yaml",
               "scripts/build_rules.py",
               "scripts/build_router_config.py",
@@ -54,6 +56,7 @@ jobs:
               "scripts/test_shellcrash_override.py",
               "scripts/test_region_groups.py",
               "scripts/test_steam_policy.py",
+              "scripts/test_loon_config.py",
           ]
           missing = [p for p in required if not (ROOT / p).exists()]
           if missing:
@@ -120,6 +123,7 @@ jobs:
           python3 scripts/test_remote_resources.py
           python3 scripts/test_rule_provider_scope.py
           python3 scripts/test_steam_policy.py
+          python3 scripts/test_loon_config.py
 
       - name: Check shell script syntax
         run: sh -n scripts/deploy_shellcrash_config.sh

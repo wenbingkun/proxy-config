@@ -1,0 +1,2 @@
+# Loon GEOIP rule, subscribed last in [Remote Rule] so it matches after every remote IP rule.
+GEOIP,CN
