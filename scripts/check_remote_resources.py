@@ -22,10 +22,14 @@ QX_FILES = (
     ROOT / "quantumultx" / "bootstrap.example.conf",
     ROOT / "quantumultx" / "filter_remote.snippet",
 )
-LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",)
+LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",) + tuple(
+    sorted((ROOT / "loon" / "plugins").glob("*.plugin"))
+)
 DEPLOY_SCRIPT = ROOT / "scripts" / "deploy_shellcrash_config.sh"
 
 URL_RE = re.compile(r"https?://[^\s,\"']+")
+# In a hosted Loon plugin only the scripts it loads are resources; other URLs are redirect targets.
+SCRIPT_PATH_RE = re.compile(r"script-path=(https?://[^\s,\"']+)")
 SHELL_TEMPLATE_RE = re.compile(
     r"^DEFAULT_(?:DUAL|SINGLE)_TEMPLATE_URL=['\"](?P<url>https?://[^'\"]+)['\"]$",
     re.MULTILINE,
@@ -46,6 +50,9 @@ LIGHT_BYTES = 4096
 FULL_LIMIT = 16 * 1024 * 1024
 USER_AGENT = "proxy-config-remote-check/1.0"
 QX_USER_AGENT = "Quantumult X"
+# kelee.one only serves requests that look like Loon on iOS (Loon plus CFNetwork/Darwin); this is
+# a string verified to work, not a guess at the server's rule.
+LOON_USER_AGENT = "Loon/3.5.2 (996) CFNetwork/3826 Darwin/25.0.0"
 
 
 @dataclass(frozen=True)
@@ -97,8 +104,17 @@ def infer_qx_kind(line: str, url: str) -> str:
     return "qx-resource"
 
 
+def client_of(source: str) -> str:
+    """Resources may answer differently per client, so each client checks its own copy."""
+    if source.startswith("quantumultx/"):
+        return "qx"
+    if source.startswith("loon/"):
+        return "loon"
+    return "default"
+
+
 def extract_resources() -> list[Resource]:
-    resources: dict[str, Resource] = {}
+    resources: dict[tuple[str, str], Resource] = {}
 
     clash = yaml.safe_load(CLASH_CONFIG.read_text(encoding="utf-8")) or {}
     providers = clash.get("rule-providers", {})
@@ -109,7 +125,7 @@ def extract_resources() -> list[Resource]:
             raise ValueError(f"clash/config.yaml: rule-provider {name!r} has no URL")
         url = provider["url"]
         if not is_skipped_url(url):
-            resources[url] = Resource(
+            resources[(url, "default")] = Resource(
                 url=url,
                 kind="clash-rule",
                 source=f"clash/config.yaml:rule-providers.{name}",
@@ -121,18 +137,20 @@ def extract_resources() -> list[Resource]:
             stripped = line.lstrip()
             if not stripped or stripped.startswith("#"):
                 continue
-            for match in URL_RE.finditer(line):
-                url = match.group(0).rstrip(")]}")
+            is_plugin = path.parent == ROOT / "loon" / "plugins"
+            for match in (SCRIPT_PATH_RE if is_plugin else URL_RE).finditer(line):
+                url = match.group(1 if is_plugin else 0).rstrip(")]}")
                 if is_skipped_url(url):
                     continue
+                source = f"{path.relative_to(ROOT)}:{lineno}"
                 resources.setdefault(
-                    url,
+                    (url, client_of(source)),
                     Resource(
                         url=url,
                         kind=infer_qx_kind(line, url).replace("qx-", "loon-")
                         if path in LOON_FILES
                         else infer_qx_kind(line, url),
-                        source=f"{path.relative_to(ROOT)}:{lineno}",
+                        source=source,
                     ),
                 )
 
@@ -140,11 +158,11 @@ def extract_resources() -> list[Resource]:
     for match in SHELL_TEMPLATE_RE.finditer(deploy_text):
         url = match.group("url")
         resources.setdefault(
-            url,
+            (url, "default"),
             Resource(url=url, kind="shellcrash-template", source="scripts/deploy_shellcrash_config.sh"),
         )
 
-    return sorted(resources.values(), key=lambda item: (item.kind, item.url))
+    return sorted(resources.values(), key=lambda item: (item.kind, item.url, item.source))
 
 
 def looks_like_html(content_type: str, body: bytes) -> bool:
@@ -181,8 +199,11 @@ def validate_body(resource: Resource, content_type: str, body: bytes, mode: str)
 
 def user_agent_for(resource: Resource) -> str:
     """Match the client used to fetch resources with conditional responses."""
-    if resource.source.startswith("quantumultx/"):
+    client = client_of(resource.source)
+    if client == "qx":
         return QX_USER_AGENT
+    if client == "loon":
+        return LOON_USER_AGENT
     return USER_AGENT
 
 

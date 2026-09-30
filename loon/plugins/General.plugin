@@ -1,0 +1,16 @@
+#!name=General
+#!desc=General
+#!icon=https://github.com/Toperlock/Quantumult/raw/main/icon/Doraemon/Doraemon-1042.png
+# Frozen Loon conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Rewrite/dc3ea2c1fb2db870676b26da24006083eb1d44d3/Html/General.conf
+# Source SHA-256: f759ce585a197719178cfa5fe2b48c105696c3d2cb1214d09522181233105f97
+# Converted with Script-Hub 6b4fb62 (service.js, type=qx-rewrite&target=loon-plugin) on 2026-09-30.
+# Script paths are pinned to the upstream commit that was reviewed. To refresh, reconvert the
+# new source the same way, pin script paths again and send the result through a PR.
+
+[Rewrite]
+# Redirect Google Search Service
+^https?:\/\/(www.)?(g|google)\.cn https://www.google.com 302
+
+[MITM]
+hostname = www.google.cn
