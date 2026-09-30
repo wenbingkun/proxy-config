@@ -93,19 +93,20 @@ def check_architecture(failures: list[str]) -> None:
 def check_security(failures: list[str]) -> None:
     """Scan committed files for accidental secrets."""
 
-    # bootstrap.conf must not be tracked by git
-    result = subprocess.run(
-        ["git", "ls-files", "quantumultx/bootstrap.conf"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    if result.stdout.strip():
-        fail(
-            "quantumultx/bootstrap.conf is tracked by git — "
-            "it contains secrets and must be gitignored",
-            failures,
+    # Local bootstraps must not be tracked by git
+    for local_bootstrap in ("quantumultx/bootstrap.conf", "loon/bootstrap.conf"):
+        result = subprocess.run(
+            ["git", "ls-files", local_bootstrap],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
         )
+        if result.stdout.strip():
+            fail(
+                f"{local_bootstrap} is tracked by git — "
+                "it contains secrets and must be gitignored",
+                failures,
+            )
 
     # Scan tracked files and untracked candidates that are not gitignored.
     candidates = subprocess.run(

@@ -6,6 +6,14 @@ quantumultx/*.crt
 quantumultx/*.key
 quantumultx/*.cer
 
+# Loon local bootstrap and MitM secrets
+loon/bootstrap.conf
+loon/*.p12
+loon/*.pem
+loon/*.crt
+loon/*.key
+loon/*.cer
+
 # Clash runtime caches
 clash/cache/
 /cache/

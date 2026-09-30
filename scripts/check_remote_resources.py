@@ -22,6 +22,7 @@ QX_FILES = (
     ROOT / "quantumultx" / "bootstrap.example.conf",
     ROOT / "quantumultx" / "filter_remote.snippet",
 )
+LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",)
 DEPLOY_SCRIPT = ROOT / "scripts" / "deploy_shellcrash_config.sh"
 
 URL_RE = re.compile(r"https?://[^\s,\"']+")
@@ -115,7 +116,7 @@ def extract_resources() -> list[Resource]:
                 expected_format=provider.get("format"),
             )
 
-    for path in QX_FILES:
+    for path in QX_FILES + LOON_FILES:
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.lstrip()
             if not stripped or stripped.startswith("#"):
@@ -128,7 +129,9 @@ def extract_resources() -> list[Resource]:
                     url,
                     Resource(
                         url=url,
-                        kind=infer_qx_kind(line, url),
+                        kind=infer_qx_kind(line, url).replace("qx-", "loon-")
+                        if path in LOON_FILES
+                        else infer_qx_kind(line, url),
                         source=f"{path.relative_to(ROOT)}:{lineno}",
                     ),
                 )

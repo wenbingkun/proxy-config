@@ -1,6 +1,6 @@
 # Proxy Config
 
-统一管理 **Quantumult X**（iPhone / iPad）、**Clash / Mihomo**（Windows）和 **ShellCrash / Mihomo**（路由器）代理配置的 Git 仓库。
+统一管理 **Quantumult X**（iPhone / iPad）、**Loon**（iPhone，试点中）、**Clash / Mihomo**（Windows）和 **ShellCrash / Mihomo**（路由器）代理配置的 Git 仓库。
 
 修改已被客户端引用的共享规则后，先生成并提交客户端产物，再合入设备资源 URL 指向的分支（本仓库示例为 `main`）；设备在后续成功刷新时加载更新。策略组、资源引用及其他主配置的同步方式因客户端而异，见[日常维护](#日常维护)。
 
@@ -10,6 +10,7 @@
 
 - [快速上手](#快速上手)
   - [Quantumult X（iPhone / iPad）](#quantumult-xiphone--ipad)
+  - [Loon（iPhone，试点）](#looniphone试点)
   - [Clash / Mihomo（Windows）](#clash--mihomowindows)
   - [ShellCrash / Mihomo（路由器）](#shellcrash--mihomo路由器)
 - [日常维护](#日常维护)
@@ -79,6 +80,45 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filte
 ```
 
 修改 `rules/` 下的规则后，按[日常维护](#日常维护)生成 `filter_remote.snippet` 并合入 `main`，QX 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则；也可手动触发「更新资源」。这只更新 snippet 的内容；本地 `bootstrap.conf` 的策略组和资源行不会随之改变，见[日常维护](#日常维护)末尾的同步边界说明。
+
+---
+
+### Loon（iPhone，试点）
+
+Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去广告；QX 保留为回滚方案，两者不要同时开启 VPN。与 QX 相同，采用**本地 bootstrap + 远程规则**：模板 `loon/bootstrap.example.conf` 进 Git，填好私密信息的 `loon/bootstrap.conf` 只留在本地。
+
+**第一次配置**
+
+1. 下载 `loon/bootstrap.example.conf`，重命名为 `bootstrap.conf`：
+
+   ```
+   https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/bootstrap.example.conf
+   ```
+
+2. 本地填写：
+   - `[Remote Proxy]`：去掉注释，换成真实订阅。机场要求用专用 DNS 解析节点时，在这一行追加 `server-dns="..."`（需 Loon 3.5.2 以上）。
+   - `HOME_SSID`：全部换成家里 Wi-Fi 的名称，包括 `[Proxy Group]` 中的每个 ssid 组和 `[Host]` 中的 `ssid:HOME_SSID`。2.4G 与 5G 名称不同时，每个 ssid 组各追加一项 `"<SSID>" = DIRECT`，`[Host]` 追加 `ssid:<SSID> = server:system`。
+   - `[MitM]`：在 Loon 中生成并安装、信任 CA，再把 `ca-p12` 和 `ca-passphrase` 填到本地文件。
+3. 导入 Loon，模式保持「规则」，开启 MitM。
+
+**家庭 / 外出自动切换**
+
+配置不使用 `ssid-trigger`，全程保持规则模式。被规则引用、可能走代理的策略组（如 🤖 人工智能、🐟 兜底分流、🇭🇰 香港节点）是 ssid 组：连上家里 Wi-Fi 时走 DIRECT，由路由器负责代理；其他网络时走同名的「· 外出」组，在外出组里选择节点。这样在家时，规则层的广告拦截（🛡️ 安全防护）、插件改写和 MitM 仍然生效，而路由器已经不再拦截广告。配置的目标是在家时 DNS 通过 `ssid:HOME_SSID = server:system` 交给路由器；它与按域名指定的 DNS 映射谁优先，官方文档没有说明，要以请求记录中的实际上游为准。
+
+**试点验收（日常使用前）**
+
+1. SSID 切换：在家里 Wi-Fi 和蜂窝网络下分别访问一个会走代理的网站。请求记录中，外层组在家应为 DIRECT，在外应为对应「· 外出」组所选的节点。
+2. 规则加载：`[Remote Rule]` 中每个列表的条数都不为 0，`geoip_cn.list` 应为 1 条。
+3. GEOIP 命中：在蜂窝网络下访问 `http://114.114.114.114`（属于 CN，不在任何列表中）。请求记录应显示命中 `geoip_cn.list`，走 🇨🇳 国内服务。
+4. 家里 DNS：查看请求或 DNS 记录，确认没有专门映射的域名由路由器（system）解析。
+
+**插件**
+
+试点阶段只启用 Biliverse ADBlock，并固定为具体版本，便于对比测试。它替代 QX 的墨鱼 B 站规则和仓库自定义重写，不要与其他 B 站改写同时启用。其他 Loon 原生插件已写入配置，但默认关闭，按需逐个开启。墨鱼的其他 QX 规则尚未迁移。
+
+**后续更新**
+
+`[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
 
 ---
 
@@ -235,6 +275,7 @@ git push
 | 客户端 | 同步方式 | 生效时间 |
 |---|---|---|
 | Quantumult X | 自动拉取 `filter_remote.snippet` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发「更新资源」 |
+| Loon | 自动拉取 `loon/rules/*.list` | 按 Loon 的资源刷新生效；也可在 App 中手动更新 |
 | Clash / Mihomo | 自动拉取 `clash/rulesets/*.yaml` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发 Provider 刷新 |
 | ShellCrash / Mihomo | 路由器本地部署任务拉取并注入 `config-router.template.yaml` | 按本地任务计划，或手动运行部署脚本 |
 
@@ -315,6 +356,9 @@ git push
 脚本会自动生成：
 - `clash/rulesets/my_service.yaml` — Clash rule-provider 格式
 - `quantumultx/filter_remote.snippet` — QX filter 格式（整个文件重新生成）
+- `loon/rules/my_service.list` — Loon 规则列表，不含策略；还需在 `loon/bootstrap.example.conf` 的 `[Remote Rule]` 中加一行，`policy=` 与 `qx_policy` 相同
+
+Loon 不支持 `domain_regex`，规则源里出现该类型时，生成器会直接报错。
 
 ---
 
@@ -345,6 +389,12 @@ proxy-config/
 │   ├── filter_remote.snippet       # 由 build_rules.py 生成，QX filter 格式
 │   └── rewrite_remote.snippet      # QX 自定义 rewrite 规则片段
 │
+├── loon/                           # Loon 客户端层（试点）
+│   ├── bootstrap.example.conf      # bootstrap 模板（提交到 Git）
+│   ├── bootstrap.conf              # 本地实际配置（gitignore，含私密信息）
+│   ├── geoip_cn.list               # GEOIP,CN，放在远程规则最后
+│   └── rules/                      # 由 build_rules.py 生成的 Loon 规则列表
+│
 ├── clash/                          # Clash / Mihomo 客户端层
 │   ├── config.yaml                 # Clash 主配置（含 rule-providers 引用）
 │   ├── config-single.yaml          # 由脚本生成的 Windows 单订阅完整配置
@@ -366,6 +416,7 @@ proxy-config/
 │   ├── test_rule_provider_scope.py # 共享 CDN 规则误捕与专用域名覆盖回归测试
 │   ├── test_shellcrash_override.py # ShellCrash 官方覆写流程集成测试
 │   ├── test_region_groups.py       # Clash/QX 地区正则与地理边界回归测试
+│   ├── test_loon_config.py         # Loon 家庭出口、与 QX 分组对齐及规则映射检查
 │   └── test_steam_policy.py        # Steam 与非 Steam 下载策略回归测试
 │
 ├── .gitignore                      # 排除本地私密文件
@@ -450,7 +501,8 @@ Clash 主配置只定义代理分组和规则引用结构，具体规则内容�
 python3 scripts/build_rules.py
        │
        ├── 生成 clash/rulesets/*.yaml
-       └── 生成 quantumultx/filter_remote.snippet
+       ├── 生成 quantumultx/filter_remote.snippet
+       └── 生成 loon/rules/*.list
        │
        ▼
 git push
@@ -468,6 +520,7 @@ git push
 | 内容 | 原因 |
 |---|---|
 | `quantumultx/bootstrap.conf` | 含真实订阅链接和 MitM 信息 |
+| `loon/bootstrap.conf` | 含真实订阅链接、家庭 SSID 和 MitM 信息 |
 | `*.p12` / `*.pem` / `*.crt` / `*.key` | MitM 私钥和证书 |
 | 任何真实的订阅 token | 机场账号安全 |
 | Cookie、API Key | 个人隐私 |
