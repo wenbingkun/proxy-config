@@ -23,8 +23,9 @@ AUTO_SUFFIX = " · 自动"
 BUILTIN = {"DIRECT", "REJECT", "REJECT-IMG", "REJECT-DICT", "REJECT-ARRAY", "REJECT-DROP"}
 REPO_RAW = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/"
 QX_KINDS = {"static": "select", "url-latency-benchmark": "url-test", "available": "fallback"}
-# Plugins whose own rules use PROXY (kokoryh Sparkle: bsbsb.top for the sponsor-block lookup).
-PLUGINS_WITH_PROXY_RULES = ("kokoryh/Sparkle/",)
+# Plugins whose own rules use PROXY (kokoryh Sparkle: bsbsb.top for the sponsor-block lookup;
+# BoxJS: every jsdelivr.net request).
+PLUGINS_WITH_PROXY_RULES = ("kokoryh/Sparkle/", "chavyleung/scripts/master/box/")
 
 
 def sections(text: str) -> dict[str, list[str]]:
@@ -294,6 +295,17 @@ def check_runtime(loon: dict, failures: list[str]) -> None:
         failures.append("loon: [Remote Proxy] must only hold a commented placeholder")
 
 
+def check_hosted_plugins(failures: list[str]) -> None:
+    # Loon runs every matching rewrite and the last redirect wins (QX stops at the first match),
+    # so the Q-Search catch-all must come first or it overrides every keyword redirect.
+    lines = (ROOT / "loon" / "plugins" / "Q-Search.plugin").read_text(encoding="utf-8").splitlines()
+    rewrites = lines[lines.index("[Rewrite]") + 1 :]
+    rules = [l for l in rewrites[: next((i for i, l in enumerate(rewrites) if l.startswith("[")), None)]
+             if l.strip() and not l.startswith("#")]
+    if not rules or not rules[0].startswith(r"^https:\/\/duckduckgo.com\/\?q=([^&]+).+ "):
+        failures.append("loon/plugins/Q-Search.plugin: the catch-all Google rule must be the first rewrite")
+
+
 def check_generator(failures: list[str]) -> None:
     sample = {
         "domain_suffix": ["example.com"],
@@ -337,6 +349,7 @@ def main() -> int:
     check_qx_parity(loon, failures)
     check_rules(loon, failures)
     check_runtime(loon, failures)
+    check_hosted_plugins(failures)
     check_generator(failures)
     if failures:
         print("Loon config checks failed:", file=sys.stderr)
