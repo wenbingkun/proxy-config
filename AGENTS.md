@@ -1,25 +1,84 @@
 # AGENTS.md
 
-## Project purpose
-This repository maintains shared proxy configuration assets for:
-- Quantumult X
-- Clash / Mihomo
+本文件是本仓库给 AI 编码代理（Claude Code、Codex 等）的唯一项目说明；`CLAUDE.md` 只做引用。用户以中文沟通，代码、命令、标识符保持英文。
 
-## Architecture rules
-- Shared reusable rules go under `rules/`
-- Quantumult X specific files go under `quantumultx/`
-- Clash / Mihomo specific files go under `mihomo/`
-- Do not put QX MitM private materials (passphrase, p12, certificates) into Git
-- Do not commit secrets, tokens, subscription URLs, or credentials directly
+## 项目
 
-## Migration goals
-- Prefer shared rule assets where practical
-- Keep client-specific syntax in each client folder
-- Preserve behavior as much as possible during refactoring
-- Make minimal safe changes first
+自用代理配置的**公开**仓库：一份共享规则源，生成三条客户端线的文件。设备通过 raw / jsDelivr 远程拉取其中的规则、snippet 和插件。
 
-## Output expectations
-- Explain file migrations clearly
-- Prefer incremental edits
-- Preserve comments when useful
-- Add placeholders for sensitive content instead of real values
+| 线 | 目录 | 设备 |
+|---|---|---|
+| Quantumult X | `quantumultx/` | iPhone、iPad |
+| Loon（试点，QX 为回滚方案） | `loon/` | iPhone |
+| Mihomo | `mihomo/verge/`（Windows Clash Verge Rev）、`mihomo/shellcrash/`（路由器 ShellCrash） | Windows、路由器 |
+
+共享：`rules/`（规则源）、`mihomo/rules/`（生成的 rule-provider，Verge 与路由器共用）、`scripts/`（生成与巡检）、`tests/`、`docs/design.md`。各端用法写在各自目录的 `README.md`，根 README 只做导航。
+
+## 真值源与生成物
+
+- 自维护规则只改 `rules/*.yaml` 与清单 `rules/local_rules.yaml`，然后 `python3 scripts/build_rules.py` 生成 `mihomo/rules/*.yaml`、`quantumultx/filter/repo.snippet`、`loon/rules/*.list`。
+- Mihomo 策略唯一来源是 `mihomo/verge/config.yaml`；`config-single.yaml` 和 `mihomo/shellcrash/config-router*.template.yaml` 由 `python3 scripts/build_router_config.py` 生成。
+- **生成物不手改**。`loon/rules/geoip_cn.list` 是手工文件。
+- 新增规则集还要在 `loon/bootstrap.example.conf` 的 `[Remote Rule]` 加一行；Loon 不支持 `domain_regex`。
+
+## 提交前检查（仓库根目录执行，任一失败即停）
+
+```sh
+set -e
+python3 scripts/build_rules.py --check
+python3 scripts/build_router_config.py --check
+python3 scripts/check_hygiene.py
+python3 scripts/check_acceptance.py
+for t in tests/test_*.py; do [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"; done
+sh -n mihomo/shellcrash/deploy.sh
+```
+
+`tests/test_shellcrash_override.py` 需要固定版本的 Mihomo 核心、mmdb 与 ShellCrash `clash_modify.sh`（版本与哈希见 `.github/workflows/validate.yml`），由 CI 运行；本地跑时按同样哈希下载。不要用 `cmd || echo` 这类会吞掉失败的写法。
+
+## 发布路径
+
+- 设备按固定路径拉取文件。改名或移动已发布的路径前，必须给出旧→新映射、仓库与设备引用清单、发布 / 切换 / 回滚步骤。
+- 默认保留兼容期；只有用户明确接受旧路径失效时才直接切换，并记录尚未迁移的设备。
+- 合并前不要请求新路径的 jsDelivr `@main` 地址（会缓存 404），用 `@<完整提交 SHA>` 验证。
+
+## 各端约定（改动前先读，别“补齐”有意的差异）
+
+**策略组**：以路由器模板为基准，三端的 32 个基础策略组组名、组序一致；Loon 另有 16 个 ssid 包装组（见下）。
+- QX 的 `🌏 全球加速` 有意不挂规则；ProxyLite 有意不移植到 QX。
+- 地区组只含本地区节点；非美地区组按延迟自动优选，美国组手动。
+
+**Quantumult X**
+- 丢弃 UDP 443（QUIC），让 App 回退到 TCP、MitM 才能生效；`fallback_udp_policy = reject`；不设 `no-ipv6`。
+- B 站使用仓库冻结托管的 `quantumultx/rewrite/bilibili_ad.conf` 与 `quantumultx/scripts/bilibili_json.js`，不跟上游，不与其他 B 站重写同时启用。
+- 观察（2026-09）：QX 测速组只在被请求时测速，在家空闲时停在首个节点，属正常。
+
+**Loon**
+- 需要区分家庭/外出的策略，由排在最后的 16 个「· 自动」ssid 组包装：在家走 DIRECT 交给路由器，外出走同名 QX 组。REJECT、DIRECT 等不需要切换的策略不包装。不用 `ssid-trigger`。
+- `GEOIP,CN` 必须作为最后一条远程规则（`loon/rules/geoip_cn.list`），不能放本地 `[Rule]`。
+- Loon 同一阶段命中的 Rewrite 按配置顺序全部执行，效果可以叠加；同一字段可能被后面的规则覆盖（QX 是命中第一条即停）。用 Script-Hub 转换 QX 重写后，要检查重叠规则的实际效果，不能按 QX 的首次命中模型推断。
+- `loon/plugins/` 托管冻结的转换版，脚本地址固定到审核过的上游提交，文件头写明来源与重新生成方法。新插件在模板里先 `enabled=false`，真机验收后再改默认值。
+- 远程资源巡检对 kelee.one 使用已验证可用的完整 iOS Loon UA（见 `scripts/check_remote_resources.py`）；只带 `Loon/x.y.z` 时曾返回 403。
+- Loon 重新保存配置时会去掉逗号后的空格，比对设备配置前先统一格式。
+
+**Mihomo / ShellCrash**
+- DAZN、Cloudflare、Amazon provider 只用域名规则；不用 GlobalMedia 聚合。共享 CDN 的 IP 段会误判。
+- 路由器上，仓库只管 proxy-providers、策略组、rule-provider 和规则；端口、DNS、TUN、sniffer、控制器、防火墙归 ShellCrash（当前设备约定 sniffer 保持开启）。Windows 的运行参数仍由 `mihomo/verge/config.yaml` 管理。
+- 当前路由器访问 raw.githubusercontent.com 不稳定：部署时把 `TEMPLATE_URL` 指向 jsDelivr 固定的完整 SHA，后台运行；每次部署使用独立的结果目录，记录退出码与完成标记。`start-stop-daemon` 必须带 `-m -p`。
+- 回滚使用部署前的固定备份；`yamls/config.yaml.bak.proxy-config` 每次部署都会被覆盖，不能当作回滚点。
+- 已知限制：Mihomo 遇到不支持 UDP 的节点会跳过规则继续匹配，与 QX 的 reject 不同。
+
+## 工作流程
+
+1. 先查清再动手。改配置前写方案或审核报告，交用户转给 Codex 审核；**审核通过前不 commit、不 push**。
+2. 报告放 `.local/<router|qx|loon|repo>/<YYYY-MM-DD>-<topic>/`（日期取任务开始日）：`PLAN*.md`、`REVIEW*.md`、`CODEX-REVIEW*.md`、`evidence/`、`rollback/`。报告要写清改动、依据、已跑的验证及复跑命令、反向测试、待审重点和范围外遗留。
+3. 审核通过后在功能分支提交（Conventional Commits，如 `fix(loon): …`），开 PR，CI 全绿。合并默认由用户安排 Codex 完成；只有用户当次明确授权，代理才自行 squash 合并并删除分支。
+4. 涉及设备（QX、Loon iCloud 配置、Verge 配置副本、路由器）时：先备份、写入前核对哈希，只替换必要的行，保留订阅、MitM、节点选择和设备覆写。设备行为的结论要能重复验证。
+5. 只做当前任务需要的最小改动。发现范围外的问题，记为后续事项，不顺手修改。
+
+## 隐私与安全（公开仓库）
+
+- 不提交：订阅 URL / token、MitM passphrase / p12 / 证书、`*/bootstrap.conf`、`mihomo/shellcrash/providers.env`、Cookie、API Key；仓库内只用占位符。
+- 机场名称、机场 DoH、节点域名、家庭 SSID 不进仓库、提交说明或 PR 描述，只在设备本地写入。
+- `.local/` 是本机档案（Git 忽略），含设备原始日志和私密配置，不提交、不上传。索引见 `.local/README.md`。
+- 打印设备配置的差异时要脱敏，包括以 `+` / `-` 开头的行。
+- 不确定用途的服务和文件，先查依赖并告知用户，不擅自关闭或删除。破坏性操作前必须备份。`chmod` 不用通配符（目录 700，文件按名称或用 `find -type f` 设置）。
