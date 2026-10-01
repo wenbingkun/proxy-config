@@ -26,6 +26,35 @@ RULE_TYPES = (
 # Loon's domain rules are DOMAIN, DOMAIN-SUFFIX and DOMAIN-KEYWORD only.
 LOON_UNSUPPORTED = {"domain_regex"}
 
+# Groups that switch with the network on QX and Loon. Rules point at "<group> · 自动", an ssid
+# group that is DIRECT on the home Wi-Fi (the router proxies) and <group> elsewhere. Both
+# bootstrap templates list these wrappers last, in this order. DIRECT, REJECT and 🛡️ 安全防护 are
+# not wrapped, so ad blocking still rejects at home.
+HOME_AUTO_SUFFIX = " · 自动"
+HOME_AUTO_GROUPS = (
+    "🤖 人工智能",
+    "🎬 流媒体",
+    "🎮 游戏平台",
+    "🌐 社交平台",
+    "🎙️ 商务协作",
+    "👨‍💻 开发服务",
+    "💰 加密货币",
+    "🛒 电商支付",
+    "🍎 苹果服务",
+    "🌌 谷歌服务",
+    "Ⓜ️ 微软服务",
+    "📺 哔哩哔哩",
+    "🇨🇳 国内服务",
+    "📡 网络测速",
+    "🐟 兜底分流",
+    "🇭🇰 香港节点",
+)
+
+
+def home_auto(policy: str) -> str:
+    """The policy a QX or Loon rule uses for a group: its "· 自动" wrapper if it has one."""
+    return policy + HOME_AUTO_SUFFIX if policy in HOME_AUTO_GROUPS else policy
+
 
 def load_manifest() -> list[dict[str, str]]:
     data = yaml.safe_load(LOCAL_RULES_MANIFEST.read_text(encoding="utf-8")) or {}
@@ -106,7 +135,7 @@ def render_qx_filter() -> str:
         data = load_rule_source(item["source"])
         lines.append(f"# {item['title']}")
         for _, qx_token, value in iter_rules(data):
-            lines.append(f"{qx_token}, {value}, {item['qx_policy']}")
+            lines.append(f"{qx_token}, {value}, {home_auto(item['qx_policy'])}")
         lines.append("")
     return "\n".join(lines)
 

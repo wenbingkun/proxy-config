@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from build_rules import HOME_AUTO_SUFFIX, home_auto  # noqa: E402
 CONFIG_PATHS = (
     ROOT / "mihomo" / "verge" / "config.yaml",
     ROOT / "mihomo" / "verge" / "config-single.yaml",
@@ -191,7 +194,9 @@ def assert_local_domain_coverage() -> None:
 
 
 def load_qx_remote_filters() -> list[tuple[str, str]]:
-    """Return (list name, force-policy) for enabled blackmatrix7 QX lists, in file order."""
+    """Return (list name, group) for enabled blackmatrix7 QX lists, in file order.
+
+    The group is the force-policy without its "· 自动" home-Wi-Fi wrapper, as Clash names it."""
     filters: list[tuple[str, str]] = []
     in_section = False
     for raw_line in QX_CONFIG.read_text(encoding="utf-8").splitlines():
@@ -209,7 +214,9 @@ def load_qx_remote_filters() -> list[tuple[str, str]]:
             continue
         match = re.search(r"/rule/QuantumultX/([^/]+)/\1\.list$", line.split(",")[0])
         if match and "force-policy" in params:
-            filters.append((match.group(1), params["force-policy"].strip()))
+            filters.append(
+                (match.group(1), params["force-policy"].strip().removesuffix(HOME_AUTO_SUFFIX))
+            )
     return filters
 
 
@@ -282,7 +289,7 @@ def assert_shared_service_policies() -> None:
     matches = [i for i, url in enumerate(urls) if url == APPLE_INTELLIGENCE_URL]
     assert len(matches) == 1, "QX must load the Apple Intelligence list exactly once"
     params = enabled[matches[0]][1]
-    assert params.get("force-policy") == "🍎 苹果服务", (
+    assert params.get("force-policy") == home_auto("🍎 苹果服务"), (
         "Apple Intelligence must follow the Apple services group"
     )
     apple = [i for i, url in enumerate(urls) if url.endswith("/rule/QuantumultX/Apple/Apple.list")]
