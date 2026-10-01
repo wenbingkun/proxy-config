@@ -103,4 +103,4 @@ Steam 不再单设策略组：客户端进程、平台域名和 21 条下载 CDN
 
 ## QX 与路由器的分工
 
-Quantumult X 可继续留在 iPhone / iPad 上承担 MitM、rewrite、脚本和内容层去广告；无需再维护第二份 QX 完整配置。由路由器负责外网分流时，QX 的常规代理出口应保持直连，让请求交给默认网关上的 ShellCrash，再由路由器决定直连或代理。只有确实需要 QX 本机能力的流量才由 QX 处理，避免形成“QX 代理到节点后又经过路由器代理”的嵌套链路。即使设备走路由器，ShellCrash 的域名级广告拦截仍然生效；QX 专属的 MitM、rewrite、脚本和页面净化则只有 QX 保持运行并接管相应请求时才生效。
+Quantumult X 可继续留在 iPhone / iPad 上承担 MitM、rewrite、脚本和内容层去广告；无需再维护第二份 QX 完整配置。由路由器负责外网分流时，QX 的常规代理出口应保持直连，让请求交给默认网关上的 ShellCrash，再由路由器决定直连或代理。这一切换与 Loon 相同，由 16 个「· 自动」ssid 策略自动完成：家庭 SSID 下为 DIRECT，其他 Wi-Fi 与蜂窝下为同名基础组；QX 全程保持规则分流，`🛡️ 安全防护` 不参与切换。包装组清单在 `scripts/build_rules.py` 的 `HOME_AUTO_GROUPS` 中维护，生成 `repo.snippet` 时直接使用，两端模板由测试校验与之一致。只有确实需要 QX 本机能力的流量才由 QX 处理，避免形成“QX 代理到节点后又经过路由器代理”的嵌套链路。即使设备走路由器，ShellCrash 的域名级广告拦截仍然生效；QX 专属的 MitM、rewrite、脚本和页面净化则只有 QX 保持运行并接管相应请求时才生效。

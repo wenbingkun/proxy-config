@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from build_rules import home_auto  # noqa: E402
+
 GAME_POLICY = "🎮 游戏平台"
 
 EXPECTED_NON_STEAM_DOWNLOADS = {
@@ -92,7 +96,8 @@ def main() -> int:
         encoding="utf-8"
     ).splitlines()
     for domain in steam_downloads:
-        if not any(domain in line and line.endswith(f", {GAME_POLICY}") for line in qx_lines):
+        # QX rules use the home-Wi-Fi wrapper of the game group.
+        if not any(domain in line and line.endswith(f", {home_auto(GAME_POLICY)}") for line in qx_lines):
             raise AssertionError(f"QX Steam download rule has wrong policy: {domain}")
     for domain in other_downloads:
         if not any(domain in line and line.endswith(", DIRECT") for line in qx_lines):

@@ -64,6 +64,7 @@ jobs:
               "tests/test_region_groups.py",
               "tests/test_steam_policy.py",
               "tests/test_loon_config.py",
+              "tests/test_qx_config.py",
           ]
           missing = [p for p in required if not (ROOT / p).exists()]
           if missing:
@@ -138,6 +139,7 @@ jobs:
           python3 tests/test_rule_provider_scope.py
           python3 tests/test_steam_policy.py
           python3 tests/test_loon_config.py
+          python3 tests/test_qx_config.py
 
       - name: Check shell script syntax
         run: sh -n mihomo/shellcrash/deploy.sh

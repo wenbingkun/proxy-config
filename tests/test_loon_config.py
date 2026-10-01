@@ -19,7 +19,7 @@ MANIFEST = ROOT / "rules" / "local_rules.yaml"
 
 HOME_SSID = "HOME_SSID"
 # Rule-facing ssid groups are "<QX group> · 自动"; the QX-named group is where nodes are picked.
-AUTO_SUFFIX = " · 自动"
+AUTO_SUFFIX = build_rules.HOME_AUTO_SUFFIX
 BUILTIN = {"DIRECT", "REJECT", "REJECT-IMG", "REJECT-DICT", "REJECT-ARRAY", "REJECT-DROP"}
 REPO_RAW = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/"
 QX_KINDS = {"static": "select", "url-latency-benchmark": "url-test", "available": "fallback"}
@@ -100,6 +100,9 @@ def load_qx_groups() -> dict[str, tuple[str, list[str], str | None, dict[str, st
     groups = {}
     for line in sections(QX_CONFIG.read_text(encoding="utf-8"))["policy"]:
         kind, _, rest = line.partition("=")
+        if kind == "ssid":
+            # The QX ssid wrappers are checked against Loon's in tests/test_qx_config.py.
+            continue
         parts = [p.strip() for p in rest.split(", ")]
         members, regex, opts = [], None, {}
         for part in parts[1:]:
@@ -117,6 +120,14 @@ def load_qx_groups() -> dict[str, tuple[str, list[str], str | None, dict[str, st
 def check_home_and_away(loon: dict, failures: list[str]) -> None:
     groups, ssid = loon["groups"], loon["ssid"]
     known = set(groups) | set(ssid) | set(loon["filters"]) | BUILTIN
+
+    # The wrapped groups are shared with the QX template and the QX snippet generator.
+    expected_ssid = [name + AUTO_SUFFIX for name in build_rules.HOME_AUTO_GROUPS]
+    if list(ssid) != expected_ssid:
+        failures.append(f"ssid groups must be {expected_ssid} (build_rules.HOME_AUTO_GROUPS), got {list(ssid)}")
+    group_lines = [line.partition(" = ")[2].startswith("ssid, ") for line in loon["sections"]["Proxy Group"]]
+    if group_lines[len(group_lines) - len(ssid) :] != [True] * len(ssid):
+        failures.append("ssid groups must be listed after every other group")
 
     for name, branches in ssid.items():
         if not name.endswith(AUTO_SUFFIX):
@@ -206,7 +217,9 @@ def check_qx_parity(loon: dict, failures: list[str]) -> None:
 
 
 def wrapped(loon: dict, policy: str) -> str:
-    """The policy a Loon rule should use for a QX policy: its "· 自动" group if it has one."""
+    """The policy a Loon rule should use for a QX group: its "· 自动" group if it has one.
+
+    QX rules already point at the "· 自动" wrappers, which pass through unchanged."""
     return policy + AUTO_SUFFIX if policy + AUTO_SUFFIX in loon["ssid"] else policy
 
 

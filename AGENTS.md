@@ -43,17 +43,19 @@ sh -n mihomo/shellcrash/deploy.sh
 
 ## 各端约定（改动前先读，别“补齐”有意的差异）
 
-**策略组**：以路由器模板为基准，三端的 32 个基础策略组组名、组序一致；Loon 另有 16 个 ssid 包装组（见下）。
+**策略组**：以路由器模板为基准，三端的 32 个基础策略组组名、组序一致；QX 与 Loon 另有 16 个 ssid 包装组（见下）。
+- 家庭/外出切换（QX、Loon 相同）：需要区分的策略由排在最后的 16 个「· 自动」ssid 组包装，在家走 DIRECT 交给路由器，外出（其他 Wi-Fi、蜂窝）走同名基础组；规则只引用包装组。REJECT、DIRECT、`🛡️ 安全防护` 等不需要切换的策略不包装。全程规则模式：Loon 不用 `ssid-trigger`，QX 不用 `running_mode_trigger` / `ssid_suspended_list`。包装组清单唯一来源是 `scripts/build_rules.py` 的 `HOME_AUTO_GROUPS`（同时决定 `repo.snippet` 的策略名），`tests/test_qx_config.py` 与 `tests/test_loon_config.py` 校验两端模板与之一致。
 - QX 的 `🌏 全球加速` 有意不挂规则；ProxyLite 有意不移植到 QX。
 - 地区组只含本地区节点；非美地区组按延迟自动优选，美国组手动。
 
 **Quantumult X**
+- ssid 策略写法：`ssid=X · 自动, X, X, HOME_SSID:DIRECT`（依次为其他 Wi-Fi、蜂窝、家庭 SSID）。仓库 `repo.snippet` 引用「· 自动」组，设备配置缺少这些组时其规则无法生效。
 - 丢弃 UDP 443（QUIC），让 App 回退到 TCP、MitM 才能生效；`fallback_udp_policy = reject`；不设 `no-ipv6`。
 - B 站使用仓库冻结托管的 `quantumultx/rewrite/bilibili_ad.conf` 与 `quantumultx/scripts/bilibili_json.js`，不跟上游，不与其他 B 站重写同时启用。
 - 观察（2026-09）：QX 测速组只在被请求时测速，在家空闲时停在首个节点，属正常。
 
 **Loon**
-- 需要区分家庭/外出的策略，由排在最后的 16 个「· 自动」ssid 组包装：在家走 DIRECT 交给路由器，外出走同名 QX 组。REJECT、DIRECT 等不需要切换的策略不包装。不用 `ssid-trigger`。
+- ssid 组写法：`X · 自动 = ssid, default = X, cellular = X, "HOME_SSID" = DIRECT`。
 - `GEOIP,CN` 必须作为最后一条远程规则（`loon/rules/geoip_cn.list`），不能放本地 `[Rule]`。
 - Loon 同一阶段命中的 Rewrite 按配置顺序全部执行，效果可以叠加；同一字段可能被后面的规则覆盖（QX 是命中第一条即停）。用 Script-Hub 转换 QX 重写后，要检查重叠规则的实际效果，不能按 QX 的首次命中模型推断。
 - `loon/plugins/` 托管冻结的转换版，脚本地址固定到审核过的上游提交，文件头写明来源与重新生成方法。新插件在模板里先 `enabled=false`，真机验收后再改默认值。
