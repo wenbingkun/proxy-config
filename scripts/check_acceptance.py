@@ -30,42 +30,42 @@ def fail(msg: str, failures: list[str]) -> None:
 def check_architecture(failures: list[str]) -> None:
     """Check that the three-layer architecture is in place."""
 
-    # clash/config.yaml has rule-providers with at least one entry
-    clash_config = ROOT / "clash" / "config.yaml"
+    # mihomo/verge/config.yaml has rule-providers with at least one entry
+    clash_config = ROOT / "mihomo" / "verge" / "config.yaml"
     if not clash_config.exists():
-        fail("clash/config.yaml not found", failures)
+        fail("mihomo/verge/config.yaml not found", failures)
     else:
         try:
             data = yaml.safe_load(clash_config.read_text(encoding="utf-8")) or {}
             providers = data.get("rule-providers")
             if not isinstance(providers, dict) or len(providers) == 0:
-                fail("clash/config.yaml: 'rule-providers' missing or empty", failures)
+                fail("mihomo/verge/config.yaml: 'rule-providers' missing or empty", failures)
             elif not {"OpenAI", "Anthropic", "GitHubCopilot", "Gemini", "AIExtra"} <= set(providers):
-                fail("clash/config.yaml: granular AI providers are incomplete", failures)
+                fail("mihomo/verge/config.yaml: granular AI providers are incomplete", failures)
             elif {"AI", "Tracking", "Epic", "PlayStation", "Xbox", "Nintendo", "BattleNet"} & set(
                 providers
             ):
-                fail("clash/config.yaml: contains a superseded duplicate rule provider", failures)
+                fail("mihomo/verge/config.yaml: contains a superseded duplicate rule provider", failures)
             proxy_providers = data.get("proxy-providers")
             if not isinstance(proxy_providers, dict) or set(proxy_providers) != {"Sub", "Sub2"}:
-                fail("clash/config.yaml: expected dual proxy providers Sub and Sub2", failures)
+                fail("mihomo/verge/config.yaml: expected dual proxy providers Sub and Sub2", failures)
         except yaml.YAMLError as exc:
-            fail(f"clash/config.yaml: YAML parse error: {exc}", failures)
+            fail(f"mihomo/verge/config.yaml: YAML parse error: {exc}", failures)
 
-    single_config = ROOT / "clash" / "config-single.yaml"
+    single_config = ROOT / "mihomo" / "verge" / "config-single.yaml"
     if not single_config.exists():
-        fail("clash/config-single.yaml not found", failures)
+        fail("mihomo/verge/config-single.yaml not found", failures)
     else:
         try:
             raw = single_config.read_text(encoding="utf-8")
             data = yaml.safe_load(raw) or {}
             proxy_providers = data.get("proxy-providers")
             if not isinstance(proxy_providers, dict) or set(proxy_providers) != {"Sub"}:
-                fail("clash/config-single.yaml: expected only proxy provider Sub", failures)
+                fail("mihomo/verge/config-single.yaml: expected only proxy provider Sub", failures)
             if "Sub2" in raw:
-                fail("clash/config-single.yaml: contains residual Sub2 reference", failures)
+                fail("mihomo/verge/config-single.yaml: contains residual Sub2 reference", failures)
         except yaml.YAMLError as exc:
-            fail(f"clash/config-single.yaml: YAML parse error: {exc}", failures)
+            fail(f"mihomo/verge/config-single.yaml: YAML parse error: {exc}", failures)
 
     # bootstrap.example.conf has [filter_remote] and [mitm] sections
     bootstrap = ROOT / "quantumultx" / "bootstrap.example.conf"
@@ -191,7 +191,7 @@ def check_documentation(failures: list[str]) -> None:
 
 
 def check_policy_references(failures: list[str]) -> None:
-    clash_data = yaml.safe_load((ROOT / "clash" / "config.yaml").read_text(encoding="utf-8")) or {}
+    clash_data = yaml.safe_load((ROOT / "mihomo" / "verge" / "config.yaml").read_text(encoding="utf-8")) or {}
     clash_groups = {
         group.get("name")
         for group in clash_data.get("proxy-groups", [])
@@ -235,7 +235,7 @@ def check_policy_references(failures: list[str]) -> None:
 
 
 def check_windows_runtime_defaults(failures: list[str]) -> None:
-    data = yaml.safe_load((ROOT / "clash" / "config.yaml").read_text(encoding="utf-8")) or {}
+    data = yaml.safe_load((ROOT / "mihomo" / "verge" / "config.yaml").read_text(encoding="utf-8")) or {}
     dns = data.get("dns", {})
     tun = data.get("tun", {})
     expected = {
@@ -246,15 +246,15 @@ def check_windows_runtime_defaults(failures: list[str]) -> None:
     }
     for key, value in expected.items():
         if data.get(key) != value:
-            fail(f"clash/config.yaml: expected {key}={value!r}", failures)
+            fail(f"mihomo/verge/config.yaml: expected {key}={value!r}", failures)
     if "bind-address" in data:
-        fail("clash/config.yaml: bind-address must not be explicitly exposed", failures)
+        fail("mihomo/verge/config.yaml: bind-address must not be explicitly exposed", failures)
     if not isinstance(dns, dict) or dns.get("enable") is not True:
-        fail("clash/config.yaml: DNS must be enabled", failures)
+        fail("mihomo/verge/config.yaml: DNS must be enabled", failures)
     elif dns.get("enhanced-mode") != "fake-ip" or dns.get("ipv6") is not True:
-        fail("clash/config.yaml: expected fake-ip DNS with IPv6 enabled", failures)
+        fail("mihomo/verge/config.yaml: expected fake-ip DNS with IPv6 enabled", failures)
     if not isinstance(tun, dict) or tun.get("enable") is not False:
-        fail("clash/config.yaml: TUN must remain disabled by default", failures)
+        fail("mihomo/verge/config.yaml: TUN must remain disabled by default", failures)
 
 
 def qx_section_lines(section: str) -> list[str]:

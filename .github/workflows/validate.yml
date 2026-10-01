@@ -30,20 +30,21 @@ jobs:
           required = [
               "rules",
               "quantumultx",
-              "clash",
+              "mihomo",
+              "tests",
               "scripts",
               "README.md",
               "AGENTS.md",
               ".gitignore",
-              "clash/config.yaml",
-              "clash/config-single.yaml",
-              "clash/config-router.template.yaml",
-              "clash/config-router-single.template.yaml",
-              "clash/shellcrash/providers.env.example",
+              "mihomo/verge/config.yaml",
+              "mihomo/verge/config-single.yaml",
+              "mihomo/shellcrash/config-router.template.yaml",
+              "mihomo/shellcrash/config-router-single.template.yaml",
+              "mihomo/shellcrash/providers.env.example",
               "quantumultx/bootstrap.example.conf",
-              "quantumultx/filter_remote.snippet",
+              "quantumultx/filter/repo.snippet",
               "loon/bootstrap.example.conf",
-              "loon/geoip_cn.list",
+              "loon/rules/geoip_cn.list",
               "loon/plugins/GoofishAds.plugin",
               "loon/plugins/WeiboAds.plugin",
               "loon/plugins/Douban.plugin",
@@ -55,13 +56,14 @@ jobs:
               "scripts/check_acceptance.py",
               "scripts/check_hygiene.py",
               "scripts/check_remote_resources.py",
-              "scripts/test_remote_resources.py",
-              "scripts/deploy_shellcrash_config.sh",
-              "scripts/test_deploy_shellcrash.py",
-              "scripts/test_shellcrash_override.py",
-              "scripts/test_region_groups.py",
-              "scripts/test_steam_policy.py",
-              "scripts/test_loon_config.py",
+              "tests/test_remote_resources.py",
+              "mihomo/shellcrash/deploy.sh",
+              "tests/test_deploy_shellcrash.py",
+              "tests/test_shellcrash_override.py",
+              "tests/test_rule_provider_scope.py",
+              "tests/test_region_groups.py",
+              "tests/test_steam_policy.py",
+              "tests/test_loon_config.py",
           ]
           missing = [p for p in required if not (ROOT / p).exists()]
           if missing:
@@ -80,11 +82,18 @@ jobs:
           import yaml
 
           ROOT = Path(".")
-          targets = (
-              list(Path("clash").glob("*.yaml")) +
-              list(Path("clash/rulesets").glob("*.yaml")) +
-              list(Path("rules").glob("*.yaml"))
-          )
+          configs = [
+              Path("mihomo/verge/config.yaml"),
+              Path("mihomo/verge/config-single.yaml"),
+              Path("mihomo/shellcrash/config-router.template.yaml"),
+              Path("mihomo/shellcrash/config-router-single.template.yaml"),
+          ]
+          rulesets = list(Path("mihomo/rules").glob("*.yaml"))
+          sources = list(Path("rules").glob("*.yaml"))
+          if not all(p.is_file() for p in configs) or not rulesets or not sources:
+              print("YAML scan set is incomplete: missing Mihomo configs, mihomo/rules or rules")
+              sys.exit(1)
+          targets = configs + rulesets + sources
           errors = []
           for path in sorted(targets):
               try:
@@ -100,19 +109,19 @@ jobs:
           print(f"YAML syntax OK ({len(targets)} files checked).")
           EOF
 
-      - name: Check clash/config.yaml has rule-providers
+      - name: Check mihomo/verge/config.yaml has rule-providers
         run: |
           python - <<'EOF'
           import sys
           from pathlib import Path
           import yaml
 
-          data = yaml.safe_load(Path("clash/config.yaml").read_text(encoding="utf-8")) or {}
+          data = yaml.safe_load(Path("mihomo/verge/config.yaml").read_text(encoding="utf-8")) or {}
           providers = data.get("rule-providers")
           if not isinstance(providers, dict) or len(providers) == 0:
-              print("clash/config.yaml: 'rule-providers' missing or empty")
+              print("mihomo/verge/config.yaml: 'rule-providers' missing or empty")
               sys.exit(1)
-          print(f"clash/config.yaml: {len(providers)} rule-providers defined.")
+          print(f"mihomo/verge/config.yaml: {len(providers)} rule-providers defined.")
           EOF
 
       - name: Check generated files are up to date
@@ -124,17 +133,17 @@ jobs:
         run: |
           python3 scripts/check_hygiene.py
           python3 scripts/check_acceptance.py
-          python3 scripts/test_region_groups.py
-          python3 scripts/test_remote_resources.py
-          python3 scripts/test_rule_provider_scope.py
-          python3 scripts/test_steam_policy.py
-          python3 scripts/test_loon_config.py
+          python3 tests/test_region_groups.py
+          python3 tests/test_remote_resources.py
+          python3 tests/test_rule_provider_scope.py
+          python3 tests/test_steam_policy.py
+          python3 tests/test_loon_config.py
 
       - name: Check shell script syntax
-        run: sh -n scripts/deploy_shellcrash_config.sh
+        run: sh -n mihomo/shellcrash/deploy.sh
 
       - name: Test ShellCrash deployment transaction
-        run: python3 scripts/test_deploy_shellcrash.py
+        run: python3 tests/test_deploy_shellcrash.py
 
       - name: Validate configs with ShellCrash Mihomo
         run: |
@@ -151,19 +160,19 @@ jobs:
           echo "${modify_sha256}  /tmp/proxy-config-mihomo/clash_modify.sh" | sha256sum -c -
           tar -xzf /tmp/proxy-config-mihomo/core.tar.gz -C /tmp/proxy-config-mihomo
           chmod +x /tmp/proxy-config-mihomo/CrashCore
-          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config.yaml
-          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-single.yaml
-          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router.template.yaml
-          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f clash/config-router-single.template.yaml
-          python3 scripts/test_shellcrash_override.py \
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f mihomo/verge/config.yaml
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f mihomo/verge/config-single.yaml
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f mihomo/shellcrash/config-router.template.yaml
+          /tmp/proxy-config-mihomo/CrashCore -t -d /tmp/proxy-config-mihomo -f mihomo/shellcrash/config-router-single.template.yaml
+          python3 tests/test_shellcrash_override.py \
             --modify-script /tmp/proxy-config-mihomo/clash_modify.sh \
             --core /tmp/proxy-config-mihomo/CrashCore \
             --mmdb /tmp/proxy-config-mihomo/Country.mmdb
-          python3 scripts/test_shellcrash_override.py \
+          python3 tests/test_shellcrash_override.py \
             --modify-script /tmp/proxy-config-mihomo/clash_modify.sh \
             --core /tmp/proxy-config-mihomo/CrashCore \
             --mmdb /tmp/proxy-config-mihomo/Country.mmdb \
-            --template clash/config-router-single.template.yaml
+            --template mihomo/shellcrash/config-router-single.template.yaml
 
   # Candidate router core: slim Mihomo v1.19.31 built from source with the same
   # parameters as the local reproducible build. Kept alongside the v1.19.17 job
@@ -219,16 +228,16 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/juewuy/ShellCrash/${shellcrash_commit}/scripts/starts/clash_modify.sh" -o /tmp/slim/out/clash_modify.sh
           echo "${mmdb_sha256}  /tmp/slim/out/Country.mmdb" | sha256sum -c -
           echo "${modify_sha256}  /tmp/slim/out/clash_modify.sh" | sha256sum -c -
-          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config.yaml
-          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config-single.yaml
-          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config-router.template.yaml
-          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f clash/config-router-single.template.yaml
-          python3 scripts/test_shellcrash_override.py \
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f mihomo/verge/config.yaml
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f mihomo/verge/config-single.yaml
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f mihomo/shellcrash/config-router.template.yaml
+          /tmp/slim/out/CrashCore -t -d /tmp/slim/out -f mihomo/shellcrash/config-router-single.template.yaml
+          python3 tests/test_shellcrash_override.py \
             --modify-script /tmp/slim/out/clash_modify.sh \
             --core /tmp/slim/out/CrashCore \
             --mmdb /tmp/slim/out/Country.mmdb
-          python3 scripts/test_shellcrash_override.py \
+          python3 tests/test_shellcrash_override.py \
             --modify-script /tmp/slim/out/clash_modify.sh \
             --core /tmp/slim/out/CrashCore \
             --mmdb /tmp/slim/out/Country.mmdb \
-            --template clash/config-router-single.template.yaml
+            --template mihomo/shellcrash/config-router-single.template.yaml

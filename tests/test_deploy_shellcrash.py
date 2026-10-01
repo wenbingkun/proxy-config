@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEPLOY_SCRIPT = ROOT / "scripts" / "deploy_shellcrash_config.sh"
+DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"
 DEPLOY_TIMEOUT = 60
 SYSTEM_BIN_DIRS = ("/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")
 

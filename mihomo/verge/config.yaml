@@ -295,7 +295,7 @@ rule-providers:
   GitHubCopilot: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github-copilot.yaml", path: ./cache/rulesets/GitHubCopilot.yaml}
   Gemini: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google-gemini.yaml", path: ./cache/rulesets/Gemini.yaml}
   Slack: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Slack/Slack.yaml", path: ./cache/rulesets/Slack.yaml}
-  Zoom: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/zoom.yaml", path: ./cache/rulesets/Zoom.yaml}
+  Zoom: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/zoom.yaml", path: ./cache/rulesets/Zoom.yaml}
   WhatsApp: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Whatsapp/Whatsapp.yaml", path: ./cache/rulesets/WhatsApp.yaml}
   Line: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Line/Line.yaml", path: ./cache/rulesets/Line.yaml}
   YouTube: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/YouTube/YouTube.yaml", path: ./cache/rulesets/YouTube.yaml}
@@ -310,7 +310,7 @@ rule-providers:
   Reddit: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Reddit/Reddit.yaml", path: ./cache/rulesets/Reddit.yaml}
   LinkedIn: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/LinkedIn/LinkedIn.yaml", path: ./cache/rulesets/LinkedIn.yaml}
   Pinterest: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Pinterest/Pinterest.yaml", path: ./cache/rulesets/Pinterest.yaml}
-  SocialMedia: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/social_media.yaml", path: ./cache/rulesets/SocialMedia.yaml}
+  SocialMedia: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/social_media.yaml", path: ./cache/rulesets/SocialMedia.yaml}
   Netflix: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Netflix/Netflix.yaml", path: ./cache/rulesets/Netflix.yaml}
   Disney: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Disney/Disney.yaml", path: ./cache/rulesets/Disney.yaml}
   Spotify: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Spotify/Spotify.yaml", path: ./cache/rulesets/Spotify.yaml}
@@ -319,17 +319,17 @@ rule-providers:
   PrimeVideo: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/AmazonPrimeVideo/AmazonPrimeVideo.yaml", path: ./cache/rulesets/PrimeVideo.yaml}
   HBO: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/HBO/HBO.yaml", path: ./cache/rulesets/HBO.yaml}
   Hulu: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Hulu/Hulu.yaml", path: ./cache/rulesets/Hulu.yaml}
-  Crunchyroll: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/crunchyroll.yaml", path: ./cache/rulesets/Crunchyroll.yaml}
+  Crunchyroll: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/crunchyroll.yaml", path: ./cache/rulesets/Crunchyroll.yaml}
   DAZN: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dazn.yaml", path: ./cache/rulesets/DAZN_Domain.yaml}
   Apple: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Apple/Apple_Classical.yaml", path: ./cache/rulesets/Apple.yaml}
-  AppleExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/apple_extra.yaml", path: ./cache/rulesets/AppleExtra.yaml}
+  AppleExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/apple_extra.yaml", path: ./cache/rulesets/AppleExtra.yaml}
   Google: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Google/Google.yaml", path: ./cache/rulesets/Google.yaml}
   Microsoft: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml", path: ./cache/rulesets/Microsoft.yaml}
-  MicrosoftExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/microsoft_extra.yaml", path: ./cache/rulesets/MicrosoftExtra.yaml}
+  MicrosoftExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/microsoft_extra.yaml", path: ./cache/rulesets/MicrosoftExtra.yaml}
   GitHub: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GitHub/GitHub.yaml", path: ./cache/rulesets/GitHub.yaml}
   GitLab: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GitLab/GitLab.yaml", path: ./cache/rulesets/GitLab.yaml}
   Docker: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Docker/Docker.yaml", path: ./cache/rulesets/Docker.yaml}
-  StackOverflow: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/stack_overflow.yaml", path: ./cache/rulesets/StackOverflow.yaml}
+  StackOverflow: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/stack_overflow.yaml", path: ./cache/rulesets/StackOverflow.yaml}
   Cloudflare: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cloudflare.yaml", path: ./cache/rulesets/Cloudflare_Domain.yaml}
   Developer: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Developer/Developer.yaml", path: ./cache/rulesets/Developer.yaml}
   Amazon: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.yaml", path: ./cache/rulesets/Amazon_Domain.yaml}
@@ -344,18 +344,18 @@ rule-providers:
   Game: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Game/Game.yaml", path: ./cache/rulesets/Game.yaml}
   ProxyLite: {type: http, behavior: domain, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt", path: ./cache/rulesets/ProxyLite.yaml}
   Lan: {type: http, behavior: ipcidr, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.yaml}
-  LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
-  DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
-  SteamDownload: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/steam_download.yaml", path: ./cache/rulesets/SteamDownload.yaml}
-  IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
-  HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
-  AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
-  CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
-  EcommerceExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/ecommerce_extra.yaml", path: ./cache/rulesets/EcommerceExtra.yaml}
-  CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
-  DevExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/dev_extra.yaml", path: ./cache/rulesets/DevExtra.yaml}
-  Speedtest: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/speedtest.yaml", path: ./cache/rulesets/Speedtest.yaml}
-  GameExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/clash/rulesets/game_extra.yaml", path: ./cache/rulesets/GameExtra.yaml}
+  LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
+  DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
+  SteamDownload: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/steam_download.yaml", path: ./cache/rulesets/SteamDownload.yaml}
+  IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
+  HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
+  AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
+  CryptoExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/crypto_extra.yaml", path: ./cache/rulesets/CryptoExtra.yaml}
+  EcommerceExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/ecommerce_extra.yaml", path: ./cache/rulesets/EcommerceExtra.yaml}
+  CollaborationExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/collaboration_extra.yaml", path: ./cache/rulesets/CollaborationExtra.yaml}
+  DevExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/dev_extra.yaml", path: ./cache/rulesets/DevExtra.yaml}
+  Speedtest: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/speedtest.yaml", path: ./cache/rulesets/Speedtest.yaml}
+  GameExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/game_extra.yaml", path: ./cache/rulesets/GameExtra.yaml}
 
 rules:
   - PROCESS-NAME,steam.exe,🎮 游戏平台

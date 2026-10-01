@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import email.message
+import sys
 import urllib.request
+from pathlib import Path
 
-import check_remote_resources as check
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+import check_remote_resources as check  # noqa: E402
 
 
 class FakeResponse:
@@ -108,7 +111,7 @@ def main() -> int:
     clash_resource = check.Resource(
         "https://resources.example/rules.yaml",
         "clash-rule",
-        "clash/config.yaml:rule-providers.Example",
+        "mihomo/verge/config.yaml:rule-providers.Example",
     )
     assert check.user_agent_for(qx_resource) == check.QX_USER_AGENT
     assert check.user_agent_for(clash_resource) == check.USER_AGENT

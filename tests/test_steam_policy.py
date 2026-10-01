@@ -60,7 +60,7 @@ def main() -> int:
     if steam_item.get("qx_policy") != GAME_POLICY:
         raise AssertionError("steam_download has the wrong QX policy")
 
-    config = yaml.safe_load((ROOT / "clash" / "config.yaml").read_text(encoding="utf-8")) or {}
+    config = yaml.safe_load((ROOT / "mihomo" / "verge" / "config.yaml").read_text(encoding="utf-8")) or {}
     groups = {group.get("name") for group in config.get("proxy-groups", [])}
     if GAME_POLICY not in groups:
         raise AssertionError("Game platform proxy group is missing")
@@ -88,7 +88,7 @@ def main() -> int:
     if any(rule.startswith("RULE-SET,Steam,") for rule in rules):
         raise AssertionError("standalone Steam rule must be removed")
 
-    qx_lines = (ROOT / "quantumultx" / "filter_remote.snippet").read_text(
+    qx_lines = (ROOT / "quantumultx" / "filter" / "repo.snippet").read_text(
         encoding="utf-8"
     ).splitlines()
     for domain in steam_downloads:

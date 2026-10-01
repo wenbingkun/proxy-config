@@ -10,8 +10,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 RULES_DIR = ROOT / "rules"
-CLASH_RULESETS_DIR = ROOT / "clash" / "rulesets"
-QX_FILTER_PATH = ROOT / "quantumultx" / "filter_remote.snippet"
+CLASH_RULESETS_DIR = ROOT / "mihomo" / "rules"
+QX_FILTER_PATH = ROOT / "quantumultx" / "filter" / "repo.snippet"
 LOON_RULES_DIR = ROOT / "loon" / "rules"
 LOCAL_RULES_MANIFEST = RULES_DIR / "local_rules.yaml"
 

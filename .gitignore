@@ -14,16 +14,17 @@ loon/*.crt
 loon/*.key
 loon/*.cer
 
-# Clash runtime caches
+# Mihomo runtime caches (clash/ entries kept from the old layout)
+mihomo/cache/
+mihomo/*/cache/
 clash/cache/
 /cache/
 
-# ShellCrash device-local secrets
+# ShellCrash device-local secrets (clash/ entries kept from the old layout)
+mihomo/shellcrash/providers.env
+mihomo/shellcrash/*.local.env
 clash/shellcrash/providers.env
 clash/shellcrash/*.local.env
-
-# Old config backups (kept locally for reference)
-old/
 
 # Codex CLI artifacts
 .codex

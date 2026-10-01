@@ -8,7 +8,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
-CLASH_CONFIG = ROOT / "clash" / "config.yaml"
+CLASH_CONFIG = ROOT / "mihomo" / "verge" / "config.yaml"
 QX_CONFIG = ROOT / "quantumultx" / "bootstrap.example.conf"
 
 REGION_GROUPS = (
@@ -172,11 +172,11 @@ def main() -> int:
         path.read_text(encoding="utf-8")
         for path in (
             CLASH_CONFIG,
-            ROOT / "clash" / "config-single.yaml",
-            ROOT / "clash" / "config-router.template.yaml",
-            ROOT / "clash" / "config-router-single.template.yaml",
+            ROOT / "mihomo" / "verge" / "config-single.yaml",
+            ROOT / "mihomo" / "shellcrash" / "config-router.template.yaml",
+            ROOT / "mihomo" / "shellcrash" / "config-router-single.template.yaml",
             QX_CONFIG,
-            ROOT / "quantumultx" / "filter_remote.snippet",
+            ROOT / "quantumultx" / "filter" / "repo.snippet",
             ROOT / "rules" / "local_rules.yaml",
         )
     )
