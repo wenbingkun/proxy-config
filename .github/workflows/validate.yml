@@ -45,6 +45,7 @@ jobs:
               "loon/bootstrap.example.conf",
               "loon/geoip_cn.list",
               "loon/plugins/GoofishAds.plugin",
+              "loon/plugins/WeiboAds.plugin",
               "loon/plugins/Douban.plugin",
               "loon/plugins/Q-Search.plugin",
               "loon/plugins/General.plugin",

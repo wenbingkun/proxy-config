@@ -90,6 +90,9 @@ def main() -> int:
     assert plugin_urls == {
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/819a88e0efbfeb5dfdb15e93c6d007a5e790a15f/amdc.js",
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/5bfa7fad4d262740131334169c222ca9ac2d353a/douban.js",
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/4ff1d89274c694454ac3a494ae1a2d4cfd1edf56/weibo_json.js",
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/08ad3524ab6924afd86ad6dc18ed48050a8abede/weibo_search_info.json",
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
     }, plugin_urls
 
     loon_resource = check.Resource(
