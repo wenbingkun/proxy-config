@@ -18,7 +18,8 @@ QX_CONFIG = ROOT / "quantumultx" / "bootstrap.example.conf"
 MANIFEST = ROOT / "rules" / "local_rules.yaml"
 
 HOME_SSID = "HOME_SSID"
-AWAY_SUFFIX = " · 外出"
+# Rule-facing ssid groups are "<QX group> · 自动"; the QX-named group is where nodes are picked.
+AUTO_SUFFIX = " · 自动"
 BUILTIN = {"DIRECT", "REJECT", "REJECT-IMG", "REJECT-DICT", "REJECT-ARRAY", "REJECT-DROP"}
 REPO_RAW = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/"
 QX_KINDS = {"static": "select", "url-latency-benchmark": "url-test", "available": "fallback"}
@@ -117,7 +118,10 @@ def check_home_and_away(loon: dict, failures: list[str]) -> None:
     known = set(groups) | set(ssid) | set(loon["filters"]) | BUILTIN
 
     for name, branches in ssid.items():
-        away = name + AWAY_SUFFIX
+        if not name.endswith(AUTO_SUFFIX):
+            failures.append(f"ssid group {name!r}: name must end with {AUTO_SUFFIX!r}")
+            continue
+        away = name.removesuffix(AUTO_SUFFIX)
         if branches.get("default") != away or branches.get("cellular") != away:
             failures.append(f"ssid group {name!r}: default and cellular must be {away!r}")
         if branches.get(HOME_SSID) != "DIRECT":
@@ -177,14 +181,14 @@ def check_home_and_away(loon: dict, failures: list[str]) -> None:
 def check_qx_parity(loon: dict, failures: list[str]) -> None:
     qx = load_qx_groups()
     loon_groups, filters = loon["groups"], loon["filters"]
-    expected_names = {name + AWAY_SUFFIX if name in loon["ssid"] else name for name in qx}
+    expected_names = set(qx)
     if set(loon_groups) != expected_names:
         failures.append(
             f"Loon groups differ from QX: missing {sorted(expected_names - set(loon_groups))}, "
             f"extra {sorted(set(loon_groups) - expected_names)}"
         )
     for name, (qx_kind, qx_members, regex, qx_opts) in qx.items():
-        loon_name = name + AWAY_SUFFIX if name in loon["ssid"] else name
+        loon_name = name
         if loon_name not in loon_groups:
             continue
         kind, members, opts = loon_groups[loon_name]
@@ -200,6 +204,11 @@ def check_qx_parity(loon: dict, failures: list[str]) -> None:
                 failures.append(f"{loon_name!r}: {key}={opts.get(key)} != QX {value}")
 
 
+def wrapped(loon: dict, policy: str) -> str:
+    """The policy a Loon rule should use for a QX policy: its "· 自动" group if it has one."""
+    return policy + AUTO_SUFFIX if policy + AUTO_SUFFIX in loon["ssid"] else policy
+
+
 def check_rules(loon: dict, failures: list[str]) -> None:
     remote = loon["remote_rules"]
     urls = [url for url, _ in remote]
@@ -213,7 +222,8 @@ def check_rules(loon: dict, failures: list[str]) -> None:
     # Expected order: repo rules in manifest order, then third-party lists in QX order, then GEOIP.
     manifest = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))["rule_sets"]
     expected_repo = [
-        (f"{REPO_RAW}loon/rules/{item['id']}.list", item["qx_policy"], "true") for item in manifest
+        (f"{REPO_RAW}loon/rules/{item['id']}.list", wrapped(loon, item["qx_policy"]), "true")
+        for item in manifest
     ]
     actual_repo = [
         (url, opts.get("policy"), opts.get("enabled")) for url, opts in remote[: len(expected_repo)]
@@ -221,7 +231,7 @@ def check_rules(loon: dict, failures: list[str]) -> None:
     if actual_repo != expected_repo:
         failures.append(
             "loon: [Remote Rule] must start with every rules/local_rules.yaml set in manifest order, "
-            "policy = qx_policy, enabled=true"
+            "policy = qx_policy (or its · 自动 group), enabled=true"
         )
 
     # QX third-party lists and Loon should route the same tags to the same policies, in order.
@@ -229,7 +239,7 @@ def check_rules(loon: dict, failures: list[str]) -> None:
     for line in sections(QX_CONFIG.read_text(encoding="utf-8"))["filter_remote"]:
         opts = dict(p.strip().split("=", 1) for p in line.split(",")[1:] if "=" in p)
         if "force-policy" in opts:
-            qx_remote.append((opts["tag"], opts["force-policy"], opts.get("enabled")))
+            qx_remote.append((opts["tag"], wrapped(loon, opts["force-policy"]), opts.get("enabled")))
     loon_remote = [
         (opts.get("tag"), opts.get("policy"), opts.get("enabled"))
         for _, opts in remote[len(expected_repo) : -1]
@@ -242,10 +252,10 @@ def check_rules(loon: dict, failures: list[str]) -> None:
     last_url, last_opts = remote[-1]
     if (last_url, last_opts.get("policy"), last_opts.get("enabled")) != (
         f"{REPO_RAW}loon/geoip_cn.list",
-        "🇨🇳 国内服务",
+        wrapped(loon, "🇨🇳 国内服务"),
         "true",
     ):
-        failures.append("loon: geoip_cn.list must be the last [Remote Rule], policy 🇨🇳 国内服务, enabled=true")
+        failures.append("loon: geoip_cn.list must be the last [Remote Rule], policy 🇨🇳 国内服务 · 自动, enabled=true")
     geoip_lines = [
         line.strip()
         for line in (ROOT / "loon" / "geoip_cn.list").read_text(encoding="utf-8").splitlines()
@@ -255,8 +265,8 @@ def check_rules(loon: dict, failures: list[str]) -> None:
         failures.append(f"loon/geoip_cn.list must contain exactly GEOIP,CN, got {geoip_lines}")
     if any(rule[0].upper() == "GEOIP" for rule in loon["local_rules"]):
         failures.append("loon: GEOIP in [Rule] would match before remote IP rules")
-    if loon["local_rules"][-1] != ["FINAL", "🐟 兜底分流"]:
-        failures.append("loon: [Rule] must end with FINAL,🐟 兜底分流")
+    if loon["local_rules"][-1] != ["FINAL", wrapped(loon, "🐟 兜底分流")]:
+        failures.append("loon: [Rule] must end with FINAL,🐟 兜底分流 · 自动")
 
 
 def check_runtime(loon: dict, failures: list[str]) -> None:
