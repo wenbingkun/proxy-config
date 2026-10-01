@@ -10,7 +10,7 @@
 # Edited after conversion: the [Rewrite] rules are in reverse order. Loon runs every matching
 # rewrite in order, so the last redirect wins, while QX stops at the first match; reversing
 # keeps QX's result (prefix keywords win over the catch-all Google search). Keep it reversed
-# when regenerating.
+# when regenerating. Also fixed: the upstream sg (Singapore store) rule sent cc=tr; it is cc=sg.
 
 [Rewrite]
 #     xxx （无指令默认为 Google）
@@ -37,7 +37,7 @@
 ^https:\/\/duckduckgo.com\/\?q=((.(?!bd))+)\+bd.+ https://www.baidu.com/s?wd=$1%20-adclear 302
 ^https:\/\/duckduckgo.com\/\?q=bd\+([^&]+).+ https://www.baidu.com/s?wd=$1%20-adclear 302
 # sg  (切换至新加坡区)
-^https:\/\/duckduckgo.com\/\?q=sg&.+ https://itunes.apple.com/WebObjects/MZStore.woa/wa/resetAndRedirect?dsf=143464&mt=8&url=/WebObjects/MZStore.woa/wa/viewSoftware?mt=8&id=1108187390&cc=tr&urlDesc= 302
+^https:\/\/duckduckgo.com\/\?q=sg&.+ https://itunes.apple.com/WebObjects/MZStore.woa/wa/resetAndRedirect?dsf=143464&mt=8&url=/WebObjects/MZStore.woa/wa/viewSoftware?mt=8&id=1108187390&cc=sg&urlDesc= 302
 # tr  (切换至土耳其区)
 ^https:\/\/duckduckgo.com\/\?q=tr&.+ https://itunes.apple.com/WebObjects/MZStore.woa/wa/resetAndRedirect?dsf=143480&mt=8&url=/WebObjects/MZStore.woa/wa/viewSoftware?mt=8&id=1108187390&cc=tr&urlDesc= 302
 # kr  (切换至韩国区)
