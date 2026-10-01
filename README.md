@@ -72,11 +72,11 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 **后续更新（已引用规则内容自动刷新）**
 
-仓库中的规则文件（`quantumultx/filter_remote.snippet`）已在 bootstrap 中配置为远程资源：
+仓库中的规则文件（`quantumultx/filter/repo.snippet`）已在 bootstrap 中配置为远程资源：
 
 ```ini
 [filter_remote]
-https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filter_remote.snippet, tag=仓库自定义规则, update-interval=86400, enabled=true
+https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filter/repo.snippet, tag=仓库自定义规则, update-interval=86400, enabled=true
 ```
 
 修改 `rules/` 下的规则后，按[日常维护](#日常维护)生成 `filter_remote.snippet` 并合入 `main`，QX 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则；也可手动触发「更新资源」。这只更新 snippet 的内容；本地 `bootstrap.conf` 的策略组和资源行不会随之改变，见[日常维护](#日常维护)末尾的同步边界说明。
@@ -141,7 +141,7 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 
 **后续更新**
 
-`[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
+`[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/rules/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
 
 ---
 
@@ -153,8 +153,8 @@ Clash 采用 **rule-providers** 架构，规则文件托管在 GitHub，客户�
 
 **第 1 步：按订阅数量下载主配置文件**
 
-- 只使用一个订阅：下载 `clash/config-single.yaml`。
-- 同时使用两个订阅：下载 `clash/config.yaml`。
+- 只使用一个订阅：下载 `mihomo/verge/config-single.yaml`。
+- 同时使用两个订阅：下载 `mihomo/verge/config.yaml`。
 
 两份文件来自同一策略源；`config-single.yaml` 由脚本生成，不包含 `Sub2` 或第二个订阅占位符。
 
@@ -203,12 +203,12 @@ rule-providers:
   AIExtra:
     type: http
     behavior: domain
-    url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/rulesets/ai_extra.yaml"
+    url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/rules/ai_extra.yaml"
     interval: 86400
     # ...
 ```
 
-修改 `rules/` 下的规则后，按[日常维护](#日常维护)生成 `clash/rulesets/*.yaml` 并合入 `main`，Clash 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则集；也可在面板中手动触发 Provider 刷新。这只更新已引用规则集的内容；Verge 中配置副本的策略组、`rule-providers` 与 `rules` 定义不会随之改变，见[日常维护](#日常维护)末尾的同步边界说明。
+修改 `rules/` 下的规则后，按[日常维护](#日常维护)生成 `mihomo/rules/*.yaml` 并合入 `main`，Clash 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则集；也可在面板中手动触发 Provider 刷新。这只更新已引用规则集的内容；Verge 中配置副本的策略组、`rule-providers` 与 `rules` 定义不会随之改变，见[日常维护](#日常维护)末尾的同步边界说明。
 
 第三方规则的名称和格式以其实际语义为准：Loyalsoldier 的 `private.txt` 是私有网络域名清单，在配置中命名为 `PrivateDomain` 并优先直连，不属于隐私或广告拦截；该项目的 `*.txt` 规则包含 YAML `payload`，因此 provider 使用 `format: yaml`。恶意域名由 URLhaus 域名列表提供并交给 `🛡️ 安全防护` 策略处理。
 
@@ -237,7 +237,7 @@ Mihomo 与 ShellCrash 的广告域名规则可以在 DNS / 域名层阻断已知
 公共 `config.yaml` 包含订阅占位符，不能在没有本地覆写或私密注入的情况下作为完整远程订阅直接运行：
 
 ```
-https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config.yaml
+https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/verge/config.yaml
 ```
 
 Windows 当前仍采用“主配置保存在本地、rule-provider 自动更新”的方式。不要直接启用公共主配置自动覆盖，否则本地订阅 URL 会被占位符替换。
@@ -249,7 +249,7 @@ Windows 当前仍采用“主配置保存在本地、rule-provider 自动更新�
 路由器采用 **公开策略模板 + 设备本地私密注入 + ShellCrash 运行参数覆写**：
 
 ```text
-clash/config.yaml
+mihomo/verge/config.yaml
         ↓ 生成并展开 YAML 锚点
 clash/config-router*.template.yaml（按单/双订阅选择，公开、无秘密）
         ↓ 路由器本地注入订阅 URL
@@ -258,7 +258,7 @@ $CRASHDIR/yamls/config.yaml（私密）
 Mihomo
 ```
 
-仓库不接管路由器的端口、DNS、TUN、sniffer、控制器或防火墙，这些继续由 ShellCrash 管理。完整安装、首次部署、定时更新和回滚说明见 [`clash/shellcrash/README.md`](clash/shellcrash/README.md)。
+仓库不接管路由器的端口、DNS、TUN、sniffer、控制器或防火墙，这些继续由 ShellCrash 管理。完整安装、首次部署、定时更新和回滚说明见 [`mihomo/shellcrash/README.md`](mihomo/shellcrash/README.md)。
 
 Quantumult X 可继续留在 iPhone / iPad 上承担 MitM、rewrite、脚本和内容层去广告；无需再维护第二份 QX 完整配置。由路由器负责外网分流时，QX 的常规代理出口应保持直连，让请求交给默认网关上的 ShellCrash，再由路由器决定直连或代理。只有确实需要 QX 本机能力的流量才由 QX 处理，避免形成“QX 代理到节点后又经过路由器代理”的嵌套链路。即使设备走路由器，ShellCrash 的域名级广告拦截仍然生效；QX 专属的 MitM、rewrite、脚本和页面净化则只有 QX 保持运行并接管相应请求时才生效。
 
@@ -281,8 +281,8 @@ python3 scripts/build_router_config.py
 # 4. 可选：校验生成结果是否正确（返回 0 表示通过）
 python3 scripts/build_rules.py --check
 python3 scripts/build_router_config.py --check
-python3 scripts/test_deploy_shellcrash.py
-python3 scripts/test_rule_provider_scope.py
+python3 tests/test_deploy_shellcrash.py
+python3 tests/test_rule_provider_scope.py
 
 # 轻量检查外部规则、QX 脚本和图标，不会保存下载内容
 python3 scripts/check_remote_resources.py --mode light
@@ -299,7 +299,7 @@ git push
 |---|---|---|
 | Quantumult X | 自动拉取 `filter_remote.snippet` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发「更新资源」 |
 | Loon | 自动拉取 `loon/rules/*.list` | 按 Loon 的资源刷新生效；也可在 App 中手动更新 |
-| Clash / Mihomo | 自动拉取 `clash/rulesets/*.yaml` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发 Provider 刷新 |
+| Clash / Mihomo | 自动拉取 `mihomo/rules/*.yaml` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发 Provider 刷新 |
 | ShellCrash / Mihomo | 路由器本地部署任务拉取并注入 `config-router.template.yaml` | 按本地任务计划，或手动运行部署脚本 |
 
 **主配置与远程资源内容的同步边界**
@@ -377,8 +377,8 @@ git push
 ```
 
 脚本会自动生成：
-- `clash/rulesets/my_service.yaml` — Clash rule-provider 格式
-- `quantumultx/filter_remote.snippet` — QX filter 格式（整个文件重新生成）
+- `mihomo/rules/my_service.yaml` — Clash rule-provider 格式
+- `quantumultx/filter/repo.snippet` — QX filter 格式（整个文件重新生成）
 - `loon/rules/my_service.list` — Loon 规则列表，不含策略；还需在 `loon/bootstrap.example.conf` 的 `[Remote Rule]` 中加一行，`policy=` 与 `qx_policy` 相同
 
 Loon 不支持 `domain_regex`，规则源里出现该类型时，生成器会直接报错。
@@ -524,8 +524,8 @@ Clash 主配置只定义代理分组和规则引用结构，具体规则内容�
        ▼
 python3 scripts/build_rules.py
        │
-       ├── 生成 clash/rulesets/*.yaml
-       ├── 生成 quantumultx/filter_remote.snippet
+       ├── 生成 mihomo/rules/*.yaml
+       ├── 生成 quantumultx/filter/repo.snippet
        └── 生成 loon/rules/*.list
        │
        ▼

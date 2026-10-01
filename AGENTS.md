@@ -8,7 +8,7 @@ This repository maintains shared proxy configuration assets for:
 ## Architecture rules
 - Shared reusable rules go under `rules/`
 - Quantumult X specific files go under `quantumultx/`
-- Clash / Mihomo specific files go under `clash/`
+- Clash / Mihomo specific files go under `mihomo/`
 - Do not put QX MitM private materials (passphrase, p12, certificates) into Git
 - Do not commit secrets, tokens, subscription URLs, or credentials directly
 

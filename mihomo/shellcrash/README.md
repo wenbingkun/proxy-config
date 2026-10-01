@@ -1,5 +1,7 @@
 # ShellCrash 路由器接入
 
+> 返回 [总览](../../README.md)。下文仓库命令均在仓库根目录执行。
+
 本目录采用以下配置所有权：
 
 - 仓库负责 `proxy-providers`、策略组、rule-provider 和路由规则。
@@ -41,12 +43,12 @@ python3 scripts/build_router_config.py --check
 
 生成两个公开模板：
 
-- `clash/config-router-single.template.yaml`：只有 `Sub`；
-- `clash/config-router.template.yaml`：包含 `Sub` 和 `Sub2`。
+- `mihomo/shellcrash/config-router-single.template.yaml`：只有 `Sub`；
+- `mihomo/shellcrash/config-router.template.yaml`：包含 `Sub` 和 `Sub2`。
 
 两个模板都：
 
-- 来自现有 `clash/config.yaml`，不是第二份手工维护的配置；
+- 来自现有 `mihomo/verge/config.yaml`，不是第二份手工维护的配置；
 - 展开了 YAML 锚点和合并键，避免 ShellCrash 拆分区块后引用失效；
 - 只包含 ShellCrash 默认覆写流程会保留的策略区块；
 - 只使用对应数量的公开占位 URL，通过 Mihomo 校验后才允许提交。
@@ -85,7 +87,7 @@ chmod 600 "$CRASHDIR/private/providers.env"
 
 ## 5. 首次部署
 
-把 `scripts/deploy_shellcrash_config.sh` 复制到路由器持久化目录，然后执行：
+把 `mihomo/shellcrash/deploy.sh` 复制到路由器持久化目录（文件名沿用 `deploy_shellcrash_config.sh`），然后执行：
 
 ```sh
 chmod 700 /path/to/deploy_shellcrash_config.sh
@@ -98,9 +100,9 @@ chmod 700 /path/to/deploy_shellcrash_config.sh
 
 ```sh
 # 单订阅（SUB_URL_2 为空）
-TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/clash/config-router-single.template.yaml'
+TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/mihomo/shellcrash/config-router-single.template.yaml'
 # 双订阅
-TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/clash/config-router.template.yaml'
+TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/mihomo/shellcrash/config-router.template.yaml'
 ```
 
 这是固定版本的应急方式：之后每次部署都只会拿到该提交的模板，不会跟进 `main` 上的后续策略更新。
@@ -161,7 +163,7 @@ $CRASHDIR/yamls/user.yaml
 
 先通过日志区分 DNS/fake-IP、sniffer 和路由策略问题，再决定是否向共享 `rules/` 增加米家直连规则。不要一次性加入未经验证的广泛域名清单。
 
-历史排查与设备修复记录见 [2026-09-17 DNS 误分流归档](archive/2026-09-17-dns-routing-review.md)，包含实际变更、回滚点和验收边界。
+2026-09-17 DNS 误分流的历史排查与设备修复记录已移出仓库，可在提交 `b196caf` 的 `clash/shellcrash/archive/` 中查阅。
 
 ## 8. 更新与回滚验证
 
@@ -179,7 +181,7 @@ $CRASHDIR/yamls/user.yaml
 每次调整生成或部署逻辑后至少验证：
 
 ```sh
-python3 scripts/test_deploy_shellcrash.py
+python3 tests/test_deploy_shellcrash.py
 ```
 
 - 连续执行部署两次结果一致；

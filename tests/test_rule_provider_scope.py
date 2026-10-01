@@ -9,10 +9,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATHS = (
-    ROOT / "clash" / "config.yaml",
-    ROOT / "clash" / "config-single.yaml",
-    ROOT / "clash" / "config-router.template.yaml",
-    ROOT / "clash" / "config-router-single.template.yaml",
+    ROOT / "mihomo" / "verge" / "config.yaml",
+    ROOT / "mihomo" / "verge" / "config-single.yaml",
+    ROOT / "mihomo" / "shellcrash" / "config-router.template.yaml",
+    ROOT / "mihomo" / "shellcrash" / "config-router-single.template.yaml",
 )
 
 DOMAIN_ONLY_PROVIDERS = {

@@ -17,15 +17,15 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
-CLASH_CONFIG = ROOT / "clash" / "config.yaml"
+CLASH_CONFIG = ROOT / "mihomo" / "verge" / "config.yaml"
 QX_FILES = (
     ROOT / "quantumultx" / "bootstrap.example.conf",
-    ROOT / "quantumultx" / "filter_remote.snippet",
+    ROOT / "quantumultx" / "filter" / "repo.snippet",
 )
 LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",) + tuple(
     sorted((ROOT / "loon" / "plugins").glob("*.plugin"))
 )
-DEPLOY_SCRIPT = ROOT / "scripts" / "deploy_shellcrash_config.sh"
+DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"
 
 URL_RE = re.compile(r"https?://[^\s,\"']+")
 # In a hosted Loon plugin only the scripts it loads are resources; other URLs are redirect targets.
@@ -119,16 +119,16 @@ def extract_resources() -> list[Resource]:
     clash = yaml.safe_load(CLASH_CONFIG.read_text(encoding="utf-8")) or {}
     providers = clash.get("rule-providers", {})
     if not isinstance(providers, dict):
-        raise ValueError("clash/config.yaml: rule-providers must be a mapping")
+        raise ValueError("mihomo/verge/config.yaml: rule-providers must be a mapping")
     for name, provider in providers.items():
         if not isinstance(provider, dict) or not isinstance(provider.get("url"), str):
-            raise ValueError(f"clash/config.yaml: rule-provider {name!r} has no URL")
+            raise ValueError(f"mihomo/verge/config.yaml: rule-provider {name!r} has no URL")
         url = provider["url"]
         if not is_skipped_url(url):
             resources[(url, "default")] = Resource(
                 url=url,
                 kind="clash-rule",
-                source=f"clash/config.yaml:rule-providers.{name}",
+                source=f"mihomo/verge/config.yaml:rule-providers.{name}",
                 expected_format=provider.get("format"),
             )
 
@@ -159,7 +159,7 @@ def extract_resources() -> list[Resource]:
         url = match.group("url")
         resources.setdefault(
             (url, "default"),
-            Resource(url=url, kind="shellcrash-template", source="scripts/deploy_shellcrash_config.sh"),
+            Resource(url=url, kind="shellcrash-template", source="mihomo/shellcrash/deploy.sh"),
         )
 
     return sorted(resources.values(), key=lambda item: (item.kind, item.url, item.source))

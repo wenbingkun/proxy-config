@@ -14,7 +14,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_TEMPLATE_PATH = ROOT / "clash" / "config-router.template.yaml"
+DEFAULT_TEMPLATE_PATH = ROOT / "mihomo" / "shellcrash" / "config-router.template.yaml"
 POLICY_SECTIONS = (
     "proxies",
     "proxy-providers",

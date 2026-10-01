@@ -8,11 +8,11 @@ from pathlib import Path
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
 import build_rules  # noqa: E402
 
 
-ROOT = Path(__file__).resolve().parent.parent
 LOON_CONFIG = ROOT / "loon" / "bootstrap.example.conf"
 QX_CONFIG = ROOT / "quantumultx" / "bootstrap.example.conf"
 MANIFEST = ROOT / "rules" / "local_rules.yaml"
@@ -252,18 +252,18 @@ def check_rules(loon: dict, failures: list[str]) -> None:
 
     last_url, last_opts = remote[-1]
     if (last_url, last_opts.get("policy"), last_opts.get("enabled")) != (
-        f"{REPO_RAW}loon/geoip_cn.list",
+        f"{REPO_RAW}loon/rules/geoip_cn.list",
         wrapped(loon, "🇨🇳 国内服务"),
         "true",
     ):
         failures.append("loon: geoip_cn.list must be the last [Remote Rule], policy 🇨🇳 国内服务 · 自动, enabled=true")
     geoip_lines = [
         line.strip()
-        for line in (ROOT / "loon" / "geoip_cn.list").read_text(encoding="utf-8").splitlines()
+        for line in (ROOT / "loon" / "rules" / "geoip_cn.list").read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
     if geoip_lines != ["GEOIP,CN"]:
-        failures.append(f"loon/geoip_cn.list must contain exactly GEOIP,CN, got {geoip_lines}")
+        failures.append(f"loon/rules/geoip_cn.list must contain exactly GEOIP,CN, got {geoip_lines}")
     if any(rule[0].upper() == "GEOIP" for rule in loon["local_rules"]):
         failures.append("loon: GEOIP in [Rule] would match before remote IP rules")
     if loon["local_rules"][-1] != ["FINAL", wrapped(loon, "🐟 兜底分流")]:

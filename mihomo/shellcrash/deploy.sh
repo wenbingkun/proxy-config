@@ -3,8 +3,8 @@
 set -eu
 umask 077
 
-DEFAULT_DUAL_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config-router.template.yaml'
-DEFAULT_SINGLE_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/clash/config-router-single.template.yaml'
+DEFAULT_DUAL_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/shellcrash/config-router.template.yaml'
+DEFAULT_SINGLE_TEMPLATE_URL='https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/shellcrash/config-router-single.template.yaml'
 PLACEHOLDER_1='https://example.com/__SUB_URL_1__'
 PLACEHOLDER_2='https://example.com/__SUB_URL_2__'
 
@@ -327,7 +327,7 @@ log '正在下载公开路由器策略模板……'
 download_status=0
 download_template "$template_url" "$downloaded_template" || download_status=$?
 if [ "$download_status" -ne 0 ]; then
-    fail "模板下载失败（curl 退出码 $download_status，28 为超时），当前配置未改动；若路由器无法访问模板地址，可临时设置 TEMPLATE_URL，见 clash/shellcrash/README.md"
+    fail "模板下载失败（curl 退出码 $download_status，28 为超时），当前配置未改动；若路由器无法访问模板地址，可临时设置 TEMPLATE_URL，见 mihomo/shellcrash/README.md"
 fi
 [ -s "$downloaded_template" ] || fail '下载到的模板为空，当前配置未改动'
 
