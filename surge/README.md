@@ -86,14 +86,14 @@ T=.local/repo/2026-10-02-surge-design/trial
 mkdir -p "$T" && chmod 700 "$T"
 pin() { sed -e '/^#!MANAGED-CONFIG/d' \
             -e "s#raw.githubusercontent.com/wenbingkun/proxy-config/main/#raw.githubusercontent.com/wenbingkun/proxy-config/$S/#g" "$1" > "$2"; }
-pin surge/proxy-config.conf "$T/proxy-config.conf"
+pin surge/proxy-config.conf "$T/proxy-config.dconf"
 pin surge/modules/home-direct.sgmodule "$T/home-direct.sgmodule"
 pin surge/modules/home-direct-noblock.sgmodule "$T/home-direct-noblock.sgmodule"
 if grep -n 'wenbingkun/proxy-config/main/' "$T"/*; then echo "unpinned repo URL" >&2; exit 1; fi
 find "$T" -type f -exec chmod 600 {} +
 ```
 
-把三个文件复制到 iCloud Drive/Surge；`.sgmodule` 放在配置目录里，就会作为本地模块出现。合并后改回按 URL 安装 `proxy-config.conf` 和两个模块，并删除本地副本。
+把三个文件复制到 iCloud Drive/Surge；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和两个模块，把 include 改回，并删除本地副本。
 
 ## 回滚
 

@@ -203,9 +203,16 @@ def check_private(failures: list[str]) -> None:
     if ssid_setting != ["SSID:HOME_SSID dns-server=system,encrypted-dns-server=off"]:
         failures.append(f"[SSID Setting] parameters take commas without spaces, got {ssid_setting}")
     mitm = sections(BOOTSTRAP.read_text(encoding="utf-8"))["MITM"]
-    for key in ("ca-p12", "ca-passphrase", "hostname"):
+    for key in ("ca-p12", "ca-passphrase"):
         if f"{key} =" not in mitm:
             failures.append(f"bootstrap [MITM] must keep an empty {key} placeholder")
+    # Surge refuses a profile line like "hostname =" (device check 2026-10-02); only the two CA
+    # placeholders the user must fill may be empty.
+    for path in (BOOTSTRAP, SURGE, HOME, NOBLOCK, AIRPORT_DNS):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            key, sep, value = line.partition("=")
+            if sep and not line.startswith("#") and not value.strip() and key.strip() not in ("ca-p12", "ca-passphrase"):
+                failures.append(f"{path.name}: empty value is invalid in Surge: {line!r}")
     if "[Proxy]" in sections(SURGE.read_text(encoding="utf-8")):
         failures.append("proxy-config.conf must not define nodes; they come from Airport.conf")
 
