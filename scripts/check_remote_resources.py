@@ -15,6 +15,9 @@ from pathlib import Path
 
 import yaml
 
+import build_rules
+import check_reject_conflicts
+
 
 ROOT = Path(__file__).resolve().parent.parent
 CLASH_CONFIG = ROOT / "mihomo" / "verge" / "config.yaml"
@@ -25,6 +28,14 @@ QX_FILES = (
 LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",) + tuple(
     sorted((ROOT / "loon" / "plugins").glob("*.plugin"))
 )
+SURGE_FILES = (ROOT / "surge" / "proxy-config.conf",) + tuple(
+    sorted((ROOT / "surge" / "modules").glob("*.sgmodule"))
+)
+# Generated from pinned upstream modules (build_surge_modules.py); like a hosted Loon plugin, only
+# the scripts it loads are resources, other URLs are patterns or redirect targets.
+SURGE_REWRITE_MODULE = ROOT / "surge" / "modules" / "rewrite.sgmodule"
+# The module whose RULE-SET lines are the pre-matching REJECT lists (see check_reject_conflicts).
+SURGE_REJECT_MODULE = ROOT / "surge" / "modules" / "home-direct.sgmodule"
 DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"
 
 URL_RE = re.compile(r"https?://[^\s,\"']+")
@@ -42,6 +53,7 @@ OPERATIONAL_HOSTS = {
     "119.29.29.29",
     "223.5.5.5",
     "dns.google",
+    "doh.pub",
     "ip-api.com",
     "www.baidu.com",
     "www.gstatic.com",
@@ -104,12 +116,23 @@ def infer_qx_kind(line: str, url: str) -> str:
     return "qx-resource"
 
 
+def resource_kind(path: Path, line: str, url: str) -> str:
+    kind = infer_qx_kind(line, url)
+    if path in LOON_FILES:
+        return kind.replace("qx-", "loon-")
+    if path in SURGE_FILES:
+        return "surge-rule" if "RULE-SET," in line else kind.replace("qx-", "surge-")
+    return kind
+
+
 def client_of(source: str) -> str:
     """Resources may answer differently per client, so each client checks its own copy."""
     if source.startswith("quantumultx/"):
         return "qx"
     if source.startswith("loon/"):
         return "loon"
+    if source.startswith("surge/"):
+        return "surge"
     return "default"
 
 
@@ -132,12 +155,12 @@ def extract_resources() -> list[Resource]:
                 expected_format=provider.get("format"),
             )
 
-    for path in QX_FILES + LOON_FILES:
+    for path in QX_FILES + LOON_FILES + SURGE_FILES:
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.lstrip()
             if not stripped or stripped.startswith("#"):
                 continue
-            is_plugin = path.parent == ROOT / "loon" / "plugins"
+            is_plugin = path.parent == ROOT / "loon" / "plugins" or path == SURGE_REWRITE_MODULE
             for match in (SCRIPT_PATH_RE if is_plugin else URL_RE).finditer(line):
                 url = match.group(1 if is_plugin else 0).rstrip(")]}")
                 if is_skipped_url(url):
@@ -147,9 +170,7 @@ def extract_resources() -> list[Resource]:
                     (url, client_of(source)),
                     Resource(
                         url=url,
-                        kind=infer_qx_kind(line, url).replace("qx-", "loon-")
-                        if path in LOON_FILES
-                        else infer_qx_kind(line, url),
+                        kind=resource_kind(path, line, url),
                         source=source,
                     ),
                 )
@@ -163,6 +184,9 @@ def extract_resources() -> list[Resource]:
         )
 
     return sorted(resources.values(), key=lambda item: (item.kind, item.url, item.source))
+
+
+FULL_CHECK_KINDS = {"clash-rule", "surge-rule"}
 
 
 def looks_like_html(content_type: str, body: bytes) -> bool:
@@ -179,10 +203,18 @@ def validate_body(resource: Resource, content_type: str, body: bytes, mode: str)
         return None
     if looks_like_html(content_type, body):
         return "resource returned HTML instead of config content"
-    if mode != "full" or resource.kind != "clash-rule":
+    if mode != "full" or resource.kind not in FULL_CHECK_KINDS:
         return None
 
     text = body.decode("utf-8-sig", errors="replace")
+    if resource.kind == "surge-rule":
+        # The repo fails any line it cannot validate (Surge itself skips it with a warning).
+        try:
+            if not check_reject_conflicts.validate_surge_ruleset(text, redact_url(resource.url)):
+                return "Surge rule set has no rules"
+        except check_reject_conflicts.InputError as exc:
+            return f"invalid Surge rule set: {exc}"
+        return None
     if resource.expected_format == "yaml":
         try:
             parsed = yaml.safe_load(text)
@@ -219,7 +251,7 @@ def read_response(url: str, headers: dict[str, str], timeout: float, limit: int)
 
 
 def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result:
-    full_rule_check = mode == "full" and resource.kind == "clash-rule"
+    full_rule_check = mode == "full" and resource.kind in FULL_CHECK_KINDS
     limit = FULL_LIMIT if full_rule_check else LIGHT_BYTES
     headers = {"User-Agent": user_agent_for(resource), "Accept": "*/*"}
     if not full_rule_check:
@@ -271,6 +303,50 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
     )
 
 
+def surge_reject_urls() -> list[str]:
+    """The REJECT RULE-SET URLs of the Surge home module (not its reject_allow.list)."""
+    urls = []
+    for line in SURGE_REJECT_MODULE.read_text(encoding="utf-8").splitlines():
+        if line.startswith("AND,((RULE-SET,"):
+            urls.append(line[len("AND,((RULE-SET,"):].split(",", 1)[0])
+    return urls
+
+
+def reject_overlap_report(timeout: float) -> tuple[list[str], list[str]]:
+    """Return (failures, warnings). Overlaps only warn; download and parse problems fail."""
+    failures: list[str] = []
+    warnings: list[str] = []
+    urls = surge_reject_urls()
+    if not urls:
+        return [f"no REJECT RULE-SET lines in {SURGE_REJECT_MODULE.relative_to(ROOT)}"], []
+    try:
+        repo = check_reject_conflicts.load_repo()
+    except check_reject_conflicts.InputError as exc:
+        return [f"repo rules: {exc}"], []
+    headers = {"User-Agent": USER_AGENT, "Accept": "*/*"}
+    for url in urls:
+        try:
+            status, _, body, _ = read_response(url, headers, timeout, FULL_LIMIT)
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            failures.append(f"{redact_url(url)}: {exc.__class__.__name__}: {exc}")
+            continue
+        if not 200 <= status < 300 or len(body) > FULL_LIMIT:
+            failures.append(f"{redact_url(url)}: HTTP {status} or over {FULL_LIMIT} bytes")
+            continue
+        try:
+            rules, _ = check_reject_conflicts.parse_rules(body.decode("utf-8-sig"), redact_url(url))
+        except (check_reject_conflicts.InputError, UnicodeDecodeError) as exc:
+            failures.append(f"{redact_url(url)}: {exc}")
+            continue
+        out = check_reject_conflicts.analyse(repo, rules)
+        for kind in ("definite", "partial", "possible", "unanalysed"):
+            for source, repo_rule, reject_rule in out[kind]:
+                # The module's NOT(reject_allow.list) keeps these bank/broker hosts unblocked.
+                note = " [excluded by reject_allow.list]" if source in build_rules.SURGE_REJECT_ALLOW_SOURCES else ""
+                warnings.append(f"{kind}: {reject_rule} over {repo_rule} ({source}) in {redact_url(url)}{note}")
+    return failures, warnings
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("light", "full"), default="light")
@@ -303,18 +379,30 @@ def main() -> int:
         results = [future.result() for future in concurrent.futures.as_completed(futures)]
 
     failures = sorted((result for result in results if not result.ok), key=lambda item: item.resource.url)
+    overlap_failures: list[str] = []
+    if args.mode == "full":
+        overlap_failures, overlap_warnings = reject_overlap_report(args.timeout)
+        if overlap_warnings:
+            excluded = sum("[excluded by reject_allow.list]" in w for w in overlap_warnings)
+            print(f"Surge REJECT lists: {len(overlap_warnings)} candidate overlaps with repo-routed rules before "
+                  f"the reject_allow.list exclusion ({excluded} excluded, {len(overlap_warnings) - excluded} "
+                  "still blocked; warning only, today's lists, see surge/README.md):")
+            for warning in overlap_warnings:
+                print(f"  [warn] {warning}")
     counts: dict[str, int] = {}
     for result in results:
         counts[result.resource.kind] = counts.get(result.resource.kind, 0) + 1
 
-    if failures:
+    if failures or overlap_failures:
         print("Remote resource check failed:")
         for result in failures:
             print(
                 f"  [fail] {result.resource.kind} {redact_url(result.resource.url)}: "
                 f"{result.message} ({result.resource.source})"
             )
-        print(f"Failed {len(failures)} of {len(results)} resources.")
+        for message in overlap_failures:
+            print(f"  [fail] surge-reject-overlap {message}")
+        print(f"Failed {len(failures)} of {len(results)} resources; {len(overlap_failures)} REJECT list errors.")
         return 1
 
     summary = ", ".join(f"{kind}={count}" for kind, count in sorted(counts.items()))

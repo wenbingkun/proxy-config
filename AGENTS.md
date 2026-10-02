@@ -4,22 +4,23 @@
 
 ## 项目
 
-自用代理配置的**公开**仓库：一份共享规则源，生成三条客户端线的文件。设备通过 raw / jsDelivr 远程拉取其中的规则、snippet 和插件。
+自用代理配置的**公开**仓库：一份共享规则源，生成四条客户端线的文件。设备通过 raw / jsDelivr 远程拉取其中的规则、snippet 和插件。
 
 | 线 | 目录 | 设备 |
 |---|---|---|
 | Quantumult X | `quantumultx/` | iPhone、iPad |
 | Loon（试点，QX 为回滚方案） | `loon/` | iPhone |
+| Surge（试点） | `surge/` | iPhone |
 | Mihomo | `mihomo/verge/`（Windows Clash Verge Rev）、`mihomo/shellcrash/`（路由器 ShellCrash） | Windows、路由器 |
 
 共享：`rules/`（规则源）、`mihomo/rules/`（生成的 rule-provider，Verge 与路由器共用）、`scripts/`（生成与巡检）、`tests/`、`docs/design.md`。各端用法写在各自目录的 `README.md`，根 README 只做导航。
 
 ## 真值源与生成物
 
-- 自维护规则只改 `rules/*.yaml` 与清单 `rules/local_rules.yaml`，然后 `python3 scripts/build_rules.py` 生成 `mihomo/rules/*.yaml`、`quantumultx/filter/repo.snippet`、`loon/rules/*.list`。
+- 自维护规则只改 `rules/*.yaml` 与清单 `rules/local_rules.yaml`，然后 `python3 scripts/build_rules.py` 生成 `mihomo/rules/*.yaml`、`quantumultx/filter/repo.snippet`、`loon/rules/*.list`、`surge/rules/*.list`（含 `reject_allow.list`）。
 - Mihomo 策略唯一来源是 `mihomo/verge/config.yaml`；`config-single.yaml` 和 `mihomo/shellcrash/config-router*.template.yaml` 由 `python3 scripts/build_router_config.py` 生成。
 - **生成物不手改**。`loon/rules/geoip_cn.list` 是手工文件。
-- 新增规则集还要在 `loon/bootstrap.example.conf` 的 `[Remote Rule]` 加一行；Loon 不支持 `domain_regex`。
+- 新增规则集还要在 `loon/bootstrap.example.conf` 的 `[Remote Rule]` 和 `surge/proxy-config.conf` 的 `[Rule]` 各加一行；Loon 与 Surge 都不支持 `domain_regex`。
 
 ## 提交前检查（仓库根目录执行，任一失败即停）
 
@@ -27,6 +28,7 @@
 set -e
 python3 scripts/build_rules.py --check
 python3 scripts/build_router_config.py --check
+python3 scripts/build_surge_modules.py --check
 python3 scripts/check_hygiene.py
 python3 scripts/check_acceptance.py
 for t in tests/test_*.py; do [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"; done
@@ -61,6 +63,15 @@ sh -n mihomo/shellcrash/deploy.sh
 - `loon/plugins/` 托管冻结的转换版，脚本地址固定到审核过的上游提交，文件头写明来源与重新生成方法。新插件在模板里先 `enabled=false`，真机验收后再改默认值。
 - 远程资源巡检对 kelee.one 使用已验证可用的完整 iOS Loon UA（见 `scripts/check_remote_resources.py`）；只带 `Loon/x.y.z` 时曾返回 403。
 - Loon 重新保存配置时会去掉逗号后的空格，比对设备配置前先统一格式。
+
+**Surge**
+- 结构是托管配置 `surge/proxy-config.conf`（公开段）加设备上的 `bootstrap.conf`（`#!include` 公开段，节点、MitM、SSID、机场 DNS 留在本地）。31 个组与 Loon 同名同序，**有意没有** 16 个「· 自动」包装组和 `🛡️ 安全防护`，`HOME_AUTO_GROUPS` 不适用于 Surge。
+- 家庭切换与拦截都在 `surge/modules/home-direct.sgmodule`：两条 `AND(RULE-SET 拒绝列表, NOT RULE-SET reject_allow.list)` 拒绝规则（`pre-matching`；`extended-matching` 写在每个 RULE-SET 子规则上，不写在外层）在前，`SUBNET,SSID:{{{HOME_SSID}}},DIRECT` 在后。UDP 没有预匹配阶段，所以顺序不能颠倒，且这个模块要排在其他含 REJECT 的模块之后。`home-direct-noblock.sgmodule` 只有 SUBNET 一行，用作误拦截时的整体放行开关，二选一启用。
+- 拒绝列表排在仓库规则之前（与 QX / Loon 相反）。重叠情况由 `scripts/check_reject_conflicts.py` 报告；巡检里只告警，输入或下载错误才算失败。金融保护靠 `reject_allow.list`（由 `hk_banks.yaml` + `intl_brokers.yaml` 生成），不要手写例外。
+- 地区组是 `smart`，正则与 Loon `[Remote Filter]` 逐字一致；美国组仍是 `select`。`tests/test_surge_config.py` 校验组、规则顺序、模块内容和占位符。
+- 改写模块：Surge 没有在配置里列出模块的段落，Loon 中启用的插件合并为 `surge/modules/rewrite.sgmodule`，由 `scripts/build_surge_modules.py` 生成（参数在生成时写入，不手改；`--check` 联网重新生成并比对，CI 也运行）。来源是固定提交 / 发布标签的上游 Surge 模块，或 `surge/modules/converted/` 中冻结的墨鱼 QX 转换（Script-Hub `target=surge-module`，文件头写明来源与转换后修改）。Surge 只运行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite（与 QX 相同，与 Loon 不同），转换时保持 QX 顺序，不要照搬 Loon 版的倒序；脚本名必须唯一。Kelee 的插件（小红书、高德、知乎、微信外链、节点检测）用 Loon 专有语法且脚本只对 Loon UA 提供，没有移植。
+- 机场 DNS：Surge 没有按节点指定解析器的办法，代理主机名也不匹配 `[Host]`，所以由设备本地模块 `airport-dns.sgmodule`（模板 `surge/airport-dns.example.sgmodule`）覆盖全局 `encrypted-dns-server`；不要再用 `[Host] server:` 给节点指定 DNS。
+- 合并前设备试验用固定到提交 SHA 的本地副本（去掉 `#!MANAGED-CONFIG`），见 `surge/README.md`。
 
 **Mihomo / ShellCrash**
 - DAZN、Cloudflare、Amazon provider 只用域名规则；不用 GlobalMedia 聚合。共享 CDN 的 IP 段会误判。

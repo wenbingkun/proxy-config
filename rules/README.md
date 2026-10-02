@@ -2,13 +2,14 @@
 
 > 返回 [总览](../README.md)。下文仓库命令均在仓库根目录执行。
 
-`rules/` 是仓库自维护规则的唯一编辑入口，由 `scripts/build_rules.py` 生成三端格式：
+`rules/` 是仓库自维护规则的唯一编辑入口，由 `scripts/build_rules.py` 生成各端格式：
 
 | 产物 | 客户端 |
 |---|---|
 | `mihomo/rules/*.yaml` | Clash Verge Rev、ShellCrash（rule-provider） |
 | `quantumultx/filter/repo.snippet` | Quantumult X（`[filter_remote]`） |
 | `loon/rules/*.list` | Loon（`[Remote Rule]`，`geoip_cn.list` 为手工维护） |
+| `surge/rules/*.list` | Surge（托管配置中的 `RULE-SET`）；`reject_allow.list` 由 `hk_banks.yaml` 与 `intl_brokers.yaml` 生成，是拒绝列表的排除清单 |
 
 ## 日常维护
 
@@ -45,6 +46,7 @@ git push
 |---|---|---|
 | Quantumult X | 自动拉取 `quantumultx/filter/repo.snippet` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发「更新资源」 |
 | Loon | 自动拉取 `loon/rules/*.list` | 按 Loon 的资源刷新生效；也可在 App 中手动更新 |
+| Surge | 自动拉取 `surge/rules/*.list` | 按 Surge 外部资源刷新生效；也可在 App 中手动更新 |
 | Clash / Mihomo | 自动拉取 `mihomo/rules/*.yaml` | 按配置刷新（示例间隔 24h），成功加载后生效；也可手动触发 Provider 刷新 |
 | ShellCrash / Mihomo | 路由器本地部署任务拉取并注入 `config-router.template.yaml` | 按本地任务计划，或手动运行部署脚本 |
 
@@ -124,5 +126,6 @@ git push
 - `mihomo/rules/my_service.yaml` — Clash rule-provider 格式
 - `quantumultx/filter/repo.snippet` — QX filter 格式（整个文件重新生成）
 - `loon/rules/my_service.list` — Loon 规则列表，不含策略；还需在 `loon/bootstrap.example.conf` 的 `[Remote Rule]` 中加一行，`policy=` 与 `qx_policy` 相同
+- `surge/rules/my_service.list` — Surge 规则列表；还需在 `surge/proxy-config.conf` 的 `[Rule]` 中按清单顺序加一行 `RULE-SET,<URL>,<qx_policy>`（`tests/test_surge_config.py` 会校验）
 
-Loon 不支持 `domain_regex`，规则源里出现该类型时，生成器会直接报错。
+Loon 与 Surge 都不支持 `domain_regex`，规则源里出现该类型时，生成器会直接报错。

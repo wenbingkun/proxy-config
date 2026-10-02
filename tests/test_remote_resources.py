@@ -56,6 +56,28 @@ def test_empty_range_falls_back_to_plain_get() -> None:
     assert result.bytes_read == check.LIGHT_BYTES
 
 
+def test_surge_reject_overlap_warns_but_bad_input_fails() -> None:
+    """Overlaps with repo rules only warn; an unparsable REJECT list must fail the check."""
+    bodies = {
+        "conflict": b"DOMAIN-SUFFIX,ads.coingecko.com\nDOMAIN-SUFFIX,noconflict.invalid\n",
+        "bad": b"IP-CIDR,not-a-cidr\n",
+        "badand": b"AND,((DOMAIN,example.com)\n",
+        "bank": b"DOMAIN-SUFFIX,metrics.citi.com\n",
+    }
+    original_read, original_urls = check.read_response, check.surge_reject_urls
+    try:
+        check.surge_reject_urls = lambda: [f"https://rules.example/{name}" for name in bodies]
+        check.read_response = lambda url, *_args: (200, "text/plain", bodies[url.rsplit("/", 1)[1]], url)
+        failures, warnings = check.reject_overlap_report(5)
+    finally:
+        check.read_response, check.surge_reject_urls = original_read, original_urls
+    assert len(failures) == 2, failures
+    assert any("not-a-cidr" in f for f in failures) and any("unbalanced" in f for f in failures), failures
+    assert any("ads.coingecko.com" in w and "excluded" not in w for w in warnings), warnings
+    assert any("metrics.citi.com" in w and "[excluded by reject_allow.list]" in w for w in warnings), warnings
+    assert not any("noconflict.invalid" in w for w in warnings), warnings
+
+
 def main() -> int:
     resources = check.extract_resources()
     urls = [resource.url for resource in resources]
@@ -97,6 +119,14 @@ def main() -> int:
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/08ad3524ab6924afd86ad6dc18ed48050a8abede/weibo_search_info.json",
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
     }, plugin_urls
+    # The generated Surge rewrite module is treated like a hosted plugin: only its script-path URLs.
+    rewrite_text = check.SURGE_REWRITE_MODULE.read_text(encoding="utf-8")
+    rewrite_scripts = {
+        url for line in rewrite_text.splitlines() if not line.lstrip().startswith("#")
+        for url in check.SCRIPT_PATH_RE.findall(line)
+    }
+    rewrite_urls = {r.url for r in resources if r.source.startswith("surge/modules/rewrite.sgmodule")}
+    assert rewrite_scripts and rewrite_urls == rewrite_scripts, rewrite_urls ^ rewrite_scripts
 
     loon_resource = check.Resource(
         "https://kelee.one/Tool/Loon/Lpx/Example.lpx", "loon-resource", "loon/bootstrap.example.conf:1"
@@ -132,7 +162,20 @@ def main() -> int:
     assert check.validate_body(yaml_rule, "text/plain", b"rules: []\n", "full") is not None
     assert check.validate_body(yaml_rule, "text/html", b"<!doctype html>", "light") is not None
 
+    surge_rule = check.Resource("https://rules.example/list.list", "surge-rule", "surge/proxy-config.conf:1")
+    assert check.validate_body(surge_rule, "text/plain", b"DOMAIN-SUFFIX, example.com\n", "full") is None
+    assert check.validate_body(surge_rule, "text/plain", b"HOST-SUFFIX,example.com\n", "full") is not None
+    assert check.validate_body(surge_rule, "text/plain", b"+.example.com\n", "full") is not None
+    assert check.validate_body(surge_rule, "text/plain", b"# only comments\n", "full") is not None
+    for bad in (b"AND,((DOMAIN,example.com)\n", b"DEST-PORT,not-a-port\n", b"DOMAIN,example.com,pre-matching\n"):
+        assert check.validate_body(surge_rule, "text/plain", bad, "full") is not None, bad
+    good = b"AND,((DOMAIN,example.com),(DEST-PORT,443))\nDEST-PORT,>=50000\nIP-CIDR,1.2.3.0/24,no-resolve\n"
+    assert check.validate_body(surge_rule, "text/plain", good, "full") is None
+    assert len(check.surge_reject_urls()) == 2
+    assert any(r.kind == "surge-rule" and r.url.endswith("/surge/rules/reject_allow.list") for r in resources)
+
     test_empty_range_falls_back_to_plain_get()
+    test_surge_reject_overlap_warns_but_bad_input_fails()
 
     print(
         f"Remote resource offline tests passed "
