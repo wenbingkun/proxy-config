@@ -45,6 +45,8 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、豆瓣网页、Safari 超级搜索、神机重定向 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
 
+注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，真机上检查闲鱼搜索页。
+
 没有移植：Kelee 的小红书、高德、知乎、微信外链、节点检测——它们用 Loon 专有语法，脚本只对 Loon 提供。Loon 中默认关闭的插件（网易云、喜马拉雅、彩云、百度网盘、BoxJS）也没有放进合集。
 
 生成：`python3 scripts/build_surge_modules.py`（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以合集保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
@@ -103,7 +105,7 @@ if grep -n 'wenbingkun/proxy-config/main/' "$T"/*; then echo "unpinned repo URL"
 find "$T" -type f -exec chmod 600 {} +
 ```
 
-把三个文件复制到 iCloud Drive/Surge，`surge/modules/rewrite.sgmodule` 也原样复制过去作为本地模块（它不含本仓库的 main 链接，不用固定）；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和两个模块，把 include 改回，并删除本地副本。
+把三个文件复制到 iCloud Drive/Surge，`surge/modules/rewrite.sgmodule` 也原样复制过去作为本地模块（它不含本仓库的 main 链接，不用固定）；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和三个模块（两个家庭模块与合集），把 include 改回，并删除本地副本。
 
 ## 回滚
 

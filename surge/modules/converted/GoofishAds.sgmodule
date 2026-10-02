@@ -7,6 +7,9 @@
 # Edited after conversion:
 #   - script paths pinned to the commits reviewed for loon/plugins/GoofishAds.plugin (1)
 #   - added 11 [Body Rewrite] http-response-jq lines from the QX jsonjq-response-body rules, which Script-Hub drops for Surge
+# Note: Surge runs every matching [Body Rewrite] rule in order (QX applies only the first), so the
+#   generic idlemtopsearch.search jq rule also runs on search.shade and search.discover; Loon behaves
+#   the same way and was accepted on the device. Check the Xianyu search pages on the device.
 # Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 

@@ -119,6 +119,14 @@ def main() -> int:
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/08ad3524ab6924afd86ad6dc18ed48050a8abede/weibo_search_info.json",
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
     }, plugin_urls
+    # The generated Surge rewrite module is treated like a hosted plugin: only its script-path URLs.
+    rewrite_text = check.SURGE_REWRITE_MODULE.read_text(encoding="utf-8")
+    rewrite_scripts = {
+        url for line in rewrite_text.splitlines() if not line.lstrip().startswith("#")
+        for url in check.SCRIPT_PATH_RE.findall(line)
+    }
+    rewrite_urls = {r.url for r in resources if r.source.startswith("surge/modules/rewrite.sgmodule")}
+    assert rewrite_scripts and rewrite_urls == rewrite_scripts, rewrite_urls ^ rewrite_scripts
 
     loon_resource = check.Resource(
         "https://kelee.one/Tool/Loon/Lpx/Example.lpx", "loon-resource", "loon/bootstrap.example.conf:1"

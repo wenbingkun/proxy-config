@@ -8,6 +8,7 @@
 #   - script paths pinned to the commits reviewed for loon/plugins/WeiboAds.plugin (25)
 #   - added 1 [Body Rewrite] http-response-jq lines from the QX jsonjq-response-body rules, which Script-Hub drops for Surge
 #   - the 23 scripts Script-Hub named weibo_json are numbered weibo_json_01..23 (Surge script names must be unique)
+#   - trailing whitespace from the QX source removed from one comment line
 # Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 
@@ -120,7 +121,7 @@ weibo_search_info = type=http-response, pattern=^https?:\/\/weibointl\.api\.weib
 # > 微博国际版_屏蔽search_topic@shiro
 weibo_search_topic = type=http-response, pattern=^https?:\/\/weibointl\.api\.weibo\.c(n|om)\/portal\.php.*feed&a=search_topic, script-path=https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json, requires-body=true, max-size=-1, timeout=60
 
-# > 微博国际版_屏蔽开屏广告@ddgksf2013 
+# > 微博国际版_屏蔽开屏广告@ddgksf2013
 weibo_json_19 = type=http-response, pattern=^https?:\/\/weibointl\.api\.weibo\.c(n|om)\/portal\.php.*get_coopen_ads, script-path=https://raw.githubusercontent.com/ddgksf2013/Scripts/4ff1d89274c694454ac3a494ae1a2d4cfd1edf56/weibo_json.js, requires-body=true, max-size=-1, timeout=60
 
 # > 微博国际版_屏蔽sdkad@ddgksf2013

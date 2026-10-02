@@ -16,9 +16,9 @@
 # Source: app2smile Spotify https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/module/spotify.module
 #   sha256 f7bd712efdffad37c547d2dd79dd6948d444bb74f95d92f6ec125f7e4c479562; arguments: defaults
 # Source: ddgksf2013 WeiboAds surge/modules/converted/WeiboAds.sgmodule
-#   sha256 146d9409d71e3535c8284690c2dec16ca6a6b228eae633ceeaa90ff485c48a85; arguments: defaults
+#   sha256 91b6e6cd6af5a30e3793a5e73010d6a1deafe0321646c168f79726e20348451f; arguments: defaults
 # Source: ddgksf2013 GoofishAds surge/modules/converted/GoofishAds.sgmodule
-#   sha256 a1ced6cbdcf0254a3787acac954e890ae0344db602deabcda20a8bf625b55bc4; arguments: defaults
+#   sha256 997b56dcbf864e0d5ebc74beaa3696927f3dc206ad15a5026c35045053cd3208; arguments: defaults
 # Source: ddgksf2013 Douban surge/modules/converted/Douban.sgmodule
 #   sha256 412321c8970af9ac28ce678f77b123c2a0c25c3f9f3c9e55fdbfc15076445ee8; arguments: defaults
 # Source: ddgksf2013 Q-Search surge/modules/converted/Q-Search.sgmodule
