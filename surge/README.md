@@ -22,7 +22,7 @@ Surge 是试用中的第四个客户端，与 Loon、QX 不要同时开启 VPN�
 | `bootstrap.conf` | 复制 `surge/bootstrap.example.conf` 后填写 | 否 |
 | `airport-dns.sgmodule` | 复制 `surge/airport-dns.example.sgmodule`，把占位地址换成 `Airport.conf` 中 `[General]` 的 `encrypted-dns-server` 原值。放进这个目录后作为本地模块启用 | 否 |
 
-1. 在 `bootstrap.conf` 中把 `HOME_SSID` 换成家里 Wi-Fi 的名称。2.4G 与 5G 名称不同时，`[SSID Setting]` 每个名称各写一行。
+1. 在 `bootstrap.conf` 中把 `HOME_SSID` 换成家里 Wi-Fi 的名称。2.4G 与 5G 名称不同时，`[SSID Setting]` 每个名称各写一行。`[SSID Setting]` 用空格分隔网络和参数，所以名称里的空格要写成 `?`（单字符通配符），两个家庭模块的 `HOME_SSID` 参数也用同样的写法；参数之间用逗号，不加空格。
 2. 在 Surge 中生成并安装、信任 CA，把 `ca-p12`、`ca-passphrase` 填进本地 `bootstrap.conf`，打开 MitM。
 3. 选用 `bootstrap.conf` 作为当前配置。**不要直接选用** `proxy-config.conf`，它没有节点。
 4. 机场的完整配置里如果没有 `#!MANAGED-CONFIG` 行，节点不会自动更新；节点有变化时，重新下载并覆盖 `Airport.conf`。

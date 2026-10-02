@@ -199,6 +199,9 @@ def check_private(failures: list[str]) -> None:
             failures.append(f"{path.name}: real SSIDs must stay on the device: {sorted(ssids)}")
         if re.search(r"(token|subscribe)=", text, re.I):
             failures.append(f"{path.name}: looks like a subscription URL")
+    ssid_setting = sections(BOOTSTRAP.read_text(encoding="utf-8"))["SSID Setting"]
+    if ssid_setting != ["SSID:HOME_SSID dns-server=system,encrypted-dns-server=off"]:
+        failures.append(f"[SSID Setting] parameters take commas without spaces, got {ssid_setting}")
     mitm = sections(BOOTSTRAP.read_text(encoding="utf-8"))["MITM"]
     for key in ("ca-p12", "ca-passphrase", "hostname"):
         if f"{key} =" not in mitm:
