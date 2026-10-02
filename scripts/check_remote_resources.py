@@ -31,6 +31,9 @@ LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",) + tuple(
 SURGE_FILES = (ROOT / "surge" / "proxy-config.conf",) + tuple(
     sorted((ROOT / "surge" / "modules").glob("*.sgmodule"))
 )
+# Generated from pinned upstream modules (build_surge_modules.py); like a hosted Loon plugin, only
+# the scripts it loads are resources, other URLs are patterns or redirect targets.
+SURGE_REWRITE_MODULE = ROOT / "surge" / "modules" / "rewrite.sgmodule"
 # The module whose RULE-SET lines are the pre-matching REJECT lists (see check_reject_conflicts).
 SURGE_REJECT_MODULE = ROOT / "surge" / "modules" / "home-direct.sgmodule"
 DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"
@@ -157,7 +160,7 @@ def extract_resources() -> list[Resource]:
             stripped = line.lstrip()
             if not stripped or stripped.startswith("#"):
                 continue
-            is_plugin = path.parent == ROOT / "loon" / "plugins"
+            is_plugin = path.parent == ROOT / "loon" / "plugins" or path == SURGE_REWRITE_MODULE
             for match in (SCRIPT_PATH_RE if is_plugin else URL_RE).finditer(line):
                 url = match.group(1 if is_plugin else 0).rstrip(")]}")
                 if is_skipped_url(url):

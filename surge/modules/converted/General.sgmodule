@@ -1,0 +1,17 @@
+#!name=General
+#!desc=General
+# Frozen Surge conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Rewrite/dc3ea2c1fb2db870676b26da24006083eb1d44d3/Html/General.conf
+# Source SHA-256: f759ce585a197719178cfa5fe2b48c105696c3d2cb1214d09522181233105f97
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=surge-module) on 2026-10-02.
+# Edited after conversion:
+#   - none
+# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# the new source the same way, redo the edits above and send the result through a PR.
+
+[URL Rewrite]
+# Redirect Google Search Service
+^https?:\/\/(www.)?(g|google)\.cn https://www.google.com 302
+
+[MITM]
+hostname = %APPEND% www.google.cn

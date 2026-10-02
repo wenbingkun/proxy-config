@@ -1,0 +1,17 @@
+#!name=Douban
+#!desc=Douban
+# Frozen Surge conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Rewrite/dc3ea2c1fb2db870676b26da24006083eb1d44d3/Html/Douban.conf
+# Source SHA-256: ee9f285059e0e0e478a2585c91e53188135775a68a9795b1dd39df979abbc757
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=surge-module) on 2026-10-02.
+# Edited after conversion:
+#   - script paths pinned to the commits reviewed for loon/plugins/Douban.plugin (1)
+# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# the new source the same way, redo the edits above and send the result through a PR.
+
+[Script]
+# > 豆瓣移动版网页去广告+快捷观影@ddgksf2013
+douban = type=http-response, pattern=^https?:\/\/m\.douban\.com\/(home_guide|movie|tv|book|group|music), script-path=https://raw.githubusercontent.com/ddgksf2013/Scripts/5bfa7fad4d262740131334169c222ca9ac2d353a/douban.js, requires-body=true, max-size=-1, timeout=60
+
+[MITM]
+hostname = %APPEND% m.douban.com
