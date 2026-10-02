@@ -44,10 +44,14 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 |---|---|
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、豆瓣网页、Safari 超级搜索、神机重定向 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
+| 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交 |
+| 高德地图、微信外链 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，真机上检查闲鱼搜索页。
 
-没有移植：Kelee 的小红书、高德、知乎、微信外链、节点检测——它们用 Loon 专有语法，脚本只对 Loon 提供。Loon 中默认关闭的插件（网易云、喜马拉雅、彩云、百度网盘、BoxJS）也没有放进合集。
+Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的插件（网易云、喜马拉雅、彩云、百度网盘、BoxJS）也没有放进合集。
+
+冻结转换的共同修改：脚本名编号保证唯一；模块里的 IP 规则加 `no-resolve`（否则排在规则最前面的 IP 规则会让每个请求先在本地解析）；QX 的 `response-body` 由 Script-Hub 转成它的 `replace-body.js`，固定到 Script-Hub `6b4fb62`。
 
 生成：`python3 scripts/build_surge_modules.py`（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以合集保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
 
