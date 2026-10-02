@@ -54,7 +54,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 - 连上家里 Wi-Fi：走 DIRECT，交给路由器上的 ShellCrash 分流；
 - 其他 Wi-Fi 与蜂窝：走同名基础组，即原来在 QX 里选好的节点。
 
-「· 自动」策略里没有需要选择的内容。`🛡️ 安全防护` 不包装，在家仍然 REJECT；重写、脚本和 MitM 在家同样生效。`[dns]` 未按 SSID 区分，在家仍使用模板中的 DNS 设置。
+「· 自动」策略里没有需要选择的内容。`🛡️ 安全防护` 不包装，在家仍然 REJECT；重写、脚本和 MitM 在家同样生效。`[dns]` 中的全局 `doh-server` 带 `excluded_ssids=HOME_SSID`：在家跳过 DoH，查询退回普通 `server`，由路由器把 53 端口劫持给 Mihomo 解析（依赖 ShellCrash 当前的 DNS 劫持）；外出照常使用 DoH。分域名的 DNS 设置，以及本地添加的机场节点专用 DoH，都不受影响。
 
 真机验收（同步配置后各做一次）：
 
