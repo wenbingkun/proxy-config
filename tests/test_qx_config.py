@@ -122,6 +122,35 @@ def check(failures: list[str]) -> dict[str, list[str]]:
     return sec
 
 
+DOH_URLS = [
+    "https://223.5.5.5/dns-query",
+    "https://1.12.12.12/dns-query",
+    "https://1.1.1.1/dns-query",
+    "https://dns.google/dns-query",
+]
+
+
+def check_dns(failures: list[str]) -> None:
+    """On the home Wi-Fi only the global DoH line is skipped; plain servers stay for the router."""
+    dns = sections(QX_CONFIG.read_text(encoding="utf-8"))["dns"]
+    if "no-system" not in dns:
+        failures.append("[dns] must keep no-system")
+    global_doh = [
+        line for line in dns
+        if line.partition("=")[0].strip() == "doh-server"
+        and not line.partition("=")[2].strip().startswith("/")
+    ]
+    if len(global_doh) != 1:
+        failures.append(f"[dns] must have exactly one global doh-server line, got {len(global_doh)}")
+    else:
+        parts = [p.strip() for p in global_doh[0].split("=", 1)[1].split(",")]
+        if parts[:-1] != DOH_URLS or parts[-1] != f"excluded_ssids={HOME_SSID}":
+            failures.append(f"global doh-server must be {DOH_URLS} on one line ending in excluded_ssids={HOME_SSID}")
+    for line in dns:
+        if "_ssids=" in line and line not in global_doh:
+            failures.append(f"[dns] only the global doh-server may skip the home Wi-Fi: {line}")
+
+
 def check_generator(failures: list[str]) -> None:
     for policy in ("DIRECT", "REJECT", AD_GROUP, "🌏 全球加速"):
         if build_rules.home_auto(policy) != policy:
@@ -136,6 +165,7 @@ def check_generator(failures: list[str]) -> None:
 def main() -> int:
     failures: list[str] = []
     check(failures)
+    check_dns(failures)
     check_generator(failures)
     if failures:
         print("QX config checks failed:", file=sys.stderr)

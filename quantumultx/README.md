@@ -33,7 +33,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 > MitM 信息可以从 Quantumult X 的"MitM"设置页面导出，或者生成新证书后复制过来。
 
-再把 `[policy]` 末尾 16 行 `ssid=… · 自动, …, HOME_SSID:DIRECT` 中的 `HOME_SSID` 全部换成家里 Wi-Fi 的名称（见下文[家庭 / 外出自动切换](#家庭--外出自动切换)）。2.4G 与 5G 名称不同时，每行末尾各追加一项 `, <SSID>:DIRECT`。家庭 SSID 只写在设备本地，不提交到仓库。
+再把 `[policy]` 末尾 16 行 `ssid=… · 自动, …, HOME_SSID:DIRECT` 中的 `HOME_SSID` 全部换成家里 Wi-Fi 的名称（见下文[家庭 / 外出自动切换](#家庭--外出自动切换)）。2.4G 与 5G 名称不同时，每行末尾各追加一项 `, <SSID>:DIRECT`。同时替换 `[dns]` 全局 `doh-server` 行的 `excluded_ssids=HOME_SSID`；多个家庭 SSID 时，排除列表须包含与上述策略相同的全部家庭网络名称，并逐个网络验证 DNS 切换。以后新增或改名时，两处同步更新。家庭 SSID 只写在设备本地，不提交到仓库。
 
 **第 3 步：导入 Quantumult X**
 
@@ -54,7 +54,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 - 连上家里 Wi-Fi：走 DIRECT，交给路由器上的 ShellCrash 分流；
 - 其他 Wi-Fi 与蜂窝：走同名基础组，即原来在 QX 里选好的节点。
 
-「· 自动」策略里没有需要选择的内容。`🛡️ 安全防护` 不包装，在家仍然 REJECT；重写、脚本和 MitM 在家同样生效。`[dns]` 未按 SSID 区分，在家仍使用模板中的 DNS 设置。
+「· 自动」策略里没有需要选择的内容。`🛡️ 安全防护` 不包装，在家仍然 REJECT；重写、脚本和 MitM 在家同样生效。`[dns]` 中的全局 `doh-server` 带 `excluded_ssids=HOME_SSID`：在家跳过 DoH，查询退回普通 `server`，由路由器把 53 端口劫持给 Mihomo 解析（依赖 ShellCrash 当前的 DNS 劫持）；外出照常使用 DoH。分域名的 DNS 设置，以及本地添加的机场节点专用 DoH，都不受影响。
 
 真机验收（同步配置后各做一次）：
 
