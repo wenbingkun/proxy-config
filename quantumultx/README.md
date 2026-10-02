@@ -33,7 +33,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 > MitM 信息可以从 Quantumult X 的"MitM"设置页面导出，或者生成新证书后复制过来。
 
-再把 `[policy]` 末尾 16 行 `ssid=… · 自动, …, HOME_SSID:DIRECT` 中的 `HOME_SSID` 全部换成家里 Wi-Fi 的名称（见下文[家庭 / 外出自动切换](#家庭--外出自动切换)）。2.4G 与 5G 名称不同时，每行末尾各追加一项 `, <SSID>:DIRECT`。家庭 SSID 只写在设备本地，不提交到仓库。
+再把 `[policy]` 末尾 16 行 `ssid=… · 自动, …, HOME_SSID:DIRECT` 中的 `HOME_SSID` 全部换成家里 Wi-Fi 的名称（见下文[家庭 / 外出自动切换](#家庭--外出自动切换)）。2.4G 与 5G 名称不同时，每行末尾各追加一项 `, <SSID>:DIRECT`。同时替换 `[dns]` 全局 `doh-server` 行的 `excluded_ssids=HOME_SSID`；多个家庭 SSID 时，排除列表须包含与上述策略相同的全部家庭网络名称，并逐个网络验证 DNS 切换。以后新增或改名时，两处同步更新。家庭 SSID 只写在设备本地，不提交到仓库。
 
 **第 3 步：导入 Quantumult X**
 

@@ -135,7 +135,11 @@ def check_dns(failures: list[str]) -> None:
     dns = sections(QX_CONFIG.read_text(encoding="utf-8"))["dns"]
     if "no-system" not in dns:
         failures.append("[dns] must keep no-system")
-    global_doh = [l for l in dns if l.startswith("doh-server") and "= /" not in l.replace(" ", "")]
+    global_doh = [
+        line for line in dns
+        if line.partition("=")[0].strip() == "doh-server"
+        and not line.partition("=")[2].strip().startswith("/")
+    ]
     if len(global_doh) != 1:
         failures.append(f"[dns] must have exactly one global doh-server line, got {len(global_doh)}")
     else:
