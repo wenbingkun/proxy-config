@@ -56,6 +56,14 @@ jobs:
               "scripts/check_acceptance.py",
               "scripts/check_hygiene.py",
               "scripts/check_remote_resources.py",
+              "scripts/check_reject_conflicts.py",
+              "surge/proxy-config.conf",
+              "surge/bootstrap.example.conf",
+              "surge/airport-dns.example.sgmodule",
+              "surge/modules/home-direct.sgmodule",
+              "surge/modules/home-direct-noblock.sgmodule",
+              "surge/rules/reject_allow.list",
+              "tests/test_surge_config.py",
               "tests/test_remote_resources.py",
               "mihomo/shellcrash/deploy.sh",
               "tests/test_deploy_shellcrash.py",
@@ -140,6 +148,8 @@ jobs:
           python3 tests/test_steam_policy.py
           python3 tests/test_loon_config.py
           python3 tests/test_qx_config.py
+          python3 tests/test_surge_config.py
+          python3 scripts/check_reject_conflicts.py --self-test
 
       - name: Check shell script syntax
         run: sh -n mihomo/shellcrash/deploy.sh

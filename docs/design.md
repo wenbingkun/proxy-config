@@ -67,14 +67,16 @@ python3 scripts/build_rules.py
        │
        ├── 生成 mihomo/rules/*.yaml
        ├── 生成 quantumultx/filter/repo.snippet
-       └── 生成 loon/rules/*.list
+       ├── 生成 loon/rules/*.list
+       └── 生成 surge/rules/*.list
        │
        ▼
 git push
        │
        ├── Mihomo 在下次刷新时拉取 mihomo/rules ──→ 规则生效
        ├── QX 在下次刷新时拉取 filter/repo.snippet ──→ 规则生效
-       └── Loon 在下次刷新时拉取 loon/rules ──→ 规则生效
+       ├── Loon 在下次刷新时拉取 loon/rules ──→ 规则生效
+       └── Surge 在下次刷新时拉取 surge/rules ──→ 规则生效
 ```
 
 ## Mihomo 生成链
@@ -100,6 +102,12 @@ IPv6 在各端统一开启（QX 不设 `no-ipv6`；Windows 配置开启 IPv6；�
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余收敛为东南亚、亚洲其他、欧洲、美洲、大洋洲和非洲。南亚、中东、中亚、蒙古与澳门均属于“亚洲其他”；加拿大、墨西哥、中美洲、加勒比和南美洲均属于“美洲”，已独立的美国不会重复命中。澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。除美国节点组保留手动固定选择外，其余地区组均按健康检查延迟自动优选；故障转移组仍按可用性切换。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
 Steam 不再单设策略组：客户端进程、平台域名和 21 条下载 CDN 补充规则均进入 `🎮 游戏平台`。平时可选择合适地区代理改善商店和社区访问；下载时临时切换为 `DIRECT`，完成后再切回。这会同时改变 Epic、Xbox、PlayStation 等其他游戏平台的出口。在 Windows 上，三个 `PROCESS-NAME` 规则只对已经进入 Mihomo 的流量生效；ShellCrash 看不到局域网客户端进程名，但会通过 `Game` 聚合规则和 Steam CDN 补充规则提供域名覆盖。Microsoft、Visual Studio、Office、winget 与 npm 下载仍始终保持 `DIRECT`，不受游戏平台组影响。
+
+## Surge 的分层与有意差异
+
+Surge 支持托管配置和分离配置，所以不再需要"本地 bootstrap 持有策略组"：仓库托管 `surge/proxy-config.conf` 的 `[General]`、`[Proxy Group]`、`[Rule]`、`[Host]`，设备上的 `bootstrap.conf` 用 `#!include` 引用这几段，节点（机场的完整 Surge 配置）、MitM、家庭 SSID 和机场 DNS（本地模块覆盖全局 `encrypted-dns-server`，Surge 没有按节点指定解析器的办法）留在本地。仓库改策略组后，设备随托管更新生效，没有 QX / Loon 的同步边界。
+
+家庭 / 外出切换由 `surge/modules/home-direct.sgmodule` 中的一条 `SUBNET` 规则完成，取代 16 个包装组。AdRules 与 Privacy 两份拒绝列表放在同一个模块里、排在 SUBNET 之前，并带 `pre-matching`：DNS 与 TCP 在预匹配阶段被拒绝，UDP 按模块内的书写顺序先遇到拒绝。代价是拒绝列表排到了仓库规则之前：仓库列表里的部分子域（2026-10-02 快照中为 151 处，多为统计、追踪子域）在 Surge 上会被拦截，而 QX / Loon 会放行。银行与券商两个列表覆盖的域名通过 `reject_allow.list` 排除。误拦截时，换用只含 SUBNET 的 noblock 模块整体放行。
 
 ## QX 与路由器的分工
 

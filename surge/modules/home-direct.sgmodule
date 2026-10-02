@@ -1,0 +1,14 @@
+#!name=在家直连 + 拦截
+#!desc=AdRules 与 Privacy 拒绝列表（pre-matching，排除银行和券商）在前；家庭 Wi-Fi 下其余流量 DIRECT，由路由器分流。与「在家直连（关闭 AdRules / Privacy 拦截）」二选一启用。
+#!arguments=HOME_SSID:HOME_SSID
+#!arguments-desc=HOME_SSID: 家里 Wi-Fi 的名称（只填在设备上）。两个家庭模块要填同一个值。
+
+# Keep this module below every other module that has REJECT rules (Surge module order): UDP has
+# no pre-matching phase, so a home UDP packet must meet those rejects before the SUBNET line.
+# The REJECT lines stay ahead of SUBNET for the same reason. extended-matching sits on each
+# RULE-SET sub-rule (documented for logical rules); the outer AND only carries pre-matching.
+# reject_allow.list is generated from rules/hk_banks.yaml and rules/intl_brokers.yaml.
+[Rule]
+AND,((RULE-SET,https://raw.githubusercontent.com/Cats-Team/AdRules/main/adrules-surge.conf,extended-matching),(NOT,((RULE-SET,https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/reject_allow.list,extended-matching)))),REJECT,pre-matching
+AND,((RULE-SET,https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/Privacy/Privacy_All_No_Resolve.list,extended-matching),(NOT,((RULE-SET,https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/reject_allow.list,extended-matching)))),REJECT,pre-matching
+SUBNET,SSID:{{{HOME_SSID}}},DIRECT

@@ -1,6 +1,6 @@
 # Proxy Config
 
-自用代理配置仓库：一份共享规则源，生成 **Quantumult X**、**Loon**、**Mihomo**（Clash Verge Rev / ShellCrash）三条线的客户端文件。仓库只放可公开的配置逻辑，订阅、MitM 证书等私密信息只留在设备本地。
+自用代理配置仓库：一份共享规则源，生成 **Quantumult X**、**Loon**、**Surge**、**Mihomo**（Clash Verge Rev / ShellCrash）四条线的客户端文件。仓库只放可公开的配置逻辑，订阅、MitM 证书等私密信息只留在设备本地。
 
 ## 客户端
 
@@ -8,6 +8,7 @@
 |---|---|---|---|
 | Quantumult X | iPhone / iPad | 本地 bootstrap + 远程 snippet | [quantumultx/](quantumultx/README.md) |
 | Loon（试点） | iPhone | 本地 bootstrap + 远程规则 / 插件 | [loon/](loon/README.md) |
+| Surge（试点） | iPhone | 托管配置 + 本地分离配置 + 模块 | [surge/](surge/README.md) |
 | Clash Verge Rev | Windows | 本地主配置 + rule-providers | [mihomo/verge/](mihomo/verge/README.md) |
 | ShellCrash | 路由器 | 公开策略模板 + 路由器本地注入订阅 | [mihomo/shellcrash/](mihomo/shellcrash/README.md) |
 
@@ -18,6 +19,7 @@ proxy-config/
 ├── rules/            共享规则源（唯一编辑入口）→ rules/README.md
 ├── quantumultx/      bootstrap 模板、filter / rewrite snippet、托管脚本
 ├── loon/             bootstrap 模板、规则列表、冻结托管插件
+├── surge/            托管配置、bootstrap 模板、家庭模块、规则列表
 ├── mihomo/
 │   ├── rules/        生成的 rule-provider 规则集（Verge 与路由器共用）
 │   ├── verge/        Windows 主配置（也是路由器模板的生成源）
@@ -53,7 +55,7 @@ python3 scripts/check_hygiene.py && python3 scripts/check_acceptance.py
 
 以下内容**不得提交**。已知的私密配置路径已加入 `.gitignore`，但忽略规则只按路径匹配、不识别文件内容，提交前仍需检查 diff：
 
-- `quantumultx/bootstrap.conf`、`loon/bootstrap.conf`：真实订阅、MitM、家庭 SSID
+- `quantumultx/bootstrap.conf`、`loon/bootstrap.conf`、`surge/bootstrap.conf`（及 `surge/Airport.conf`、`surge/*.dconf`）：真实订阅、MitM、家庭 SSID
 - `*.p12` / `*.pem` / `*.crt` / `*.key`：MitM 私钥与证书
 - `mihomo/shellcrash/providers.env`：路由器订阅参数，仅存路由器本地（`600`）
 - 任何订阅 token、Cookie、API Key

@@ -94,7 +94,7 @@ def check_security(failures: list[str]) -> None:
     """Scan committed files for accidental secrets."""
 
     # Local bootstraps must not be tracked by git
-    for local_bootstrap in ("quantumultx/bootstrap.conf", "loon/bootstrap.conf"):
+    for local_bootstrap in ("quantumultx/bootstrap.conf", "loon/bootstrap.conf", "surge/bootstrap.conf"):
         result = subprocess.run(
             ["git", "ls-files", local_bootstrap],
             cwd=ROOT,
@@ -117,7 +117,7 @@ def check_security(failures: list[str]) -> None:
     ).stdout.splitlines()
 
     # Scan executable/config formats where machine-local secrets are most likely.
-    SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt", ".py", ".sh"}
+    SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt", ".py", ".sh", ".dconf", ".sgmodule"}
 
     for rel_path in candidates:
         path = ROOT / rel_path
@@ -131,8 +131,9 @@ def check_security(failures: list[str]) -> None:
         except OSError:
             continue
 
-        # passphrase with a real value — use [^\S\n]* to avoid crossing line boundaries
-        for match in re.finditer(r"(?m)^passphrase[^\S\n]*=[^\S\n]*(.+)$", text):
+        # passphrase (QX) / ca-passphrase (Loon, Surge) with a real value — use [^\S\n]* to avoid
+        # crossing line boundaries
+        for match in re.finditer(r"(?m)^(?:ca-)?passphrase[^\S\n]*=[^\S\n]*(.+)$", text):
             value = match.group(1).strip()
             if value and not value.startswith("#"):
                 fail(
@@ -141,8 +142,8 @@ def check_security(failures: list[str]) -> None:
                     failures,
                 )
 
-        # p12 with a real value
-        for match in re.finditer(r"(?m)^p12[^\S\n]*=[^\S\n]*(.+)$", text):
+        # p12 (QX) / ca-p12 (Loon, Surge) with a real value
+        for match in re.finditer(r"(?m)^(?:ca-)?p12[^\S\n]*=[^\S\n]*(.+)$", text):
             value = match.group(1).strip()
             if value and not value.startswith("#"):
                 fail(

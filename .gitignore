@@ -34,3 +34,14 @@ clash/shellcrash/*.local.env
 
 # Private local notes (router incident evidence, client evaluations)
 /.local/
+
+# Surge local bootstrap, airport profile, detached sections and MitM secrets
+surge/bootstrap.conf
+surge/Airport.conf
+surge/*.dconf
+surge/airport-dns.sgmodule
+surge/*.p12
+surge/*.pem
+surge/*.crt
+surge/*.key
+surge/*.cer

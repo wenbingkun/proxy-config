@@ -1,0 +1,9 @@
+#!name=在家直连（关闭 AdRules / Privacy 拦截）
+#!desc=只保留家庭 Wi-Fi 下的 DIRECT，不挂 AdRules 与 Privacy 拒绝列表。误拦截时代替「在家直连 + 拦截」临时启用，二选一。其他模块（如 B 站）的拦截与改写照常工作。
+#!arguments=HOME_SSID:HOME_SSID
+#!arguments-desc=HOME_SSID: 家里 Wi-Fi 的名称（只填在设备上）。两个家庭模块要填同一个值。
+
+# Unlike Loon's 🛡️ 安全防护 = DIRECT, hosts the lists used to reject keep matching the service
+# rules below, so outside home they may go through a proxy instead of DIRECT.
+[Rule]
+SUBNET,SSID:{{{HOME_SSID}}},DIRECT
