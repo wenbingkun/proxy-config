@@ -235,7 +235,8 @@ def check_rewrite_module(failures: list[str]) -> None:
         path = source.get("path")
         if path:
             converted = (ROOT / path).read_text(encoding="utf-8")
-            if "# Frozen Surge conversion of ddgksf2013's Quantumult X rewrite" not in converted:
+            if not re.search(r"^# Frozen Surge conversion of \S+'s Quantumult X rewrite; do not edit by hand\.$",
+                             converted, re.M):
                 failures.append(f"{path}: missing the frozen-conversion header")
             if re.search(r"refs/heads/master|script\.hub", converted):
                 failures.append(f"{path}: script paths must be pinned and must not go through Script-Hub")
@@ -251,6 +252,10 @@ def check_rewrite_module(failures: list[str]) -> None:
     if len(hostnames) != 1 or "grpc.biliapi.net" not in hostnames[0] or "%APPEND%" not in hostnames[0]:
         failures.append(f"{REWRITE.name}: [MITM] must be one merged 'hostname = %APPEND% ...' line")
     for line in sec.get("Rule", []):
+        # Module rules sit at the top of the rule list; an IP rule there without no-resolve would
+        # resolve every request locally before the profile's own rules run.
+        if line.startswith(("IP-CIDR,", "IP-CIDR6,", "GEOIP,", "IP-ASN,")) and not line.endswith(",no-resolve"):
+            failures.append(f"{REWRITE.name}: IP rule without no-resolve: {line}")
         tokens = check_reject_conflicts.split_top(line, REWRITE.name)
         policy = tokens[2] if len(tokens) > 2 else ""
         if policy not in ("DIRECT", "REJECT", "REJECT-NO-DROP", "REJECT-DROP", "REJECT-TINYGIF"):
