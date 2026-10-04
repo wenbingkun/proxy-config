@@ -1,4 +1,4 @@
-#!name=14 Safari 超级搜索
+#!name=Safari 超级搜索
 #!desc=Safari 超级搜索：搜索引擎设为 DuckDuckGo，用关键字前缀跳转到其他站点搜索。需要 MitM。由仓库生成，不要与「去广告与增强合集」同时启用。
 #!category=proxy-config
 

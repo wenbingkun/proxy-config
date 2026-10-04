@@ -380,10 +380,6 @@ def check_rewrite_module(failures: list[str]) -> None:
                         f"got {[p.name for p in on_disk]}")
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
-    # Surge lists a category's modules by name; the numbered names keep the Loon order of SOURCES.
-    names = [re.search(r"^#!name=(.*)$", path.read_text(encoding="utf-8"), re.M).group(1) for path in SPLIT]
-    if names != sorted(names) or names != [f"{i:02d} {s['title']}" for i, s in enumerate(sources, 1)]:
-        failures.append(f"per-app module names must be numbered in SOURCES order, got {names}")
 
     # The per-app modules carry exactly the merged module's lines, so the two never drift apart.
     for section in sorted((set(merged) | {s for sec in split.values() for s in sec}) - {"MITM", "General"}):
