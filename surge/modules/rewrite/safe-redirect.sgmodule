@@ -1,4 +1,4 @@
-#!name=安全重定向
+#!name=09 安全重定向
 #!desc=blackmatrix7 的安全重定向。需要 MitM。由仓库生成，不要与「去广告与增强合集」同时启用。
 #!category=proxy-config
 
