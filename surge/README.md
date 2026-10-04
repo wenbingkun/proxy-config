@@ -38,7 +38,9 @@ Surge 没有按节点指定解析器的参数，代理服务器的主机名也�
 
 ## 模块
 
-Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块要在 App 里安装，启用状态按设备保存、不随 iCloud 同步。所以 Loon 中启用的插件在仓库里合并成**一个**模块 `surge/modules/rewrite.sgmodule`（「去广告与增强合集」），只装这一个即可，**不要再单独安装其中的模块**，否则改写会重复。
+Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块要在 App 里按 URL 安装（或把文件放进 iCloud Drive/Surge 作为本地模块），启用状态按设备保存、不随 iCloud 同步。Loon 中启用的插件在仓库里按 App 拆成单独的模块，放在 `surge/modules/rewrite/`，都归在 proxy-config 分类下，装好后逐个按需启用。按 URL 安装的模块随仓库自动更新；本地副本不会。
+
+原来的合并模块 `surge/modules/rewrite.sgmodule`（「去广告与增强合集」）在兼容期内保留并继续生成，内容与拆分模块逐行相同。它和拆分模块**只能用一种**，同时启用会重复改写。迁移步骤见下文「从合集迁移」。
 
 | 内容 | 来源 |
 |---|---|
@@ -49,11 +51,13 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，2026-10 真机检查闲鱼搜索页正常。
 
-Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的插件（网易云、喜马拉雅、彩云、百度网盘、BoxJS）也没有放进合集。
+Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的插件（网易云、喜马拉雅、彩云、百度网盘、BoxJS）也没有移植。
 
 冻结转换的共同修改：脚本名编号保证唯一；模块里的 IP 规则加 `no-resolve`（否则排在规则最前面的 IP 规则会让每个请求先在本地解析）；QX 的 `response-body` 由 Script-Hub 转成它的 `replace-body.js`，固定到 Script-Hub `6b4fb62`。
 
-生成：`python3 scripts/build_surge_modules.py`（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以合集保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
+生成：`python3 scripts/build_surge_modules.py`，每个来源生成一个模块，另外生成合集（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以合集保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
+
+多个模块之间谁先执行，Surge 文档没有说明，所以拆分后的模块不能依赖彼此的顺序。2026-10-05 逐段核对过：只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite、Rule）里，不同模块不会对同一个请求给出不同结果。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享的主机名清单固定在 `tests/test_surge_config.py`，更新来源后清单变化，测试会失败，要重新核对再改清单。
 
 在「模块 → 安装新模块」中填写以下 URL（复制时注意不要带上空格）：
 
@@ -61,9 +65,35 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 |---|---|---|
 | 在家直连 + 拦截 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/home-direct.sgmodule` | 启用，参数 `HOME_SSID` 填家里 Wi-Fi |
 | 在家直连（关闭 AdRules / Privacy 拦截） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/home-direct-noblock.sgmodule` | 不启用；与上一个**二选一** |
-| 去广告与增强合集 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite.sgmodule` | 启用；需要 MitM |
+| 哔哩哔哩增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/bilibili.sgmodule` | 按需启用 |
+| YouTube 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/youtube.sgmodule` | 按需启用 |
+| 小红书去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaohongshu.sgmodule` | 按需启用 |
+| 高德地图去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap.sgmodule` | 按需启用 |
+| 知乎去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/zhihu.sgmodule` | 按需启用 |
+| 微信外链解锁 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/wechat.sgmodule` | 按需启用 |
+| 通用去广告（blackmatrix7） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/advertising.sgmodule` | 按需启用 |
+| Siri 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/siri.sgmodule` | 按需启用 |
+| 安全重定向（blackmatrix7） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/safe-redirect.sgmodule` | 按需启用 |
+| Spotify 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/spotify.sgmodule` | 按需启用 |
+| 微博去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/weibo.sgmodule` | 按需启用 |
+| 闲鱼去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/goofish.sgmodule` | 按需启用 |
+| 豆瓣网页增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/douban.sgmodule` | 按需启用 |
+| Safari 超级搜索 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/q-search.sgmodule` | 按需启用 |
+| 神机重定向 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/general.sgmodule` | 按需启用 |
+| 去广告与增强合集（兼容期） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite.sgmodule` | 不再新装；与上面的拆分模块二选一 |
 
-**模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块（目前是合集里的 B 站规则）**之后**。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。
+除两个家庭模块外，上表的模块都需要 MitM。Loon 中这些插件默认全部启用；不用的 App 可以不装，或在模块列表里关掉。
+
+**模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块**之后**，目前是哔哩哔哩增强、小红书去广告、知乎去广告、微博去广告、闲鱼去广告（它们的模块说明里都写了这一点）。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。也可以用 `python3 scripts/netdiag.py get surge /v1/rules` 查看实际生效的规则顺序：上述模块的规则应排在 `SUBNET,SSID:` 之前。
+
+### 从合集迁移
+
+1. 按上表 URL 安装要用的拆分模块，先不启用。
+2. 停用「去广告与增强合集」，再启用拆分模块。合集是本地副本的，从 iCloud Drive/Surge 删除；按 URL 安装的，在模块列表里删除。
+3. 确认只启用了一种（合集或拆分模块），并按上一段检查模块顺序。
+4. 抽查常用 App 的去广告效果，以及 B 站 P2P 端口的拦截。
+
+回滚：停用拆分模块，重新启用合集。兼容期内仓库仍会更新合集；设备迁移完成并确认后，再用单独的改动删除合集。
 
 ## 家庭 / 外出
 
@@ -109,7 +139,7 @@ if grep -n 'wenbingkun/proxy-config/main/' "$T"/*; then echo "unpinned repo URL"
 find "$T" -type f -exec chmod 600 {} +
 ```
 
-把三个文件复制到 iCloud Drive/Surge，`surge/modules/rewrite.sgmodule` 也原样复制过去作为本地模块（它不含本仓库的 main 链接，不用固定）；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和三个模块（两个家庭模块与合集），把 include 改回，并删除本地副本。
+把三个文件复制到 iCloud Drive/Surge，`surge/modules/rewrite/` 下要用的模块也原样复制过去作为本地模块（它们不含本仓库的 main 链接，不用固定）；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和模块（两个家庭模块与要用的拆分模块），把 include 改回，并删除本地副本。
 
 ## 回滚
 

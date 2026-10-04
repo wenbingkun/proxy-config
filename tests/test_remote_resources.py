@@ -127,6 +127,13 @@ def main() -> int:
     }
     rewrite_urls = {r.url for r in resources if r.source.startswith("surge/modules/rewrite.sgmodule")}
     assert rewrite_scripts and rewrite_urls == rewrite_scripts, rewrite_urls ^ rewrite_scripts
+    # The per-app modules load the same scripts; each URL is checked once per client.
+    split_scripts = {
+        url for path in check.SURGE_REWRITE_MODULES[1:] for line in path.read_text(encoding="utf-8").splitlines()
+        if not line.lstrip().startswith("#") for url in check.SCRIPT_PATH_RE.findall(line)
+    }
+    assert len(check.SURGE_REWRITE_MODULES) > 1 and split_scripts == rewrite_scripts, split_scripts ^ rewrite_scripts
+    assert not any(r.source.startswith("surge/modules/rewrite/") and r.url not in rewrite_scripts for r in resources)
 
     loon_resource = check.Resource(
         "https://kelee.one/Tool/Loon/Lpx/Example.lpx", "loon-resource", "loon/bootstrap.example.conf:1"
