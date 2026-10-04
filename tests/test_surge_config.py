@@ -30,9 +30,6 @@ AIRPORT_DNS = ROOT / "surge" / "airport-dns.example.sgmodule"
 REWRITE = build_surge_modules.OUTPUT
 README = ROOT / "surge" / "README.md"
 REPO_RULES = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/"
-# Repo lists whose IP rules must not trigger a lookup for domains: local_network sits ahead of almost
-# every list, so resolving there would send each request through local DNS before its domain rule.
-NO_RESOLVE_REPO_RULES = {"local_network"}
 MANAGED_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/proxy-config.conf"
 BM7_LOON = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Loon/"
 BM7_SURGE = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/"
@@ -42,6 +39,16 @@ AD_GROUP = "🛡️ 安全防护"
 ADRULES = "https://raw.githubusercontent.com/Cats-Team/AdRules/main/adrules-surge.conf"
 PRIVACY = BM7_SURGE + "Privacy/Privacy_All_No_Resolve.list"
 HOME_RULE = "SUBNET,SSID:{{{HOME_SSID}}},DIRECT"
+# Surge resolves a domain locally at the first IP-based rule without no-resolve (manual: rules
+# overview). Only this tail may do that: GEOIP,CN needs an address, and the three domestic sets keep
+# their IP fallback for domains no earlier rule matched. Every rule ahead of it must carry no-resolve
+# (#57, #60), so an upstream list that drops the flag cannot bring early resolution back.
+DOMESTIC = "🇨🇳 国内服务"
+RESOLVING_TAIL = [f"RULE-SET,{BM7_SURGE}{n}/{n}_All.list,{DOMESTIC}" for n in ("Alibaba", "Tencent", "China")] + [
+    f"GEOIP,CN,{DOMESTIC}", "FINAL,🐟 兜底分流,dns-failed"]
+IP_RULES = {"IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP"}
+KNOWN_RULES = IP_RULES | {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-WILDCARD", "RULE-SET",
+                          "AND", "OR", "NOT", "SUBNET", "DEST-PORT", "USER-AGENT", "PROTOCOL", "FINAL"}
 GROUP_KIND = {"url-test": "smart", "select": "select", "fallback": "fallback"}
 
 
@@ -109,6 +116,48 @@ def rule_lines() -> list[str]:
     return sections(SURGE.read_text(encoding="utf-8"))["Rule"]
 
 
+def sub_rules(rule: str) -> list[str]:
+    """The sub-rules of AND,((a),(b)),… / NOT,((a)),… (nesting allowed)."""
+    body = rule[rule.index(",") + 1:]
+    depth, start, subs = 0, 0, []
+    for i, ch in enumerate(body):
+        if ch == "(":
+            depth += 1
+            if depth == 2:
+                start = i + 1
+        elif ch == ")":
+            if depth == 2:
+                subs.append(body[start:i].strip())
+            depth -= 1
+            if depth == 0:
+                return subs
+    raise ValueError(f"unbalanced logical rule: {rule}")
+
+
+def early_resolve(rule: str) -> list[str]:
+    """Why a rule ahead of RESOLVING_TAIL could resolve a domain locally (empty if it cannot)."""
+    kind, *opts = [p.strip() for p in rule.split(",")]
+    if kind not in KNOWN_RULES:
+        return [f"unknown rule type {kind!r}, review how it resolves: {rule}"]
+    if kind == "FINAL":
+        return [f"FINAL must be the last rule: {rule}"]
+    if kind == "NOT":
+        return [f"NOT is not expected ahead of the domestic tail: {rule}"]
+    if kind in ("AND", "OR"):
+        return [p for sub in sub_rules(rule) for p in early_resolve(sub)]
+    if (kind in IP_RULES or kind == "RULE-SET") and "no-resolve" not in opts:
+        return [f"needs no-resolve (only the domestic tail may resolve): {rule}"]
+    return []
+
+
+def check_resolve_order(rules: list[str], failures: list[str]) -> None:
+    if rules[-len(RESOLVING_TAIL):] != RESOLVING_TAIL:
+        failures.append("rules must end with the Alibaba/Tencent/China _All sets, GEOIP,CN and FINAL dns-failed,"
+                        f" in that order; got {rules[-len(RESOLVING_TAIL):]}")
+    for line in rules[:-len(RESOLVING_TAIL)]:
+        failures.extend(early_resolve(line))
+
+
 def check_rules(failures: list[str]) -> None:
     rules = rule_lines()
     names = {g[0] for g in surge_groups()} | {"DIRECT"}
@@ -121,16 +170,13 @@ def check_rules(failures: list[str]) -> None:
             failures.append(f"Surge rules must not use ssid wrappers or {AD_GROUP}: {line}")
     if rules[0] != "DOMAIN-SUFFIX,base.org,💰 加密货币":
         failures.append(f"first rule must be Loon's local base.org rule, got {rules[0]}")
-    if rules[-2:] != ["GEOIP,CN,🇨🇳 国内服务", "FINAL,🐟 兜底分流,dns-failed"]:
-        failures.append(f"rules must end with GEOIP,CN and FINAL dns-failed, got {rules[-2:]}")
+    check_resolve_order(rules, failures)
 
     rule_sets = [line for line in rules if line.startswith("RULE-SET,")]
     manifest = build_rules.load_manifest()
-    repo = [f"RULE-SET,{REPO_RULES}{item['id']}.list,{item['qx_policy']}"
-            + (",no-resolve" if item["id"] in NO_RESOLVE_REPO_RULES else "") for item in manifest]
+    repo = [f"RULE-SET,{REPO_RULES}{item['id']}.list,{item['qx_policy']},no-resolve" for item in manifest]
     if rule_sets[: len(repo)] != repo:
-        failures.append("repo RULE-SET lines must follow rules/local_rules.yaml order and qx_policy"
-                        f" (with no-resolve on {sorted(NO_RESOLVE_REPO_RULES)})")
+        failures.append("repo RULE-SET lines must follow rules/local_rules.yaml order and qx_policy, with no-resolve")
 
     _, _, loon_remote = loon_parts()
     third = []
@@ -142,12 +188,11 @@ def check_rules(failures: list[str]) -> None:
         if url.startswith(BM7_LOON):
             name = url[len(BM7_LOON):].split("/")[0]
             url = f"{BM7_SURGE}{name}/{name}{'_All' if name in BM7_ALL else ''}.list"
-        # Apple precedes other service domains; its IP fallback must not resolve them first.
-        suffix = ",no-resolve" if url == BM7_SURGE + "Apple/Apple_All.list" else ""
-        third.append(f"RULE-SET,{url},{policy}{suffix}")
+        line = f"RULE-SET,{url},{policy}"
+        third.append(line if line in RESOLVING_TAIL else line + ",no-resolve")
     if rule_sets[len(repo):] != third:
         failures.append("third-party RULE-SET lines must mirror Loon [Remote Rule]"
-                        " (bm7 Surge paths, no-resolve on Apple_All)")
+                        " (bm7 Surge paths, no-resolve except the domestic tail)")
     if any(ADRULES in line or "/Privacy/" in line for line in rules):
         failures.append("AdRules/Privacy belong in surge/modules/home-direct.sgmodule only")
 
