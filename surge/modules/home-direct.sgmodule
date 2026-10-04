@@ -9,6 +9,6 @@
 # RULE-SET sub-rule (documented for logical rules); the outer AND only carries pre-matching.
 # reject_allow.list is generated from rules/hk_banks.yaml and rules/intl_brokers.yaml.
 [Rule]
-AND,((RULE-SET,https://raw.githubusercontent.com/Cats-Team/AdRules/main/adrules-surge.conf,extended-matching),(NOT,((RULE-SET,https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/reject_allow.list,extended-matching)))),REJECT,pre-matching
-AND,((RULE-SET,https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/Privacy/Privacy_All_No_Resolve.list,extended-matching),(NOT,((RULE-SET,https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/reject_allow.list,extended-matching)))),REJECT,pre-matching
+AND,((RULE-SET,https://raw.githubusercontent.com/Cats-Team/AdRules/main/adrules-surge.conf,no-resolve,extended-matching),(NOT,((RULE-SET,https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/reject_allow.list,extended-matching)))),REJECT,pre-matching
+AND,((RULE-SET,https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/Privacy/Privacy_All_No_Resolve.list,no-resolve,extended-matching),(NOT,((RULE-SET,https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/reject_allow.list,extended-matching)))),REJECT,pre-matching
 SUBNET,SSID:{{{HOME_SSID}}},DIRECT
