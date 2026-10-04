@@ -411,6 +411,13 @@ def check_rewrite_module(failures: list[str]) -> None:
         failures.append(f"per-app modules share unreviewed MitM hosts (see SHARED_MITM): {shared}")
 
 
+def check_categories(failures: list[str]) -> None:
+    """Every repo module and device-only template sits in the proxy-config category, not 未分类."""
+    for path in (HOME, NOBLOCK, AIRPORT_DNS, ROOT / "surge" / "netdiag-api.example.sgmodule"):
+        if not re.search(r"^#!category=proxy-config$", path.read_text(encoding="utf-8"), re.M):
+            failures.append(f"{path.name}: must be in the proxy-config category")
+
+
 def check_airport_dns(failures: list[str]) -> None:
     """The airport DNS is a local module overriding the global encrypted DNS, never [Host]."""
     sec = sections(AIRPORT_DNS.read_text(encoding="utf-8"))
@@ -424,7 +431,7 @@ def check_airport_dns(failures: list[str]) -> None:
 def main() -> int:
     failures: list[str] = []
     for check in (check_groups, check_rules, check_modules, check_module_resolve, check_allow_list, check_private,
-                  check_airport_dns, check_rewrite_module):
+                  check_airport_dns, check_rewrite_module, check_categories):
         check(failures)
     if failures:
         print("Surge config checks failed:")
