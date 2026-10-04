@@ -94,7 +94,6 @@ def main() -> int:
         "https://ddgksf2013.top/rewrite/StartUpAds.conf",
         "https://ddgksf2013.top/rewrite/XiaoHongShuAds.conf",
         "https://ddgksf2013.top/scripts/zhihu.ads.js",
-        "https://ddgksf2013.top/scripts/bdpan.ads.js",
     } <= set(urls)
 
     # A URL used by both QX and Loon is checked once for each client, each with its own UA.
