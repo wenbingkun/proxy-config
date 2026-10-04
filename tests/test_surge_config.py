@@ -134,6 +134,11 @@ def sub_rules(rule: str) -> list[str]:
     raise ValueError(f"unbalanced logical rule: {rule}")
 
 
+# The only NOT allowed anywhere (used by the home module): the repo's domain-only allow list. A no-resolve
+# there would turn a skipped IP entry into "not allowed", so the list stays domain-only (check_allow_list).
+ALLOWED_NOT = f"NOT,((RULE-SET,{REPO_RULES}reject_allow.list,extended-matching))"
+
+
 def early_resolve(rule: str) -> list[str]:
     """Why a rule ahead of RESOLVING_TAIL could resolve a domain locally (empty if it cannot)."""
     kind, *opts = [p.strip() for p in rule.split(",")]
@@ -142,7 +147,7 @@ def early_resolve(rule: str) -> list[str]:
     if kind == "FINAL":
         return [f"FINAL must be the last rule: {rule}"]
     if kind == "NOT":
-        return [f"NOT is not expected ahead of the domestic tail: {rule}"]
+        return [] if rule.replace(" ", "") == ALLOWED_NOT else [f"only {ALLOWED_NOT} may use NOT: {rule}"]
     if kind in ("AND", "OR"):
         return [p for sub in sub_rules(rule) for p in early_resolve(sub)]
     if (kind in IP_RULES or kind == "RULE-SET") and "no-resolve" not in opts:
@@ -156,6 +161,14 @@ def check_resolve_order(rules: list[str], failures: list[str]) -> None:
                         f" in that order; got {rules[-len(RESOLVING_TAIL):]}")
     for line in rules[:-len(RESOLVING_TAIL)]:
         failures.extend(early_resolve(line))
+
+
+def check_module_resolve(failures: list[str]) -> None:
+    """Module rules run ahead of the whole profile (and UDP has no pre-matching stage), so they follow
+    the same no-resolve rule as the profile's front part. Device-only modules are not covered."""
+    for path in (HOME, NOBLOCK, REWRITE):
+        for line in module_rules(path):
+            failures.extend(f"{path.name}: {p}" for p in early_resolve(line))
 
 
 def check_rules(failures: list[str]) -> None:
@@ -210,7 +223,7 @@ def check_modules(failures: list[str]) -> None:
         return
     allow = REPO_RULES + "reject_allow.list"
     want = [
-        f"AND,((RULE-SET,{src},extended-matching),(NOT,((RULE-SET,{allow},extended-matching)))),REJECT,pre-matching"
+        f"AND,((RULE-SET,{src},no-resolve,extended-matching),(NOT,((RULE-SET,{allow},extended-matching)))),REJECT,pre-matching"
         for src in (ADRULES, PRIVACY)
     ]
     if home[:-1] != want:
@@ -327,8 +340,8 @@ def check_airport_dns(failures: list[str]) -> None:
 
 def main() -> int:
     failures: list[str] = []
-    for check in (check_groups, check_rules, check_modules, check_allow_list, check_private, check_airport_dns,
-                  check_rewrite_module):
+    for check in (check_groups, check_rules, check_modules, check_module_resolve, check_allow_list, check_private,
+                  check_airport_dns, check_rewrite_module):
         check(failures)
     if failures:
         print("Surge config checks failed:")
