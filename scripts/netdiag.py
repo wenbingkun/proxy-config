@@ -438,6 +438,7 @@ def build_report(ctx: dict) -> str:
 
     router = [(r, parse_router(r["payload"])) for r in ctx["router"]]
     surge = ctx["surge"]
+    active = ctx.get("router_connections")
 
     out += ["", "## Problems"]
     problems = []
@@ -501,9 +502,21 @@ def build_report(ctx: dict) -> str:
                 "Surge sent these to the router (DIRECT at home); the router's rule decided the exit."]
         out.append(", ".join(both[:80]) or "none")
 
-    if not surge and not parsed_rows:
-        out += ["", "No traffic from the device in this window. Check that the iPhone is on home Wi-Fi, "
-                "the recorder is running (`netdiag.py status`) and the window covers the repro."]
+    if active is not None:
+        out += ["", f"## Router active connections now ({len(active)})",
+                "Snapshot at collection time; these connections may have started before the window."]
+        rows = []
+        for conn in active:
+            meta = conn.get("metadata", {})
+            rows.append([meta.get("host") or meta.get("destinationIP", ""),
+                         f"{meta.get('network', '')}/{meta.get('destinationPort', '')}",
+                         conn.get("rule", ""), " ← ".join(conn.get("chains") or [])])
+        out.append(table(["host/IP", "net/port", "rule", "policy chain"], rows)
+                   if rows else "No active router connections from the device at collection time.")
+
+    if not surge and not router:
+        out += ["", "No new request or router log records collected in this window. "
+                "This does not establish that the device had no traffic; check source coverage and the recorder."]
     out += ["", f"Session files: {ctx['session']}"]
     return mask("\n".join(out)) + "\n"
 
@@ -576,6 +589,7 @@ def cmd_collect(args) -> int:
     router_rows = read_records("router", start, end)
     save("router-log.json", router_rows)
     sources.append(f"router log lines from the device: {len(router_rows)}")
+    mine = None  # None means unavailable; an empty list is a successful empty snapshot.
     state = probe(cfg, "router")
     if state == "reachable":
         try:
@@ -624,7 +638,7 @@ def cmd_collect(args) -> int:
                            + (f" ({st['error']})" if st.get("error") else ""))
 
     ctx = {"start": start, "end": end, "devices": device_ips(cfg), "sources": sources,
-           "router": router_rows, "surge": surge, "session": session}
+           "router": router_rows, "router_connections": mine, "surge": surge, "session": session}
     report = build_report(ctx)
     (session / "report.md").write_text(report, encoding="utf-8")
     print(report)

@@ -67,6 +67,7 @@ def main() -> int:
     check_router_source()
     check_config_example()
     check_collect_degrades(t0, good)
+    check_active_connections()
     assert netdiag.parse_since("15m") == timedelta(minutes=15)
     print("netdiag tests passed")
     return 0
@@ -156,6 +157,42 @@ def check_collect_degrades(t0, good) -> None:
     assert "INCOMPLETE: router /connections failed: TimeoutError" in report, report
     assert "INCOMPLETE: Surge /v1/requests/recent failed" in report, report
     assert "Surge requests started in window: 1" in report and "www.apple.com" in report, report
+
+
+def check_active_connections() -> None:
+    """A snapshot alone must show the device's connections, even without opening logs."""
+    connection = {"metadata": {"sourceIP": DEVICE, "host": "active.example.com",
+                               "network": "tcp", "destinationPort": "443"},
+                  "rule": "Domain", "chains": ["DIRECT"]}
+    other = {"metadata": {"sourceIP": "192.0.2.99", "host": "other.example.com"}}
+    for snapshot in ([connection, other], [], TimeoutError("offline")):
+        def fetch(*_args, **_kwargs):
+            if isinstance(snapshot, Exception):
+                raise snapshot
+            return {"connections": snapshot}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = io.StringIO()
+            with mock.patch.multiple(
+                netdiag, STATE=Path(tmp), load_config=lambda: {"DEVICE_IPS": DEVICE},
+                service_state=lambda: "active", api_get=fetch,
+                probe=lambda _cfg, source: "reachable" if source == "router" else "not configured",
+            ), redirect_stdout(out):
+                assert netdiag.cmd_collect(mock.Mock(since=timedelta(minutes=15))) == 0
+            report = out.getvalue()
+        assert "No traffic from the device" not in report, report
+        assert "No new request or router log records collected" in report, report
+        assert "other.example.com" not in report, report
+        if isinstance(snapshot, Exception):
+            assert "INCOMPLETE: router /connections failed" in report, report
+            assert "No active router connections" not in report, report
+            assert "## Router active connections now" not in report, report
+        elif snapshot:
+            for text in ("Router active connections now (1)", "active.example.com", "tcp/443", "Domain", "DIRECT"):
+                assert text in report, (text, report)
+        else:
+            assert "Router active connections now (0)" in report, report
+            assert "No active router connections" in report, report
 
 
 if __name__ == "__main__":
