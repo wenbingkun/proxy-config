@@ -175,7 +175,12 @@ def check_rules(failures: list[str]) -> None:
     rules = rule_lines()
     names = {g[0] for g in surge_groups()} | {"DIRECT"}
     for line in rules:
-        parts = line.split(",")
+        # Split outside parentheses and quotes so a logical rule's sub-rules do not read as its policy.
+        try:
+            parts = check_reject_conflicts.split_top(line, "surge/proxy-config.conf [Rule]")
+        except check_reject_conflicts.InputError as exc:
+            failures.append(str(exc))
+            continue
         policy = parts[1] if parts[0] == "FINAL" else parts[2]
         if policy not in names:
             failures.append(f"rule policy {policy!r} is not a Surge group: {line}")
