@@ -30,6 +30,9 @@ AIRPORT_DNS = ROOT / "surge" / "airport-dns.example.sgmodule"
 REWRITE = build_surge_modules.OUTPUT
 README = ROOT / "surge" / "README.md"
 REPO_RULES = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/"
+# Repo lists whose IP rules must not trigger a lookup for domains: local_network sits ahead of almost
+# every list, so resolving there would send each request through local DNS before its domain rule.
+NO_RESOLVE_REPO_RULES = {"local_network"}
 MANAGED_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/proxy-config.conf"
 BM7_LOON = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Loon/"
 BM7_SURGE = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/"
@@ -123,9 +126,11 @@ def check_rules(failures: list[str]) -> None:
 
     rule_sets = [line for line in rules if line.startswith("RULE-SET,")]
     manifest = build_rules.load_manifest()
-    repo = [f"RULE-SET,{REPO_RULES}{item['id']}.list,{item['qx_policy']}" for item in manifest]
+    repo = [f"RULE-SET,{REPO_RULES}{item['id']}.list,{item['qx_policy']}"
+            + (",no-resolve" if item["id"] in NO_RESOLVE_REPO_RULES else "") for item in manifest]
     if rule_sets[: len(repo)] != repo:
-        failures.append("repo RULE-SET lines must follow rules/local_rules.yaml order and qx_policy")
+        failures.append("repo RULE-SET lines must follow rules/local_rules.yaml order and qx_policy"
+                        f" (with no-resolve on {sorted(NO_RESOLVE_REPO_RULES)})")
 
     _, _, loon_remote = loon_parts()
     third = []
