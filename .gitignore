@@ -40,6 +40,7 @@ surge/bootstrap.conf
 surge/Airport.conf
 surge/*.dconf
 surge/airport-dns.sgmodule
+surge/netdiag-api.sgmodule
 surge/*.p12
 surge/*.pem
 surge/*.crt
