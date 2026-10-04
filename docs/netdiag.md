@@ -12,7 +12,7 @@
 
 QX 和 Loon 没有可供外部读取请求记录的接口：QX 的 `$configuration` 和 Loon 的 `$config` 只提供策略选择、运行模式、流量统计和 DNS 缓存操作，请求列表和日志只在 App 内查看。因此 QX / Loon 的诊断依靠路由器视角，而且只覆盖进入内核的境外流量：在家时，被 App 拒绝的请求不会出现在路由器上，出现的请求由路由器规则决定出口；国内流量在 QX / Loon 上没有可自动获取的数据。蜂窝网络和外部 Wi-Fi 下，QX / Loon 没有可自动获取的数据，需要回家复现，或在 Surge 中复现。
 
-iOS 系统日志（2026-10-04 用 pymobiledevice3 实测，iOS 27.2）不可用：Surge 和 Loon 的隧道进程只有系统框架日志，域名显示为 `<private>`；Loon 主 App 自己的日志同样被隐去。QX 的隧道进程尚未单独确认。
+本次采集未获得可用于逐请求网络诊断的 iOS 系统日志（2026-10-04，iOS 27.2，`pymobiledevice3 syslog live`，默认日志级别）：Surge、Loon、QX 三个隧道进程（Surge-iOS-NE、LoonTunnelProvider、Quantumult X Tunnel）的采集结果中只见系统框架日志，域名显示为 `<private>`，没有 App 自己的逐请求记录；Loon 主 App 自己的日志同样被隐去。这一结论只针对这条采集路线，不推广到其他版本、日志级别或采集方法。
 
 iOS 同一时间只能运行一个 VPN，对比三端行为时需要依次切换 App 复现。
 
