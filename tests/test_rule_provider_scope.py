@@ -322,7 +322,10 @@ def strip_no_resolve(rule: str) -> str:
 REQUIRED_IP_STAGE = ("LocalNetwork", "Lan", "AdGuard", "Hijacking", "WhatsApp", "Line", "YouTube", "BiliBili",
                      "Telegram", "Twitter", "Facebook", "Spotify", "Twitch", "Apple", "Google", "WeChat",
                      "Alibaba", "Tencent", "ChinaCompany", "Game")
-REPO_RULES_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/rules/"
+REPO_RULES_URLS = (  # where the configs load the repo's own Mihomo rule files from
+    "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/",
+    "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/rules/",
+)
 
 
 def assert_two_stage_rules(path: Path) -> None:
@@ -350,12 +353,17 @@ def assert_two_stage_rules(path: Path) -> None:
     names = {rule.split(",")[1] for rule in tail}
     providers = load_yaml(path)["rule-providers"]
     # Repo-maintained lists are checked offline: one that holds IP rules must be in the IP stage too.
+    repo_lists = 0
     for name, provider in providers.items():
         url = str(provider.get("url", ""))
-        if url.startswith(REPO_RULES_URL):
-            payload = load_yaml(ROOT / "mihomo" / "rules" / url[len(REPO_RULES_URL):]).get("payload") or []
-            if any(str(x).split(",")[0] in ("IP-CIDR", "IP-CIDR6", "IP-ASN") for x in payload) and name not in names:
-                raise AssertionError(f"{where}: {name} holds IP rules, so it must also be in the IP stage")
+        prefix = next((p for p in REPO_RULES_URLS if url.startswith(p)), None)
+        if prefix is None:
+            continue
+        repo_lists += 1
+        payload = load_yaml(ROOT / "mihomo" / "rules" / url[len(prefix):]).get("payload") or []
+        if any(str(x).split(",")[0] in ("IP-CIDR", "IP-CIDR6", "IP-ASN") for x in payload) and name not in names:
+            raise AssertionError(f"{where}: {name} holds IP rules, so it must also be in the IP stage")
+    assert repo_lists, f"{where}: no repo rule provider matched REPO_RULES_URLS; the check above would be dead"
     missing = [name for name in REQUIRED_IP_STAGE if name not in names]
     assert not missing, f"{where}: IP stage is missing {missing}"
 

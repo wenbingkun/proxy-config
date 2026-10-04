@@ -77,7 +77,7 @@ sh -n mihomo/shellcrash/deploy.sh
 
 **Mihomo / ShellCrash**
 - DAZN、Cloudflare、Amazon provider 只用域名规则；不用 GlobalMedia 聚合。共享 CDN 的 IP 段会误判。
-- `mihomo/verge/config.yaml` 的 `rules` 分两段：域名段的每条 RULE-SET 都带 `no-resolve`（Mihomo 遇到第一条不带它的 IP 规则就本地解析，域名规则应先决定）；IP 段在 `GEOIP,CN` 前按原顺序再次引用含 IP 规则的 rule-set（不带 `no-resolve`），给没有域名规则命中的请求做 IP 兜底，其中 LocalNetwork、Lan、AdGuard、Hijacking、Alibaba、Tencent 必须保留。新增 rule-set 默认带 `no-resolve`；它含 IP 规则时也加进 IP 段。`tests/test_rule_provider_scope.py` 校验。
+- `mihomo/verge/config.yaml` 的 `rules` 分两段：域名段的每条 RULE-SET 都带 `no-resolve`（Mihomo 遇到第一条不带它的 IP 规则就本地解析，域名规则应先决定）；IP 段在 `GEOIP,CN` 前按原顺序再次引用含 IP 规则的 rule-set（不带 `no-resolve`），给没有域名规则命中的请求做 IP 兜底；测试固定了 10-04 含 IP 规则的全部 20 个（LocalNetwork、Lan、AdGuard、Hijacking、Alibaba、Tencent 等），删减要先审核。新增 rule-set 默认带 `no-resolve`；它含 IP 规则时也加进 IP 段。`tests/test_rule_provider_scope.py` 校验。
 - 路由器上，仓库只管 proxy-providers、策略组、rule-provider 和规则；端口、DNS、TUN、sniffer、控制器、防火墙归 ShellCrash（当前设备约定 sniffer 保持开启）。Windows 的运行参数仍由 `mihomo/verge/config.yaml` 管理。
 - 当前路由器访问 raw.githubusercontent.com 不稳定：部署时把 `TEMPLATE_URL` 指向 jsDelivr 固定的完整 SHA，后台运行；每次部署使用独立的结果目录，记录退出码与完成标记。`start-stop-daemon` 必须带 `-m -p`。
 - 回滚使用部署前的固定备份；`yamls/config.yaml.bak.proxy-config` 只服务于本次部署的自动回滚，每次部署都会被覆盖，不能当作长期回滚点。
