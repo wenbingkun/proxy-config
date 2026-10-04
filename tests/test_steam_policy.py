@@ -77,7 +77,7 @@ def main() -> int:
     if "Steam" in providers:
         raise AssertionError("standalone Steam provider must be removed")
 
-    rules = config.get("rules", [])
+    rules = [rule.removesuffix(",no-resolve") for rule in config.get("rules", [])]
     if rules[:3] != EXPECTED_PROCESS_RULES:
         raise AssertionError("Steam process rules must be the first three rules")
     expected_targets = {

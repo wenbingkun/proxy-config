@@ -156,6 +156,7 @@ def assert_domain_only_providers(path: Path) -> None:
 
     rules = config.get("rules")
     assert isinstance(rules, list), f"{path.relative_to(ROOT)} has no rules"
+    rules = [strip_no_resolve(rule) for rule in rules]
     assert not any("GlobalMedia" in rule for rule in rules), (
         f"{path.relative_to(ROOT)} must not reference GlobalMedia rules"
     )
@@ -251,7 +252,7 @@ def clash_rule_sets(path: Path) -> list[tuple[str, str]]:
     assert isinstance(rules, list), f"{path.relative_to(ROOT)} has no rules"
     return [
         (parts[1], parts[2])
-        for parts in (rule.split(",") for rule in rules)
+        for parts in (strip_no_resolve(rule).split(",") for rule in rules)
         if parts[0] == "RULE-SET"
     ]
 
@@ -311,9 +312,66 @@ def assert_qx_cloudflare_domain_only() -> None:
     assert params.get("opt-parser") == "true", "QX Cloudflare needs opt-parser=true for #out to apply"
 
 
+def strip_no_resolve(rule: str) -> str:
+    return rule.removesuffix(",no-resolve")
+
+
+# Every rule set that held IP rules on 2026-10-04 (provider snapshot), in rule order. Their IP rules are
+# the fallback for domains nothing else matched: private addresses stay DIRECT, ad and hijack addresses
+# stay blocked, Chinese cloud addresses stay domestic. Dropping one changes routing, so it needs review.
+REQUIRED_IP_STAGE = ("LocalNetwork", "Lan", "AdGuard", "Hijacking", "WhatsApp", "Line", "YouTube", "BiliBili",
+                     "Telegram", "Twitter", "Facebook", "Spotify", "Twitch", "Apple", "Google", "WeChat",
+                     "Alibaba", "Tencent", "ChinaCompany", "Game")
+REPO_RULES_URLS = (  # where the configs load the repo's own Mihomo rule files from
+    "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/",
+    "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/rules/",
+)
+
+
+def assert_two_stage_rules(path: Path) -> None:
+    """Mihomo resolves a domain at the first IP rule without no-resolve. Domain stage: every rule set
+    carries no-resolve, so a domain rule always decides before any lookup. IP stage: rule sets that
+    also hold IP rules are referenced again without no-resolve, in their domain-stage order, then
+    GEOIP,CN and MATCH. Only the timing of the lookup changes, never which IP rules exist."""
+    where = path.relative_to(ROOT)
+    rules = load_yaml(path)["rules"]
+    assert rules[-2:] == ["GEOIP,CN,🇨🇳 国内服务", "MATCH,🐟 兜底分流"], f"{where}: must end with GEOIP,CN and MATCH"
+    split = next((i for i, r in enumerate(rules[:-2]) if r.startswith("RULE-SET,") and not r.endswith(",no-resolve")),
+                 len(rules) - 2)
+    front, tail = rules[:split], rules[split:-2]
+    for rule in front:
+        kind = rule.split(",")[0]
+        assert kind in ("RULE-SET", "PROCESS-NAME"), f"{where}: unexpected rule type in the domain stage: {rule}"
+        if kind == "RULE-SET":
+            assert rule.endswith(",no-resolve"), f"{where}: domain-stage rule set needs no-resolve: {rule}"
+    stage = [strip_no_resolve(r) for r in front if r.startswith("RULE-SET,")]
+    for rule in tail:
+        assert rule.startswith("RULE-SET,") and not rule.endswith(",no-resolve"), f"{where}: bad IP-stage rule: {rule}"
+        assert rule in stage, f"{where}: IP-stage rule must repeat a domain-stage rule set and policy: {rule}"
+    order = [stage.index(rule) for rule in tail]
+    assert order == sorted(order) and len(set(tail)) == len(tail), f"{where}: IP stage must keep domain-stage order"
+    names = {rule.split(",")[1] for rule in tail}
+    providers = load_yaml(path)["rule-providers"]
+    # Repo-maintained lists are checked offline: one that holds IP rules must be in the IP stage too.
+    repo_lists = 0
+    for name, provider in providers.items():
+        url = str(provider.get("url", ""))
+        prefix = next((p for p in REPO_RULES_URLS if url.startswith(p)), None)
+        if prefix is None:
+            continue
+        repo_lists += 1
+        payload = load_yaml(ROOT / "mihomo" / "rules" / url[len(prefix):]).get("payload") or []
+        if any(str(x).split(",")[0] in ("IP-CIDR", "IP-CIDR6", "IP-ASN") for x in payload) and name not in names:
+            raise AssertionError(f"{where}: {name} holds IP rules, so it must also be in the IP stage")
+    assert repo_lists, f"{where}: no repo rule provider matched REPO_RULES_URLS; the check above would be dead"
+    missing = [name for name in REQUIRED_IP_STAGE if name not in names]
+    assert not missing, f"{where}: IP stage is missing {missing}"
+
+
 def main() -> int:
     for path in CONFIG_PATHS:
         assert_domain_only_providers(path)
+        assert_two_stage_rules(path)
     assert_local_domain_coverage()
     assert_shared_service_policies()
     assert_qx_cloudflare_domain_only()
