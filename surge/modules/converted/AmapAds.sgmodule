@@ -8,7 +8,7 @@
 #   - 10 script paths pinned to commits: ddgksf2013/Scripts@314f610, ddgksf2013/Scripts@819a88e
 #   - amdc script renamed amap_amdc (converted/GoofishAds also has an amdc script)
 #   - the 9 scripts Script-Hub named amap are numbered amap_01..09 (Surge script names must be unique)
-# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 
 [Rule]

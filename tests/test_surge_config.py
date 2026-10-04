@@ -29,7 +29,6 @@ BOOTSTRAP = ROOT / "surge" / "bootstrap.example.conf"
 HOME = ROOT / "surge" / "modules" / "home-direct.sgmodule"
 NOBLOCK = ROOT / "surge" / "modules" / "home-direct-noblock.sgmodule"
 AIRPORT_DNS = ROOT / "surge" / "airport-dns.example.sgmodule"
-REWRITE = build_surge_modules.OUTPUT
 SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build_surge_modules.SOURCES]
 # MitM hosts the per-app modules share. Surge does not document the order between modules, and only
 # the first matching script, Map Local or header-mode URL Rewrite runs, so two modules may share a
@@ -195,7 +194,7 @@ def check_resolve_order(rules: list[str], failures: list[str]) -> None:
 def check_module_resolve(failures: list[str]) -> None:
     """Module rules run ahead of the whole profile (and UDP has no pre-matching stage), so they follow
     the same no-resolve rule as the profile's front part. Device-only modules are not covered."""
-    for path in (HOME, NOBLOCK, REWRITE, *SPLIT):
+    for path in (HOME, NOBLOCK, *SPLIT):
         for line in module_rules(path):
             failures.extend(f"{path.name}: {p}" for p in early_resolve(line))
 
@@ -357,13 +356,12 @@ def mitm_hosts(sec: dict[str, list[str]]) -> set[str]:
 
 
 def check_rewrite_module(failures: list[str]) -> None:
-    """The merged module and the per-app modules stay generated, pinned, consistent with each other,
-    and with the sponsor-block lookup switched off."""
+    """The per-app modules stay generated and pinned, with the sponsor-block lookup switched off."""
     sources = list(build_surge_modules.SOURCES)
     for source in sources:
         url = source.get("url")
         if url and not re.search(r"/[0-9a-f]{40}/|/releases/download/v[0-9.]+/", url):
-            failures.append(f"{REWRITE.name}: source must be pinned to a commit or release tag: {url}")
+            failures.append(f"{source['name']}: source must be pinned to a commit or release tag: {url}")
         path = source.get("path")
         if path:
             converted = (ROOT / path).read_text(encoding="utf-8")
@@ -373,7 +371,6 @@ def check_rewrite_module(failures: list[str]) -> None:
             if re.search(r"refs/heads/master|script\.hub", converted):
                 failures.append(f"{path}: script paths must be pinned and must not go through Script-Hub")
 
-    merged = check_generated_module(REWRITE, sources, failures)
     on_disk = sorted(build_surge_modules.MODULE_DIR.glob("*.sgmodule"))
     if on_disk != sorted(SPLIT):
         failures.append("surge/modules/rewrite/ must hold exactly one module per source, "
@@ -381,24 +378,11 @@ def check_rewrite_module(failures: list[str]) -> None:
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
 
-    # The per-app modules carry exactly the merged module's lines, so the two never drift apart.
-    for section in sorted((set(merged) | {s for sec in split.values() for s in sec}) - {"MITM", "General"}):
-        joined = [line for path in SPLIT for line in split[path.stem].get(section, [])]
-        if merged.get(section, []) != joined:
-            failures.append(f"[{section}] of the per-app modules must equal {REWRITE.name}")
-    for section in ("MITM", "General"):
-        merged_hosts = mitm_hosts(merged) if section == "MITM" else set(merged.get(section, []))
-        joined_hosts = set().union(*(mitm_hosts(sec) if section == "MITM" else set(sec.get(section, []))
-                                     for sec in split.values()))
-        if merged_hosts != joined_hosts:
-            failures.append(f"[{section}] of the per-app modules must equal {REWRITE.name}")
-
-    for name, sec in (("rewrite.sgmodule", merged), ("rewrite/bilibili.sgmodule", split.get("bilibili", {}))):
-        text = "\n".join(line for lines in sec.values() for line in lines)
-        if '"sponsorBlock":"#"' not in text or "grpc.biliapi.net" not in text:
-            failures.append(f"{name}: the sponsor-block lookup (空降助手) must be off")
-    if not re.search(r"^# = type=http-request", REWRITE.read_text(encoding="utf-8"), re.M):
-        failures.append(f"{REWRITE.name}: the sponsor-block lookup (空降助手) must be off")
+    bilibili = build_surge_modules.MODULE_DIR / "bilibili.sgmodule"
+    text = "\n".join(line for lines in split.get("bilibili", {}).values() for line in lines)
+    if ('"sponsorBlock":"#"' not in text or "grpc.biliapi.net" not in text
+            or not re.search(r"^# = type=http-request", bilibili.read_text(encoding="utf-8"), re.M)):
+        failures.append("rewrite/bilibili.sgmodule: the sponsor-block lookup (空降助手) must be off")
 
     shared = {}
     for a, b in itertools.combinations(sorted(split), 2):

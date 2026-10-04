@@ -119,21 +119,14 @@ def main() -> int:
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/08ad3524ab6924afd86ad6dc18ed48050a8abede/weibo_search_info.json",
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
     }, plugin_urls
-    # The generated Surge rewrite module is treated like a hosted plugin: only its script-path URLs.
-    rewrite_text = check.SURGE_REWRITE_MODULE.read_text(encoding="utf-8")
+    # The generated Surge rewrite modules are treated like hosted plugins: only their script-path URLs.
     rewrite_scripts = {
-        url for line in rewrite_text.splitlines() if not line.lstrip().startswith("#")
-        for url in check.SCRIPT_PATH_RE.findall(line)
-    }
-    rewrite_urls = {r.url for r in resources if r.source.startswith("surge/modules/rewrite.sgmodule")}
-    assert rewrite_scripts and rewrite_urls == rewrite_scripts, rewrite_urls ^ rewrite_scripts
-    # The per-app modules load the same scripts; each URL is checked once per client.
-    split_scripts = {
-        url for path in check.SURGE_REWRITE_MODULES[1:] for line in path.read_text(encoding="utf-8").splitlines()
+        url for path in check.SURGE_REWRITE_MODULES for line in path.read_text(encoding="utf-8").splitlines()
         if not line.lstrip().startswith("#") for url in check.SCRIPT_PATH_RE.findall(line)
     }
-    assert len(check.SURGE_REWRITE_MODULES) > 1 and split_scripts == rewrite_scripts, split_scripts ^ rewrite_scripts
-    assert not any(r.source.startswith("surge/modules/rewrite/") and r.url not in rewrite_scripts for r in resources)
+    rewrite_urls = {r.url for r in resources if r.source.startswith("surge/modules/rewrite/")}
+    assert len(check.SURGE_REWRITE_MODULES) == 15, check.SURGE_REWRITE_MODULES
+    assert rewrite_scripts and rewrite_urls == rewrite_scripts, rewrite_urls ^ rewrite_scripts
 
     loon_resource = check.Resource(
         "https://kelee.one/Tool/Loon/Lpx/Example.lpx", "loon-resource", "loon/bootstrap.example.conf:1"

@@ -8,7 +8,7 @@
 #   - 11 script paths pinned to commits: Script-Hub-Org/Script-Hub@6b4fb62, fmz200/wool_scripts@5d5f63f
 #   - Script-Hub turns the QX response-body rule into its replace-body.js script (1); kept as converted, renamed xiaohongshu_replaceBody so names stay unique across modules
 #   - the 9 scripts Script-Hub named xiaohongshu are numbered xiaohongshu_01..09 (Surge script names must be unique)
-# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 #!author=奶思
 #!icon=https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/icons/gif/naisi-01.gif

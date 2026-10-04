@@ -58,7 +58,6 @@ jobs:
               "scripts/check_remote_resources.py",
               "scripts/check_reject_conflicts.py",
               "scripts/build_surge_modules.py",
-              "surge/modules/rewrite.sgmodule",
               "surge/modules/rewrite",
               "surge/proxy-config.conf",
               "surge/bootstrap.example.conf",
