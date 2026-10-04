@@ -212,7 +212,8 @@ def load_qx_remote_filters() -> list[tuple[str, str]]:
         # QX loads a remote resource unless it is explicitly disabled.
         if params.get("enabled", "true").strip().lower() == "false":
             continue
-        match = re.search(r"/rule/QuantumultX/([^/]+)/\1\.list$", line.split(",")[0])
+        # A "#..." fragment carries resource-parser options (Cloudflare drops its IP rules that way).
+        match = re.search(r"/rule/QuantumultX/([^/]+)/\1\.list(?:#.*)?$", line.split(",")[0])
         if match and "force-policy" in params:
             filters.append(
                 (match.group(1), params["force-policy"].strip().removesuffix(HOME_AUTO_SUFFIX))
@@ -298,11 +299,24 @@ def assert_shared_service_policies() -> None:
     )
 
 
+def assert_qx_cloudflare_domain_only() -> None:
+    """QX has no no-resolve and matches IP rules after resolving any host no host rule matched, so the
+    bm7 Cloudflare list's IP ranges would pull every unlisted Cloudflare-hosted site into the dev
+    group. Mihomo uses a domain-only Cloudflare set; QX drops the IP rules through the resource parser."""
+    entries = [(url, params) for url, params in load_qx_enabled_filters()
+               if "/rule/QuantumultX/Cloudflare/Cloudflare.list" in url]
+    assert len(entries) == 1, "QX must load the Cloudflare list exactly once"
+    url, params = entries[0]
+    assert url.endswith("Cloudflare.list#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0"), f"QX Cloudflare must drop IP rules: {url}"
+    assert params.get("opt-parser") == "true", "QX Cloudflare needs opt-parser=true for #out to apply"
+
+
 def main() -> int:
     for path in CONFIG_PATHS:
         assert_domain_only_providers(path)
     assert_local_domain_coverage()
     assert_shared_service_policies()
+    assert_qx_cloudflare_domain_only()
     print("Rule provider scope tests passed.")
     return 0
 
