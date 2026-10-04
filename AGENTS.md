@@ -89,6 +89,7 @@ sh -n mihomo/shellcrash/deploy.sh
 3. 审核通过后在功能分支提交（Conventional Commits，如 `fix(loon): …`），开 PR，CI 全绿。合并默认由用户安排 Codex 完成；只有用户当次明确授权，代理才自行 squash 合并并删除分支。
 4. 涉及设备（QX、Loon iCloud 配置、Verge 配置副本、路由器）时：先备份、写入前核对哈希，只替换必要的行，保留订阅、MitM、节点选择和设备覆写。设备行为的结论要能重复验证。
 5. 只做当前任务需要的最小改动。发现范围外的问题，记为后续事项，不顺手修改。
+6. 排查 iPhone 网络问题（用户说“分析刚才的网络行为”）时，先用 `scripts/netdiag.py status` 和 `collect --since <窗口>` 取数据，别让用户截图转述；数据来源、能力边界和约定见 `docs/netdiag.md`。
 
 ## 隐私与安全（公开仓库）
 
