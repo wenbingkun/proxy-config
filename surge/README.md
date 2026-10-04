@@ -51,7 +51,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，2026-10 真机检查闲鱼搜索页正常。
 
-Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的插件（网易云、喜马拉雅、彩云、百度网盘、BoxJS）也没有移植。
+Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的 BoxJS 也没有移植。
 
 冻结转换的共同修改：脚本名编号保证唯一；模块里的 IP 规则加 `no-resolve`（否则排在规则最前面的 IP 规则会让每个请求先在本地解析）；QX 的 `response-body` 由 Script-Hub 转成它的 `replace-body.js`，固定到 Script-Hub `6b4fb62`。
 
