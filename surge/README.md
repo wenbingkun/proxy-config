@@ -40,7 +40,7 @@ Surge 没有按节点指定解析器的参数，代理服务器的主机名也�
 
 Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块要在 App 里按 URL 安装（或把文件放进 iCloud Drive/Surge 作为本地模块），启用状态按设备保存、不随 iCloud 同步。Loon 中启用的插件在仓库里按 App 拆成单独的模块，放在 `surge/modules/rewrite/`，都归在 proxy-config 分类下，装好后逐个按需启用。按 URL 安装的模块随仓库自动更新；本地副本不会。
 
-原来的合并模块 `surge/modules/rewrite.sgmodule`（「去广告与增强合集」）在兼容期内保留并继续生成，内容与拆分模块逐行相同。它和拆分模块**只能用一种**，同时启用会重复改写。迁移步骤见下文「从合集迁移」。
+原来的合并模块 `surge/modules/rewrite.sgmodule`（「去广告与增强合集」）在设备迁移到拆分模块后，于 2026-10-05 删除；需要时可以从提交 `17c7b8d` 取回。
 
 | 内容 | 来源 |
 |---|---|
@@ -55,12 +55,12 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 
 冻结转换的共同修改：脚本名编号保证唯一；模块里的 IP 规则加 `no-resolve`（否则排在规则最前面的 IP 规则会让每个请求先在本地解析）；QX 的 `response-body` 由 Script-Hub 转成它的 `replace-body.js`，固定到 Script-Hub `6b4fb62`。
 
-生成：`python3 scripts/build_surge_modules.py`，每个来源生成一个模块，另外生成合集（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以合集保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
+生成：`python3 scripts/build_surge_modules.py`，每个来源生成一个模块（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以 `SOURCES` 保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
 
-多个模块之间谁先执行，Surge 文档没有说明。合集里的先后（App 专用来源在前）拆分后不再有保证，2026-10-05 的核对结果：
+多个模块之间谁先执行，Surge 文档没有说明，所以 Loon 里「专用插件排在 blackmatrix7 合集之前」的先后在 Surge 上没有保证。2026-10-05 的核对结果：
 
 - 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突（amdc 脚本除外，两边结果相同，见下）。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
-- **例外**：通用去广告里有一批不限主机的 reject 模式，如 `(?i)\badvertising`、`(?i)\badvertisement`、`(?i)\bsplash_screen`、`(?i)\b\/ad\/`，以及按 IP 地址主机写的模式。被解密的请求或纯 HTTP 请求，URL 里带这些词时，会同时命中通用去广告和别的模块的跳转，结果由模块顺序决定。已知的情况：DuckDuckGo 搜索词含 advertising 等词时，Safari 超级搜索的跳转（合集里结果是拒绝，本来就是缺陷）；知乎外链 `link.zhihu.com/?target=` 的目标地址含 `/ad/` 时（合集里是跳转）；`google.cn`、纯 HTTP 站点的路径带这些词时，与神机重定向 / 安全重定向的跳转。只涉及带这些词的请求，接受这个差异；`SHARED_MITM` 查不出这类重叠。
+- **例外**：通用去广告里有一批不限主机的 reject 模式，如 `(?i)\badvertising`、`(?i)\badvertisement`、`(?i)\bsplash_screen`、`(?i)\b\/ad\/`，以及按 IP 地址主机写的模式。被解密的请求或纯 HTTP 请求，URL 里带这些词时，会同时命中通用去广告和别的模块的跳转，结果由模块顺序决定。已知的情况：DuckDuckGo 搜索词含 advertising 等词时，Safari 超级搜索的跳转（被拒绝时搜索失败）；知乎外链 `link.zhihu.com/?target=` 的目标地址含 `/ad/` 时；`google.cn`、纯 HTTP 站点的路径带这些词时，与神机重定向 / 安全重定向的跳转。只涉及带这些词的请求，接受这个差异；`SHARED_MITM` 查不出这类重叠。
 - Rule 段：B 站的 `DEST-PORT` 拒绝和知乎的 `USER-AGENT,"AVOS*"` 拒绝不限主机，理论上可以与高德、微博的 DIRECT 域名规则同时命中，实际不会出现。
 - 高德去广告与闲鱼去广告都对纯 HTTP 的 `amdc.m.taobao.com/amdc/mobileDispatch` 执行同一个 `amdc.js`（同一提交、同一参数），无论谁先执行，结果都一样。
 - 通用去广告还带 `[General] force-http-engine-hosts`（其中有 `weibointl.api.weibo.cn`）。只启用微博去广告、不启用通用去广告时没有这一项，对微博国际版有没有影响未核实。
@@ -86,20 +86,10 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 | 豆瓣网页增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/douban.sgmodule` | 按需启用 |
 | Safari 超级搜索 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/q-search.sgmodule` | 按需启用 |
 | 神机重定向 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/general.sgmodule` | 按需启用 |
-| 去广告与增强合集（兼容期） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite.sgmodule` | 不再新装；与上面的拆分模块二选一 |
 
 除两个家庭模块外，上表的模块都需要 MitM。Loon 中这些插件默认全部启用；不用的 App 可以不装，或在模块列表里关掉。
 
 **模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块**之后**，目前是哔哩哔哩增强、小红书去广告、知乎去广告、微博去广告、闲鱼去广告（它们的模块说明里都写了这一点）。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。也可以用 `python3 scripts/netdiag.py get surge /v1/rules` 查看实际生效的规则顺序：上述模块的规则应排在 `SUBNET,SSID:` 之前。
-
-### 从合集迁移
-
-1. 按上表 URL 安装要用的拆分模块，先不启用。
-2. 停用「去广告与增强合集」，再启用拆分模块。合集是本地副本的，从 iCloud Drive/Surge 删除；按 URL 安装的，在模块列表里删除。
-3. 确认只启用了一种（合集或拆分模块），并按上一段检查模块顺序。
-4. 抽查常用 App 的去广告效果，以及 B 站 P2P 端口的拦截。
-
-回滚：停用拆分模块，按 URL `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite.sgmodule` 重新安装并启用合集（第 2 步已经删掉本地副本）。兼容期内仓库仍会更新合集；设备迁移完成并确认后，再用单独的改动删除合集。
 
 ## 家庭 / 外出
 

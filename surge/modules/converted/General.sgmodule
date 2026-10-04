@@ -6,7 +6,7 @@
 # Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=surge-module) on 2026-10-02.
 # Edited after conversion:
 #   - none
-# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 
 [URL Rewrite]

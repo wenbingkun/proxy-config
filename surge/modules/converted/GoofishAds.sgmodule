@@ -10,7 +10,7 @@
 # Note: Surge runs every matching [Body Rewrite] rule in order (QX applies only the first), so the
 #   generic idlemtopsearch.search jq rule also runs on search.shade and search.discover; Loon behaves
 #   the same way and was accepted on the device. Check the Xianyu search pages on the device.
-# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 
 [Rule]

@@ -28,16 +28,12 @@ QX_FILES = (
 LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",) + tuple(
     sorted((ROOT / "loon" / "plugins").glob("*.plugin"))
 )
-# Generated from pinned upstream modules (build_surge_modules.py): the merged module and the
-# per-app modules. Like a hosted Loon plugin, only the scripts they load are resources, other URLs
-# are patterns or redirect targets.
-SURGE_REWRITE_MODULE = ROOT / "surge" / "modules" / "rewrite.sgmodule"
-SURGE_REWRITE_MODULES = (SURGE_REWRITE_MODULE,) + tuple(
-    sorted((ROOT / "surge" / "modules" / "rewrite").glob("*.sgmodule"))
-)
+# Generated from pinned upstream modules (build_surge_modules.py), one per app. Like a hosted Loon
+# plugin, only the scripts they load are resources, other URLs are patterns or redirect targets.
+SURGE_REWRITE_MODULES = tuple(sorted((ROOT / "surge" / "modules" / "rewrite").glob("*.sgmodule")))
 SURGE_FILES = (ROOT / "surge" / "proxy-config.conf",) + tuple(
     sorted((ROOT / "surge" / "modules").glob("*.sgmodule"))
-) + SURGE_REWRITE_MODULES[1:]
+) + SURGE_REWRITE_MODULES
 # The module whose RULE-SET lines are the pre-matching REJECT lists (see check_reject_conflicts).
 SURGE_REJECT_MODULE = ROOT / "surge" / "modules" / "home-direct.sgmodule"
 DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"

@@ -9,7 +9,7 @@
 #   - added 1 [Body Rewrite] http-response-jq lines from the QX jsonjq-response-body rules, which Script-Hub drops for Surge
 #   - the 23 scripts Script-Hub named weibo_json are numbered weibo_json_01..23 (Surge script names must be unique)
 #   - trailing whitespace from the QX source removed from one comment line
-# Merged into surge/modules/rewrite.sgmodule by scripts/build_surge_modules.py. To refresh, reconvert
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
 
 [Rule]
