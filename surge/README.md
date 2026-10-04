@@ -59,7 +59,7 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 
 多个模块之间谁先执行，Surge 文档没有说明。合集里的先后（App 专用来源在前）拆分后不再有保证，2026-10-05 的核对结果：
 
-- 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
+- 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突（amdc 脚本除外，两边结果相同，见下）。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
 - **例外**：通用去广告里有一批不限主机的 reject 模式，如 `(?i)\badvertising`、`(?i)\badvertisement`、`(?i)\bsplash_screen`、`(?i)\b\/ad\/`，以及按 IP 地址主机写的模式。被解密的请求或纯 HTTP 请求，URL 里带这些词时，会同时命中通用去广告和别的模块的跳转，结果由模块顺序决定。已知的情况：DuckDuckGo 搜索词含 advertising 等词时，Safari 超级搜索的跳转（合集里结果是拒绝，本来就是缺陷）；知乎外链 `link.zhihu.com/?target=` 的目标地址含 `/ad/` 时（合集里是跳转）；`google.cn`、纯 HTTP 站点的路径带这些词时，与神机重定向 / 安全重定向的跳转。只涉及带这些词的请求，接受这个差异；`SHARED_MITM` 查不出这类重叠。
 - Rule 段：B 站的 `DEST-PORT` 拒绝和知乎的 `USER-AGENT,"AVOS*"` 拒绝不限主机，理论上可以与高德、微博的 DIRECT 域名规则同时命中，实际不会出现。
 - 高德去广告与闲鱼去广告都对纯 HTTP 的 `amdc.m.taobao.com/amdc/mobileDispatch` 执行同一个 `amdc.js`（同一提交、同一参数），无论谁先执行，结果都一样。
