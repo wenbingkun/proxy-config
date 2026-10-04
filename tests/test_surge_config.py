@@ -142,9 +142,12 @@ def check_rules(failures: list[str]) -> None:
         if url.startswith(BM7_LOON):
             name = url[len(BM7_LOON):].split("/")[0]
             url = f"{BM7_SURGE}{name}/{name}{'_All' if name in BM7_ALL else ''}.list"
-        third.append(f"RULE-SET,{url},{policy}")
+        # Apple precedes other service domains; its IP fallback must not resolve them first.
+        suffix = ",no-resolve" if url == BM7_SURGE + "Apple/Apple_All.list" else ""
+        third.append(f"RULE-SET,{url},{policy}{suffix}")
     if rule_sets[len(repo):] != third:
-        failures.append("third-party RULE-SET lines must mirror Loon [Remote Rule] (bm7 Surge paths)")
+        failures.append("third-party RULE-SET lines must mirror Loon [Remote Rule]"
+                        " (bm7 Surge paths, no-resolve on Apple_All)")
     if any(ADRULES in line or "/Privacy/" in line for line in rules):
         failures.append("AdRules/Privacy belong in surge/modules/home-direct.sgmodule only")
 
