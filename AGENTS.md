@@ -84,6 +84,7 @@ sh -n mihomo/shellcrash/deploy.sh
 
 1. 先查清再动手。改配置前写方案或审核报告，交用户转给 Codex 审核；**审核通过前不 commit、不 push**。
 2. 报告放 `.local/<router|qx|loon|repo>/<YYYY-MM-DD>-<topic>/`（日期取任务开始日）：`PLAN*.md`、`REVIEW*.md`、`CODEX-REVIEW*.md`、`evidence/`、`rollback/`。报告要写清改动、依据、已跑的验证及复跑命令、反向测试、待审重点和范围外遗留。
+   `.local/` 只在用户本机（WSL）存在。动手前先看 `.local/README.md`：不存在就是云端会话或新克隆，**不要创建 `.local/` 及其中的文件**（云端写入回不到本机），方案和报告直接写在回复里，由用户回本机后归档；设备文件（iCloud、路由器）在云端同样不可用。
 3. 审核通过后在功能分支提交（Conventional Commits，如 `fix(loon): …`），开 PR，CI 全绿。合并默认由用户安排 Codex 完成；只有用户当次明确授权，代理才自行 squash 合并并删除分支。
 4. 涉及设备（QX、Loon iCloud 配置、Verge 配置副本、路由器）时：先备份、写入前核对哈希，只替换必要的行，保留订阅、MitM、节点选择和设备覆写。设备行为的结论要能重复验证。
 5. 只做当前任务需要的最小改动。发现范围外的问题，记为后续事项，不顺手修改。

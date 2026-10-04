@@ -45,3 +45,6 @@ surge/*.pem
 surge/*.crt
 surge/*.key
 surge/*.cer
+
+# Python bytecode caches
+__pycache__/
