@@ -123,13 +123,17 @@ TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/mihom
 6. 原子替换 `$CRASHDIR/yamls/config.yaml`；
 7. 通过 ShellCrash 启动服务；
 8. 对新增或 URL 变化的 provider，等待对应缓存生成并确认至少包含一个节点；
-9. 启动失败或 provider 获取超时时，同时恢复上一份配置和被失效的旧缓存。
+9. 启动失败或 provider 获取超时时，同时恢复上一份配置和被失效的旧缓存，并重新启动旧配置；
+   旧配置也启动失败时，脚本会明确提示服务可能未运行。
 
-最近一次备份保存在：
+本次部署的自动回滚使用：
 
 ```text
 $CRASHDIR/yamls/config.yaml.bak.proxy-config
 ```
+
+它只服务于本次部署，下一次部署会覆盖它，不能当作长期回滚点。需要手工回滚或做回滚演练时，
+先在部署前另存一份固定备份并记录哈希。
 
 下载、占位符检查或 Mihomo 校验失败时，当前运行配置不会被修改。
 从机场 A 切换到机场 B、单订阅切双订阅或双订阅切回单订阅时，直接修改
@@ -174,7 +178,8 @@ $CRASHDIR/yamls/user.yaml
       并加载最后一次成功部署的配置，代理策略组、规则集与订阅节点均正常；SSH 固化
       （`nvram ssh_en` + dropbear 启动脚本补丁 + `ssh_patch.sh`）同样自动恢复，
       dropbear 主机密钥与 `/data/etc/dropbear/` 中的持久化备份一致。
-- [ ] 在可控窗口演练一次失败回滚，确认 `config.yaml.bak.proxy-config` 可恢复且 DNS/网络不中断。
+- [ ] 在可控窗口演练一次失败回滚：部署前另存固定备份并记录哈希，准备不经过代理的恢复渠道；
+      确认自动回滚恢复了配置和 provider 缓存、旧配置重新启动，并记录 DNS/网络的中断时长和最终恢复情况。
 
 完成回滚演练后，再启用长期定时更新任务。
 

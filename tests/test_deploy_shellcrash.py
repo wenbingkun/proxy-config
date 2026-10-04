@@ -239,6 +239,10 @@ printf '%s\n' "$action" >>"$root/start_calls"
 if [ "$action" = 'start' ] && [ -f "$root/start_should_fail" ]; then
     exit 1
 fi
+if [ "$action" = 'start' ] && [ -f "$root/start_fail_once" ]; then
+    rm -f "$root/start_fail_once"
+    exit 1
+fi
 if [ "$action" = 'start' ] && [ ! -f "$root/provider_fetch_should_fail" ]; then
     cache_dir="$root/cache/proxy-providers"
     config="$root/yamls/config.yaml"
@@ -476,16 +480,34 @@ exit 0
 
         # A failed start restores both the previous config and the invalidated
         # provider cache before attempting to restart the old configuration.
+        # When that restart fails too, the error must say the service may be
+        # down instead of only reporting the restored config.
         sub_cache.write_bytes(b"proxies:\n  - name: sub-before-failed-deploy\n")
         (shellcrash_dir / "start_should_fail").touch()
         write_env(env_path, shellcrash_dir, "changed.yaml")
-        run_deploy(env_path, process_env, should_succeed=False)
+        output = run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
         assert sub_cache.read_bytes() == (
             b"proxies:\n  - name: sub-before-failed-deploy\n"
         )
+        assert "ShellCrash 启动命令失败" in output, output
+        assert "旧配置启动失败，服务可能未运行" in output, output
+        assert "启动命令已成功执行" not in output, output
 
         (shellcrash_dir / "start_should_fail").unlink()
+
+        # When only the new config fails to start, the old one is restored and
+        # its successful restart is reported.
+        (shellcrash_dir / "start_fail_once").touch()
+        write_env(env_path, shellcrash_dir, "changed.yaml")
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert config_path.read_bytes() == deployed
+        assert sub_cache.read_bytes() == (
+            b"proxies:\n  - name: sub-before-failed-deploy\n"
+        )
+        assert "旧配置的启动命令已成功执行" in output, output
+        assert "服务可能未运行" not in output, output
+        assert not (shellcrash_dir / "start_fail_once").exists()
 
         # A running core is not enough: a changed provider that cannot produce
         # a non-empty proxies list must fail with a useful, secret-free hint and

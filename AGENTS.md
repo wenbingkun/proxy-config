@@ -77,7 +77,7 @@ sh -n mihomo/shellcrash/deploy.sh
 - DAZN、Cloudflare、Amazon provider 只用域名规则；不用 GlobalMedia 聚合。共享 CDN 的 IP 段会误判。
 - 路由器上，仓库只管 proxy-providers、策略组、rule-provider 和规则；端口、DNS、TUN、sniffer、控制器、防火墙归 ShellCrash（当前设备约定 sniffer 保持开启）。Windows 的运行参数仍由 `mihomo/verge/config.yaml` 管理。
 - 当前路由器访问 raw.githubusercontent.com 不稳定：部署时把 `TEMPLATE_URL` 指向 jsDelivr 固定的完整 SHA，后台运行；每次部署使用独立的结果目录，记录退出码与完成标记。`start-stop-daemon` 必须带 `-m -p`。
-- 回滚使用部署前的固定备份；`yamls/config.yaml.bak.proxy-config` 每次部署都会被覆盖，不能当作回滚点。
+- 回滚使用部署前的固定备份；`yamls/config.yaml.bak.proxy-config` 只服务于本次部署的自动回滚，每次部署都会被覆盖，不能当作长期回滚点。
 - 已知限制：Mihomo 遇到不支持 UDP 的节点会跳过规则继续匹配，与 QX 的 reject 不同。
 
 ## 工作流程

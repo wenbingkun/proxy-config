@@ -220,8 +220,10 @@ rollback_config() {
         mv -f "$deploy_stage_path" "$config_path"
         deploy_stage_path=''
         restore_provider_caches
-        "$start_script" start >/dev/null 2>&1 || true
-        fail "$rollback_reason；已恢复上一份配置"
+        if "$start_script" start >/dev/null 2>&1; then
+            fail "$rollback_reason；已恢复上一份配置和 provider 缓存，旧配置的启动命令已成功执行"
+        fi
+        fail "$rollback_reason；已恢复上一份配置和 provider 缓存，但旧配置启动失败，服务可能未运行。请执行 $start_script start 并检查网络，或用部署前的固定备份恢复"
     fi
     restore_provider_caches
     fail "$rollback_reason；没有可恢复的旧配置，已保留通过校验的新配置供排查"
