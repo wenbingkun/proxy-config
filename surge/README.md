@@ -57,7 +57,13 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 
 生成：`python3 scripts/build_surge_modules.py`，每个来源生成一个模块，另外生成合集（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以合集保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
 
-多个模块之间谁先执行，Surge 文档没有说明，所以拆分后的模块不能依赖彼此的顺序。2026-10-05 逐段核对过：只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite、Rule）里，不同模块不会对同一个请求给出不同结果。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享的主机名清单固定在 `tests/test_surge_config.py`，更新来源后清单变化，测试会失败，要重新核对再改清单。
+多个模块之间谁先执行，Surge 文档没有说明。合集里的先后（App 专用来源在前）拆分后不再有保证，2026-10-05 的核对结果：
+
+- 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
+- **例外**：通用去广告里有一批不限主机的 reject 模式，如 `(?i)\badvertising`、`(?i)\badvertisement`、`(?i)\bsplash_screen`、`(?i)\b\/ad\/`，以及按 IP 地址主机写的模式。被解密的请求或纯 HTTP 请求，URL 里带这些词时，会同时命中通用去广告和别的模块的跳转，结果由模块顺序决定。已知的情况：DuckDuckGo 搜索词含 advertising 等词时，Safari 超级搜索的跳转（合集里结果是拒绝，本来就是缺陷）；知乎外链 `link.zhihu.com/?target=` 的目标地址含 `/ad/` 时（合集里是跳转）；`google.cn`、纯 HTTP 站点的路径带这些词时，与神机重定向 / 安全重定向的跳转。只涉及带这些词的请求，接受这个差异；`SHARED_MITM` 查不出这类重叠。
+- Rule 段：B 站的 `DEST-PORT` 拒绝和知乎的 `USER-AGENT,"AVOS*"` 拒绝不限主机，理论上可以与高德、微博的 DIRECT 域名规则同时命中，实际不会出现。
+- 高德去广告与闲鱼去广告都对纯 HTTP 的 `amdc.m.taobao.com/amdc/mobileDispatch` 执行同一个 `amdc.js`（同一提交、同一参数），无论谁先执行，结果都一样。
+- 通用去广告还带 `[General] force-http-engine-hosts`（其中有 `weibointl.api.weibo.cn`）。只启用微博去广告、不启用通用去广告时没有这一项，对微博国际版有没有影响未核实。
 
 在「模块 → 安装新模块」中填写以下 URL（复制时注意不要带上空格）：
 
@@ -93,7 +99,7 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 3. 确认只启用了一种（合集或拆分模块），并按上一段检查模块顺序。
 4. 抽查常用 App 的去广告效果，以及 B 站 P2P 端口的拦截。
 
-回滚：停用拆分模块，重新启用合集。兼容期内仓库仍会更新合集；设备迁移完成并确认后，再用单独的改动删除合集。
+回滚：停用拆分模块，按 URL `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite.sgmodule` 重新安装并启用合集（第 2 步已经删掉本地副本）。兼容期内仓库仍会更新合集；设备迁移完成并确认后，再用单独的改动删除合集。
 
 ## 家庭 / 外出
 

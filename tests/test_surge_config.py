@@ -34,10 +34,12 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # MitM hosts the per-app modules share. Surge does not document the order between modules, and only
 # the first matching script, Map Local or header-mode URL Rewrite runs, so two modules may share a
 # host only when they cannot both answer one request in the same section. Reviewed 2026-10-05: on
-# these hosts blackmatrix7 Advertising carries only URL Rewrite lines; where its patterns and
-# another module's URL Rewrite match the same URL, both reject (amap.com, uve.weibo.com) or redirect
-# to the same target (google.cn, General and SafeRedirect). The others use different sections
-# there. Review again before changing this.
+# these hosts blackmatrix7 Advertising carries only URL Rewrite lines; where its host-specific
+# patterns and another module's URL Rewrite match the same URL, both reject (amap.com, uve.weibo.com)
+# or redirect to the same target (google.cn, General and SafeRedirect). The others use different
+# sections there. Review again before changing this. This only catches overlaps by host: Advertising's
+# host-agnostic reject patterns (advertising, /ad/, ...) can still meet another module's redirect;
+# surge/README.md records that accepted difference.
 SHARED_MITM = {
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "m5-zb.amap.com", "m5.amap.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
@@ -382,7 +384,7 @@ def check_rewrite_module(failures: list[str]) -> None:
     # The per-app modules carry exactly the merged module's lines, so the two never drift apart.
     for section in sorted((set(merged) | {s for sec in split.values() for s in sec}) - {"MITM", "General"}):
         joined = [line for path in SPLIT for line in split[path.stem].get(section, [])]
-        if [line for line in merged.get(section, []) if not line.startswith("# --- ")] != joined:
+        if merged.get(section, []) != joined:
             failures.append(f"[{section}] of the per-app modules must equal {REWRITE.name}")
     for section in ("MITM", "General"):
         merged_hosts = mitm_hosts(merged) if section == "MITM" else set(merged.get(section, []))

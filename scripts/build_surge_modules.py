@@ -228,6 +228,9 @@ def load_sources() -> list[tuple[dict, list[str], dict[str, list[str]]]]:
     """Each source with its provenance comment lines and its sections, arguments applied."""
     loaded = []
     for source in SOURCES:
+        missing = sorted({"file", "title", "desc"} - set(source))
+        if missing:
+            raise SourceError(f"{source['name']}: missing {missing}")
         where, body = load(source)
         provenance = [
             f"# Source: {source['name']} {where}",
