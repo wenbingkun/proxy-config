@@ -411,6 +411,21 @@ def check_rewrite_module(failures: list[str]) -> None:
         failures.append(f"per-app modules share unreviewed MitM hosts (see SHARED_MITM): {shared}")
 
 
+def check_categories(failures: list[str]) -> None:
+    """The home modules and device-only templates get their own category instead of 未分类. Surge lists
+    categories and the modules inside one by name, so this group follows proxy-config and keeps
+    these four in the order below."""
+    paths = (HOME, NOBLOCK, AIRPORT_DNS, ROOT / "surge" / "netdiag-api.example.sgmodule")
+    names = []
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        if not re.search(r"^#!category=proxy-config · 家庭与本地$", text, re.M):
+            failures.append(f"{path.name}: must be in the 'proxy-config · 家庭与本地' category")
+        names.append(re.search(r"^#!name=(.*)$", text, re.M).group(1))
+    if names != sorted(names):
+        failures.append(f"home and device-only module names must sort in this order: {names}")
+
+
 def check_airport_dns(failures: list[str]) -> None:
     """The airport DNS is a local module overriding the global encrypted DNS, never [Host]."""
     sec = sections(AIRPORT_DNS.read_text(encoding="utf-8"))
@@ -424,7 +439,7 @@ def check_airport_dns(failures: list[str]) -> None:
 def main() -> int:
     failures: list[str] = []
     for check in (check_groups, check_rules, check_modules, check_module_resolve, check_allow_list, check_private,
-                  check_airport_dns, check_rewrite_module):
+                  check_airport_dns, check_rewrite_module, check_categories):
         check(failures)
     if failures:
         print("Surge config checks failed:")

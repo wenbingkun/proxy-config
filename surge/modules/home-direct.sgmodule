@@ -1,5 +1,6 @@
 #!name=在家直连 + 拦截
 #!desc=AdRules 与 Privacy 拒绝列表（pre-matching，排除银行和券商）在前；家庭 Wi-Fi 下其余流量 DIRECT，由路由器分流。与「在家直连（关闭 AdRules / Privacy 拦截）」二选一启用。
+#!category=proxy-config · 家庭与本地
 #!arguments=HOME_SSID:HOME_SSID
 #!arguments-desc=HOME_SSID: 家里 Wi-Fi 的名称（只填在设备上）。两个家庭模块要填同一个值。
 
