@@ -412,10 +412,18 @@ def check_rewrite_module(failures: list[str]) -> None:
 
 
 def check_categories(failures: list[str]) -> None:
-    """Every repo module and device-only template sits in the proxy-config category, not 未分类."""
-    for path in (HOME, NOBLOCK, AIRPORT_DNS, ROOT / "surge" / "netdiag-api.example.sgmodule"):
-        if not re.search(r"^#!category=proxy-config$", path.read_text(encoding="utf-8"), re.M):
-            failures.append(f"{path.name}: must be in the proxy-config category")
+    """The home modules and device-only templates get their own category instead of 未分类. Surge lists
+    categories and the modules inside one by name, so this group follows proxy-config and keeps
+    these four in the order below."""
+    paths = (HOME, NOBLOCK, AIRPORT_DNS, ROOT / "surge" / "netdiag-api.example.sgmodule")
+    names = []
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        if not re.search(r"^#!category=proxy-config · 家庭与本地$", text, re.M):
+            failures.append(f"{path.name}: must be in the 'proxy-config · 家庭与本地' category")
+        names.append(re.search(r"^#!name=(.*)$", text, re.M).group(1))
+    if names != sorted(names):
+        failures.append(f"home and device-only module names must sort in this order: {names}")
 
 
 def check_airport_dns(failures: list[str]) -> None:
