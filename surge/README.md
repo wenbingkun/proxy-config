@@ -46,7 +46,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 |---|---|
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、Safari 超级搜索 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
-| 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交 |
+| 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本自 2026-10-05 起改指仓库托管的 `quantumultx/scripts/xiaohongshu.js`（三端同一份：首页推荐去视频笔记、去「视频」频道），并为频道列表接口加了 `xiaohongshu_11` |
 | 高德地图 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
 | 网易邮箱大师、大麦、航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
@@ -55,7 +55,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，2026-10 真机检查闲鱼搜索页正常。
 
-Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的 BoxJS 也没有移植。
+Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026-10-05 起改用仓库托管插件），它们是 Loon 专有语法、脚本只对 Loon 提供，所以 Surge 改用上表的公开来源，规则和效果可能与 Kelee 版不同；节点检测是 Loon 独有功能，没有移植。Loon 中默认关闭的 BoxJS 也没有移植。
 
 冻结转换的共同修改：脚本名编号保证唯一；模块里的 IP 规则加 `no-resolve`（否则排在规则最前面的 IP 规则会让每个请求先在本地解析）；QX 的 `response-body` 由 Script-Hub 转成它的 `replace-body.js`，固定到 Script-Hub `6b4fb62`。
 

@@ -178,10 +178,12 @@ def check_fmz200(failures: list[str]) -> None:
 
 
 # Hosted rewrites that replaced ddgksf2013's (2026-10-05): the scripts each may load, pinned to the
-# reviewed commits, and whether QX also loads the file as a filter (mixed snippet). Off until checked
-# on the device.
+# reviewed commits (or this repo's hosted script), whether QX also loads the file as a filter (mixed
+# snippet), and the template default: off until checked on the device, on once accepted (2026-10-05).
 REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/"
+REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
+    "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
     "fmz200-XiaoYuZhou.snippet": (set(), False),
     "fmz200-Zhihu.snippet": ({"https://raw.githubusercontent.com/fmz200/wool_scripts/"
                               "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js"}, True),
@@ -190,8 +192,9 @@ HOSTED_REWRITES = {
     "YouTube.conf": ({"https://raw.githubusercontent.com/Maasea/sgmodule/"
                       "65075cdb388fc5e3094afd7e7314c67b243f3525/Script/Youtube/youtube.response.js"}, False),
 }
+HOSTED_ACCEPTED = {"fmz200-XiaoYuZhou.snippet", "fmz200-Zhihu.snippet", "WeChatUnblock.conf", "YouTube.conf"}
 REPLACED_DDGKSF2013 = ("scripts/zhihu.ads.js", "AdBlock/YoutubeAds.conf", "Function/UnblockURLinWeChat.conf",
-                       "AdBlock/XiaoYuZhouAds.conf")
+                       "AdBlock/XiaoYuZhouAds.conf", "rewrite/XiaoHongShuAds.conf")
 
 
 def check_hosted_rewrites(failures: list[str]) -> None:
@@ -211,8 +214,10 @@ def check_hosted_rewrites(failures: list[str]) -> None:
                 failures.append(f"QX [{section}]: {name} must be loaded {'once' if wanted else 'not at all'}")
             for line in lines:
                 opts = line.replace(" ", "")
-                if "enabled=false" not in opts:
-                    failures.append(f"QX [{section}]: {name} must stay off until checked on the device")
+                state = "enabled=true" if name in HOSTED_ACCEPTED else "enabled=false"
+                if state not in opts:
+                    failures.append(f"QX [{section}]: {name} must have {state} "
+                                    "(off until checked on the device, on once accepted)")
                 if name.endswith(".snippet") and "opt-parser=true" not in opts:
                     failures.append(f"QX [{section}]: snippet {name} needs opt-parser=true")
                 if section == "filter_remote" and "force-policy=🛡️安全防护" not in opts:

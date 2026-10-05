@@ -50,6 +50,13 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # rather than read from build_surge_modules, so changing SOURCES cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
 FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou"}
+# Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
+REPO_SCRIPTED = {
+    "xiaohongshu": {
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
+        "https://raw.githubusercontent.com/Script-Hub-Org/Script-Hub/6b4fb62240629d2fc66b08bc271f8c1f83a5dcd1/scripts/replace-body.js",
+    },
+}
 # fmz200 modules that run a script: only these scripts, pinned through SOURCES "pins" (2026-10-05).
 FMZ200_SCRIPTED = {
     "wechat": {"https://raw.githubusercontent.com/zZPiglet/Task/0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js"},
@@ -407,6 +414,11 @@ def check_rewrite_module(failures: list[str]) -> None:
                         f"got {[p.name for p in on_disk]}")
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
+    for name, expected in REPO_SCRIPTED.items():
+        text = (build_surge_modules.MODULE_DIR / f"{name}.sgmodule").read_text(encoding="utf-8")
+        scripts = set(re.findall(r"script-path=([^,\s]+)", text))
+        if scripts != expected:
+            failures.append(f"{name}.sgmodule: scripts must be exactly {sorted(expected)}, got {sorted(scripts)}")
     fmz200 = {s["file"]: s for s in sources if "fmz200/wool_scripts" in (s.get("url") or "")}
     if set(fmz200) != FMZ200_FILES | set(FMZ200_SCRIPTED):
         failures.append(f"fmz200 sources must be exactly {sorted(FMZ200_FILES | set(FMZ200_SCRIPTED))}, "

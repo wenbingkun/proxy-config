@@ -331,7 +331,13 @@ def check_hosted_plugins(failures: list[str]) -> None:
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
 FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban",
                   "ChinaMobile", "XiaoYuZhou"}
+# Mirrors accepted on the device are on by default (2026-10-05).
+FMZ200_ACCEPTED = {"XiaoYuZhou"}
 MIRROR_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/fmz200-"
+# Xiaohongshu (2026-10-05): fmz200's plugin, hosted with every script pointed at the repo's copy of
+# xiaohongshu.js (home feed video notes and the 视频 channel removed); it replaces Kelee's RedPaper.
+XHS_PLUGIN = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/Xiaohongshu.plugin"
+XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 
 
 def check_fmz200_plugins(failures: list[str]) -> None:
@@ -343,8 +349,19 @@ def check_fmz200_plugins(failures: list[str]) -> None:
     if names != FMZ200_PLUGINS or len(lines) != len(FMZ200_PLUGINS):
         failures.append(f"loon: fmz200 plugins must be exactly {sorted(FMZ200_PLUGINS)}, got {sorted(names)}")
     for line in lines:
-        if "enabled=false" not in line.split(",", 1)[1].replace(" ", ""):
-            failures.append(f"loon: fmz200 plugin must stay off until checked on the device: {line.split(',')[0]}")
+        name = line.split(",")[0][len(MIRROR_URL):].removesuffix(".plugin")
+        state = "enabled=true" if name in FMZ200_ACCEPTED else "enabled=false"
+        if state not in line.split(",", 1)[1].replace(" ", ""):
+            failures.append(f"loon: fmz200 plugin must have {state} (off until checked on the device): {line.split(',')[0]}")
+    xhs = [l for l in plugin if l.split(",")[0].strip() == XHS_PLUGIN]
+    if len(xhs) != 1 or "enabled=false" not in xhs[0].replace(" ", ""):
+        failures.append("loon: Xiaohongshu.plugin must be listed once and stay off until checked on the device")
+    if any("RedPaper" in l for l in plugin):
+        failures.append("loon: Kelee's RedPaper was replaced by loon/plugins/Xiaohongshu.plugin")
+    xhs_text = (ROOT / "loon" / "plugins" / "Xiaohongshu.plugin").read_text(encoding="utf-8")
+    scripts = set(re.findall(r"script-path=([^,\s]+)", "\n".join(l for l in xhs_text.splitlines() if not l.startswith("#"))))
+    if scripts != {XHS_SCRIPT}:
+        failures.append(f"Xiaohongshu.plugin: scripts must be exactly [{XHS_SCRIPT}], got {sorted(scripts)}")
     for name in FMZ200_PLUGINS:
         path = ROOT / "loon" / "plugins" / f"fmz200-{name}.plugin"
         text = path.read_text(encoding="utf-8") if path.exists() else ""
