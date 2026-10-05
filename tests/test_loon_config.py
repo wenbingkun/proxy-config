@@ -356,6 +356,12 @@ def check_fmz200_plugins(failures: list[str]) -> None:
     xhs = [l for l in plugin if l.split(",")[0].strip() == XHS_PLUGIN]
     if len(xhs) != 1 or "enabled=false" not in xhs[0].replace(" ", ""):
         failures.append("loon: Xiaohongshu.plugin must be listed once and stay off until checked on the device")
+    amdc = [l for l in plugin if l.split(",")[0].strip() == XHS_PLUGIN.replace("Xiaohongshu.plugin", "AlibabaAmdc.plugin")]
+    if len(amdc) != 1 or "enabled=false" not in amdc[0].replace(" ", ""):
+        failures.append("loon: AlibabaAmdc.plugin must be listed once and stay off until checked on the device")
+    amdc_text = (ROOT / "loon" / "plugins" / "AlibabaAmdc.plugin").read_text(encoding="utf-8")
+    if set(re.findall(r"script-path=([^,\s]+)", amdc_text)) != {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}:
+        failures.append("AlibabaAmdc.plugin: must load only the repo's amdc.js")
     if any("RedPaper" in l for l in plugin):
         failures.append("loon: Kelee's RedPaper was replaced by loon/plugins/Xiaohongshu.plugin")
     xhs_text = (ROOT / "loon" / "plugins" / "Xiaohongshu.plugin").read_text(encoding="utf-8")

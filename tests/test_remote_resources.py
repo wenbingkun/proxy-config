@@ -119,6 +119,7 @@ def main() -> int:
         "https://raw.githubusercontent.com/Maasea/sgmodule/2c2c0adba8454f16c82c05fe5ed415badcbdd3d8/Script/WeRead/weread.js",
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.ads.js",
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js",
     }, plugin_urls
     # The generated Surge rewrite modules are treated like hosted plugins: only their script-path URLs.
     rewrite_scripts = {

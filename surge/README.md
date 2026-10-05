@@ -47,7 +47,8 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、Safari 超级搜索 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本自 2026-10-05 起改指仓库托管的 `quantumultx/scripts/xiaohongshu.js`（三端同一份：首页推荐去视频笔记、去「视频」频道），并为频道列表接口加了 `xiaohongshu_11` |
-| 高德地图 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
+| 高德地图（2026-10-06 起） | fmz200 按 App 拆分的原生模块（`5d5f63f`，无脚本，含拒绝规则）；原墨鱼版里的 amdc 处理移到「阿里系 amdc」 |
+| 阿里系 amdc（2026-10-06 新增） | 仓库自写的 `quantumultx/scripts/amdc.js`（与墨鱼 `amdc.js` 同一 UA 清单），只有一条 http-response 脚本、不需要 MitM；三端各一项 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
 | 网易邮箱大师、大麦、航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
 | 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，模块和脚本都固定到提交（脚本由 `SOURCES` 的 `pins` 在生成时替换）；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
@@ -63,10 +64,10 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 
 多个模块之间谁先执行，Surge 文档没有说明，所以 Loon 里「专用插件排在 blackmatrix7 合集之前」的先后在 Surge 上没有保证。2026-10-05 的核对结果：
 
-- 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突（amdc 脚本除外，两边结果相同，见下）。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
+- 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突（amdc 脚本存在重叠，见下）。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject（高德广告图 `optimus-ads…/uploadimg/*.gif` 由通用去广告在请求阶段先拒绝，高德模块返回空图的 Map Local 不再执行，两者都不显示广告图），`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
 - **例外**：通用去广告里有一批不限主机的 reject 模式，如 `(?i)\badvertising`、`(?i)\badvertisement`、`(?i)\bsplash_screen`、`(?i)\b\/ad\/`，以及按 IP 地址主机写的模式。被解密的请求或纯 HTTP 请求，URL 里带这些词时，会同时命中通用去广告和别的模块的跳转，结果由模块顺序决定。已知的情况：DuckDuckGo 搜索词含 advertising 等词时，Safari 超级搜索的跳转（被拒绝时搜索失败）；知乎外链 `link.zhihu.com/?target=` 的目标地址含 `/ad/` 时；`google.cn`、纯 HTTP 站点的路径带这些词时，与神机重定向 / 安全重定向的跳转。只涉及带这些词的请求，接受这个差异；`SHARED_MITM` 查不出这类重叠。
-- Rule 段：B 站的 `DEST-PORT` 拒绝和知乎的 `USER-AGENT,"AVOS*"` 拒绝不限主机，理论上可以与高德、微博的 DIRECT 域名规则同时命中，实际不会出现。
-- 高德去广告、闲鱼去广告、大麦去广告都对纯 HTTP 的 `amdc.m.taobao.com/amdc/mobileDispatch` 执行同一个 `amdc.js`（同一提交、同一参数），无论谁先执行，结果都一样。
+- Rule 段：B 站的 `DEST-PORT` 拒绝和知乎的 `USER-AGENT,"AVOS*"` 拒绝不限主机，理论上可以与微博的 DIRECT 域名规则同时命中，实际不会出现。
+- 纯 HTTP 的 `/amdc/mobileDispatch` 由「阿里系 amdc」处理（2026-10-06 起，高德模块不再带 amdc）。闲鱼去广告、大麦去广告在批次 3b 替换前仍各带墨鱼的同一个 `amdc.js`，与新脚本用同一 UA 清单，但响应内容不同，不能据此认定回退效果相同，也不能依赖跨模块顺序。受控试验使用仅删除旧 amdc 行的设备本地副本，确认只有新脚本处理；批次 3b 替换后只剩「阿里系 amdc」一处。
 - 2026-10-05 新增的 8 个 fmz200 模块（微信公众号到中国移动）都与通用去广告共享 MitM 主机名（见 `SHARED_MITM`）。通用去广告在这些主机上只有 URL Rewrite；与新模块的 URL Rewrite 同时命中时两边都是 reject，并且它在请求阶段先执行，会先于新模块的 Map Local 拒绝一部分请求。已确认的例子：虎扑 `search/hotkey`、`interfaceAd/getOther`、`hoopchina` 帖子图；美团 `linglong` 素材、外卖 `startpicture`；猫眼 `adAdmin` 图；豆瓣 `common_ads`；乐刻广告接口；微信 `cps_product_info`；中国移动的广告列表。这不是完整清单，最终命中以请求记录为准。依赖：美团外卖开屏（`wmapi.meituan.com`）只由通用去广告解密；豆瓣的横幅（`frodo.douban.com`）和图片广告（`img*.doubanio.com`）两条 HTTPS 规则没有任何模块解密，本次不覆盖。
 - 2026-10-05 新增的网易邮箱大师、大麦、航旅纵横与通用去广告共享 MitM 主机名，但通用去广告在这些主机上只有 URL Rewrite，新模块用的是 Script、Map Local 和 Body Rewrite，不在同一段。通用去广告的拒绝在请求阶段先执行，所以航旅纵横的 `startup` 接口、网易邮箱的 `/mmad/`、大麦的弹窗接口仍由它拒绝，新模块对这几处不起作用。
 - 通用去广告还带 `[General] force-http-engine-hosts`（其中有 `weibointl.api.weibo.cn`）。只启用微博去广告、不启用通用去广告时没有这一项，对微博国际版有没有影响未核实。
@@ -81,6 +82,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 | YouTube 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/youtube.sgmodule` | 按需启用 |
 | 小红书去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaohongshu.sgmodule` | 按需启用 |
 | 高德地图去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap.sgmodule` | 按需启用 |
+| 阿里系 amdc | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/alibaba-amdc.sgmodule` | 用高德、闲鱼、大麦等阿里系 App 时启用 |
 | 知乎去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/zhihu.sgmodule` | 按需启用 |
 | 微信外链解锁 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/wechat.sgmodule` | 按需启用 |
 | 通用去广告（blackmatrix7） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/advertising.sgmodule` | 按需启用 |
@@ -108,7 +110,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 
 除两个家庭模块外，上表的模块都需要 MitM。前 15 个对应 Loon 中已验收、默认启用的插件；2026-10-05 新增的 5 个（网易邮箱大师到微信读书精简）在 QX、Loon 中默认关闭，之后的 8 个（微信公众号到中国移动）只有 Surge 和 Loon，Loon 中默认关闭；真机逐个验收前都不要当作已验证。12306 和中国电信的模块在 2026-10-05 真机验收后移除：`ad.12306.cn` 已被三端的 AdRules 拒绝（Surge 在家庭模块里预匹配拒绝），12306 的脚本从未运行；fmz200「中国电信」处理的是天翼云盘等其他电信 App 的主机，中国电信 App 实际访问的 `appgo*.189.cn` 一条都不匹配。不用的 App 可以不装，或在模块列表里关掉。
 
-**模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块**之后**，目前是哔哩哔哩增强、小红书去广告、知乎去广告、微博去广告、闲鱼去广告，以及 2026-10-05 新增的虎扑、米家、豆瓣 App、中国移动（它们的模块说明里都写了这一点）。启用新模块、调整顺序或重载配置后都要复核；无法排到家庭模块之前时，关闭这个新模块，保持家庭切换与拦截不变。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。也可以用 `python3 scripts/netdiag.py get surge /v1/rules` 查看实际生效的规则顺序：上述模块的规则应排在 `SUBNET,SSID:` 之前。
+**模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块**之后**，目前是哔哩哔哩增强、小红书去广告、高德地图去广告（2026-10-06 起）、知乎去广告、微博去广告、闲鱼去广告，以及 2026-10-05 新增的虎扑、米家、豆瓣 App、中国移动（它们的模块说明里都写了这一点）。启用新模块、调整顺序或重载配置后都要复核；无法排到家庭模块之前时，关闭这个新模块，保持家庭切换与拦截不变。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。也可以用 `python3 scripts/netdiag.py get surge /v1/rules` 查看实际生效的规则顺序：上述模块的规则应排在 `SUBNET,SSID:` 之前。
 
 ## 家庭 / 外出
 

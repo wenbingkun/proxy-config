@@ -66,8 +66,17 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 高德地图", "path": "surge/modules/converted/AmapAds.sgmodule",
+        # fmz200's split module (2026-10-06; it replaced ddgksf2013's AmapAds), script-free. Its amdc
+        # handling moved to the alibaba-amdc module.
+        "name": "fmz200 AutoNavi",
         "file": "amap", "title": "高德地图去广告", "desc": "高德地图去广告",
+        "url": f"{FMZ200}/Surge/module/split/partG/AutoNavi.sgmodule",
+        "arguments": {},
+    },
+    {
+        "name": "proxy-config 阿里系 amdc", "path": "surge/modules/converted/AlibabaAmdc.sgmodule",
+        "file": "alibaba-amdc", "title": "阿里系 amdc",
+        "desc": "对指定阿里系 UA 的纯 HTTP 调度响应返回无效内容；是否回退 HTTPS 须真机验证",
         "arguments": {},
     },
     {

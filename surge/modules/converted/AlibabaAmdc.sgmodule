@@ -1,0 +1,10 @@
+#!name=AlibabaAmdc
+#!desc=AlibabaAmdc
+# Frozen Surge conversion of proxy-config's Quantumult X rewrite; do not edit by hand.
+# Source: quantumultx/rewrite/AlibabaAmdc.conf (written for this repo on 2026-10-06; converted by hand,
+# one http-response script, no MitM: the dispatch is plain HTTP).
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, change
+# the QX rewrite and this file together and send the result through a PR.
+
+[Script]
+alibaba_amdc = type=http-response, pattern="^http:\/\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+){1,4}(:\d+)?\/amdc\/mobileDispatch", script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js, requires-body=true, timeout=10
