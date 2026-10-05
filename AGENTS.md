@@ -65,6 +65,7 @@ sh -n mihomo/shellcrash/deploy.sh
 - `loon/plugins/` 托管冻结的转换版，脚本地址固定到审核过的上游提交，文件头写明来源与重新生成方法。墨鱼自建域名 ddgksf2013.top 上的资源没有提交可固定：文件头记录抓取日期和 SHA-256；冻结版引用的脚本托管副本（如 `quantumultx/scripts/umetrip.ads.js`），不直接引用该域名；副本相对上游的修改写在文件头并配回归测试（`tests/test_umetrip_script.py`）。fmz200 按 App 拆分的资源（`fmz200/wool_scripts` 的 `*/split/`）三端原生：无脚本的，Surge `SOURCES` 与 QX 直接引用固定的完整提交 SHA（QX 的 `.snippet` 混有分流，含分流的要在 `[rewrite_remote]`、`[filter_remote]` 各引用一次，都 `opt-parser=true`）；Loon 用 `scripts/build_loon_plugins.py` 生成的托管副本，只换图标（上游是 560 KB 的 GIF）。仓库托管的 Loon 插件图标统一由 `build_loon_plugins.py` 的 `ICONS` 管理，用 App Store 的小 PNG；带脚本的要固定脚本并按附录式设计另行审核。三份测试独立写死期望的提交、无脚本和默认关闭。新插件在模板里先 `enabled=false`，真机验收后再改默认值。
 - 远程资源巡检对 kelee.one 使用已验证可用的完整 iOS Loon UA（见 `scripts/check_remote_resources.py`）；只带 `Loon/x.y.z` 时曾返回 403。
 - Loon 重新保存配置时会去掉逗号后的空格，比对设备配置前先统一格式。
+- 插件图标（`#!icon`）只用小 PNG，不用 GIF：2026-10-05 fmz200 插件的 560 KB 动图图标让 Loon 插件页一直转圈，换成 App Store 的 100×100 PNG（几 KB，`scripts/build_loon_plugins.py` 的 `ICONS`）后真机确认恢复正常。`tests/test_loon_config.py` 拒绝非 PNG 图标；新托管插件要在 `ICONS` 登记对应 App 的图标。QX 的 `img-url` 等其他客户端的图标同样用小 PNG。
 
 **Surge**
 - 结构是托管配置 `surge/proxy-config.conf`（公开段）加设备上的 `bootstrap.conf`（`#!include` 公开段，节点、MitM、SSID、机场 DNS 留在本地）。31 个组与 Loon 同名同序，**有意没有** 16 个「· 自动」包装组和 `🛡️ 安全防护`，`HOME_AUTO_GROUPS` 不适用于 Surge。
