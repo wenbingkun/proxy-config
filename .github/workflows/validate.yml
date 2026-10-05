@@ -58,6 +58,7 @@ jobs:
               "scripts/check_remote_resources.py",
               "scripts/check_reject_conflicts.py",
               "scripts/build_surge_modules.py",
+              "scripts/build_loon_plugins.py",
               "surge/modules/rewrite",
               "surge/proxy-config.conf",
               "surge/bootstrap.example.conf",
@@ -141,6 +142,7 @@ jobs:
           python3 scripts/build_rules.py --check
           python3 scripts/build_router_config.py --check
           python3 scripts/build_surge_modules.py --check
+          python3 scripts/build_loon_plugins.py --check
 
       - name: Check repository hygiene and acceptance
         run: |

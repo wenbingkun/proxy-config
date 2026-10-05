@@ -29,6 +29,7 @@ set -e
 python3 scripts/build_rules.py --check
 python3 scripts/build_router_config.py --check
 python3 scripts/build_surge_modules.py --check
+python3 scripts/build_loon_plugins.py --check
 python3 scripts/check_hygiene.py
 python3 scripts/check_acceptance.py
 for t in tests/test_*.py; do [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"; done
@@ -61,7 +62,7 @@ sh -n mihomo/shellcrash/deploy.sh
 - ssid 组写法：`X · 自动 = ssid, default = X, cellular = X, "HOME_SSID" = DIRECT`。
 - `GEOIP,CN` 必须作为最后一条远程规则（`loon/rules/geoip_cn.list`），不能放本地 `[Rule]`。
 - Loon 同一阶段命中的 Rewrite 按配置顺序全部执行，效果可以叠加；同一字段可能被后面的规则覆盖（QX 是命中第一条即停）。用 Script-Hub 转换 QX 重写后，要检查重叠规则的实际效果，不能按 QX 的首次命中模型推断。
-- `loon/plugins/` 托管冻结的转换版，脚本地址固定到审核过的上游提交，文件头写明来源与重新生成方法。墨鱼自建域名 ddgksf2013.top 上的资源没有提交可固定：文件头记录抓取日期和 SHA-256；冻结版引用的脚本托管副本（如 `quantumultx/scripts/umetrip.ads.js`），不直接引用该域名；副本相对上游的修改写在文件头并配回归测试（`tests/test_umetrip_script.py`）。fmz200 按 App 拆分的资源（`fmz200/wool_scripts` 的 `*/split/`）三端原生：无脚本且不需修正的，Loon `[Plugin]` 与 Surge `SOURCES` 直接引用固定的完整提交 SHA，不托管副本；带脚本的要固定脚本并按附录式设计另行审核。两份测试独立写死期望的提交、无脚本和默认关闭。新插件在模板里先 `enabled=false`，真机验收后再改默认值。
+- `loon/plugins/` 托管冻结的转换版，脚本地址固定到审核过的上游提交，文件头写明来源与重新生成方法。墨鱼自建域名 ddgksf2013.top 上的资源没有提交可固定：文件头记录抓取日期和 SHA-256；冻结版引用的脚本托管副本（如 `quantumultx/scripts/umetrip.ads.js`），不直接引用该域名；副本相对上游的修改写在文件头并配回归测试（`tests/test_umetrip_script.py`）。fmz200 按 App 拆分的资源（`fmz200/wool_scripts` 的 `*/split/`）三端原生：无脚本的，Surge `SOURCES` 与 QX 直接引用固定的完整提交 SHA（QX 的 `.snippet` 混有分流，含分流的要在 `[rewrite_remote]`、`[filter_remote]` 各引用一次，都 `opt-parser=true`）；Loon 用 `scripts/build_loon_plugins.py` 生成的托管副本，只换图标（上游是 560 KB 的 GIF）。仓库托管的 Loon 插件图标统一由 `build_loon_plugins.py` 的 `ICONS` 管理，用 App Store 的小 PNG；带脚本的要固定脚本并按附录式设计另行审核。三份测试独立写死期望的提交、无脚本和默认关闭。新插件在模板里先 `enabled=false`，真机验收后再改默认值。
 - 远程资源巡检对 kelee.one 使用已验证可用的完整 iOS Loon UA（见 `scripts/check_remote_resources.py`）；只带 `Loon/x.y.z` 时曾返回 403。
 - Loon 重新保存配置时会去掉逗号后的空格，比对设备配置前先统一格式。
 
