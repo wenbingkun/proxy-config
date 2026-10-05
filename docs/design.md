@@ -95,7 +95,7 @@ Mihomo
 
 ## 跨端策略约定
 
-Apple 相关服务统一归入 `🍎 苹果服务`：QX 的 Apple Intelligence 远程清单改为强制该组；Apple Intelligence / Private Cloud Compute 托管在第三方 CDN 上的中继（`apple-relay.cloudflare.com`、`apple-relay.fastly-edge.com`、`apple-relay.akamaized.net`、`cp4.cloudflare.com`）不在 blackmatrix7 Apple 列表中，由仓库的 `AppleExtra` 补齐，并排在 Cloudflare 与 ProxyLite 之前，避免被送往开发服务或全球加速。
+Apple 相关服务统一归入 `🍎 苹果服务`：Apple Intelligence / Private Cloud Compute 托管在第三方 CDN 上的中继（`apple-relay.cloudflare.com`、`apple-relay.fastly-edge.com`、`apple-relay.akamaized.net`、`cp4.cloudflare.com`）不在 blackmatrix7 Apple 列表中，由仓库的 `AppleExtra`（`rules/apple_extra.yaml`）补齐；三端原先单独加载的墨鱼 AppleIntelligence 清单已于 2026-10-05 并入同一文件，四端共用一个来源，并排在 Cloudflare 与 ProxyLite 之前，避免被送往开发服务或全球加速。
 
 IPv6 在各端统一开启（QX 不设 `no-ipv6`；Windows 配置开启 IPv6；路由器本已开启）。QX 放行除 443 以外的全部 UDP 端口，并丢弃 UDP 443（QUIC），让 App 回退到 TCP，MitM 重写才能生效；2026-09-30 实测放开 QUIC 时 B 站去广告失效且关注页、热门页加载缓慢，恢复屏蔽后正常。QX 固定 `fallback_udp_policy = reject`，节点不支持 UDP 转发时拒绝而不直连。**Mihomo（Windows 与路由器）目前不提供同等保证**：v1.19.31 遇到不支持 UDP 的节点会跳过该规则继续匹配，可能命中后续直连规则或最终回落 DIRECT；当前机场节点均声明支持 UDP，如以后出现不支持 UDP 的节点，需要另行设计。
 

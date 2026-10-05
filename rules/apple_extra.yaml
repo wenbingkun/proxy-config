@@ -1,8 +1,19 @@
 # Apple Intelligence / Private Cloud Compute relays hosted on third-party
 # CDNs. The blackmatrix7 Apple list misses them, so they would otherwise fall
 # through to the Cloudflare or ProxyLite rules instead of the Apple group.
+# The apple.com / icloud.com / apple-dns.net entries come from ddgksf2013's
+# AppleIntelligence.list (2026-09-17), which QX, Loon and Surge used to load
+# as a separate remote list; it is folded in here so all clients and Mihomo
+# share one source.
 domain_suffix:
   - apple-relay.cloudflare.com
   - apple-relay.fastly-edge.com
   - apple-relay.akamaized.net
   - cp4.cloudflare.com
+  - gateway.icloud.com
+  - apple-relay.apple.com
+  - guzzoni.apple.com
+  - gspe1-ssl.ls.apple.com
+  - smoot.apple.com
+  - apple-relay.mask.apple-dns.net
+  - api-siri-prod.apple.com

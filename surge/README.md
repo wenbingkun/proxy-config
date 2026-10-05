@@ -45,7 +45,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 内容 | 来源 |
 |---|---|
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
-| 微博、闲鱼、豆瓣网页、Safari 超级搜索、神机重定向 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
+| 微博、闲鱼、Safari 超级搜索 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交 |
 | 高德地图、微信外链 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
 | 网易邮箱大师、小宇宙、大麦、航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
@@ -88,9 +88,9 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 | Spotify 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/spotify.sgmodule` | 按需启用 |
 | 微博去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/weibo.sgmodule` | 按需启用 |
 | 闲鱼去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/goofish.sgmodule` | 按需启用 |
-| 豆瓣网页增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/douban.sgmodule` | 按需启用 |
+| 豆瓣网页增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/douban.sgmodule` | 停用（2026-10-05 起不再使用，兼容期内保留） |
 | Safari 超级搜索 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/q-search.sgmodule` | 按需启用 |
-| 神机重定向 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/general.sgmodule` | 按需启用 |
+| 神机重定向 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/general.sgmodule` | 停用（由安全重定向覆盖，兼容期内保留） |
 | 网易邮箱大师去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/neteasemail.sgmodule` | 按需启用 |
 | 小宇宙去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaoyuzhou.sgmodule` | 按需启用 |
 | 大麦去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/damai.sgmodule` | 按需启用 |
