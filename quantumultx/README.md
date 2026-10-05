@@ -49,6 +49,8 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 2026-10-05 新增 6 个重写，默认关闭，真机验收后再开：网易邮箱大师、小宇宙、大麦、12306 直接引用墨鱼原版；航旅纵横用仓库托管的 `quantumultx/rewrite/UmetripAds.conf`（原版引用的 `/rewrite/umetrip.ads.js` 对所有客户端都返回网页，改为指向托管的脚本副本 `quantumultx/scripts/umetrip.ads.js`；副本修正了上游没有接上的 JSON 清理入口，见 `tests/test_umetrip_script.py`）；微信读书精简是 Maasea 的 Surge 模块，Script-Hub 转换失败，`quantumultx/rewrite/WeRead.conf` 按原模块手写，脚本固定到提交。12306 原版说明要求 `ad.12306.cn` 走直连；blackmatrix7 的 China 列表只有 `12306.com`，没有 `12306.cn`，所以它没有域名规则命中，靠末尾的 `GEOIP,CN` 在解析到国内地址时走 🇨🇳 国内服务（三端相同），真机验收时确认。
 
+同日在 Surge、Loon 新增的 9 个 fmz200 按 App 拆分的模块（微信公众号、美团外卖、虎扑、米家、中国电信、猫眼、乐刻、豆瓣 App、中国移动），QX 本阶段不新增：已知部分重写与现有的 bm7、墨鱼去开屏 2.0、小程序去广告重叠，其他增量尚未完整验证；它们的 `.snippet` 还混有分流规则（不含淘宝、京东时共 15 条），QX 未额外接入。微信公众号文章广告在 QX 上由小程序去广告（Applet.conf）中的同一规则处理。
+
 ## 家庭 / 外出自动切换
 
 与 Loon 相同（见 [Loon 说明](../loon/README.md#家庭--外出自动切换)）：不使用 `running_mode_trigger` 或 `ssid_suspended_list`，运行模式在任何网络下都保持「规则分流」。策略页上方的 32 个组与路由器、Loon 同名同序，在这些组里选择节点。规则实际引用的是排在最后的 16 个「· 自动」ssid 策略（如 `🤖 人工智能 · 自动`、`🐟 兜底分流 · 自动`、`🇭🇰 香港节点 · 自动`）：

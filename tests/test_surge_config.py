@@ -39,11 +39,28 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # sections there. Reviewed 2026-10-05 for the six app modules added that day (12306, damai, neteasemail,
 # umetrip): Advertising still has only URL Rewrite there and they use Script, Map Local and Body Rewrite;
 # Advertising's rejects run first in the request stage either way (umetrip startup, mail.163 /mmad/,
-# damai popup.get). Review again before changing this. This only catches overlaps by host: Advertising's
+# damai popup.get). Reviewed 2026-10-05 for the nine fmz200 domestic modules (chinamobile, chinatelecom,
+# douban-app, hupu, leke, maoyan, meituan, mijia, wechat-mp): Advertising has only URL Rewrite there; where
+# it and a new URL Rewrite match the same request both reject, and its rejects run before their Map Local
+# (Codex's worked examples: hupu search/hotkey, goblin getOther, hoopchina blogfile, meituan linglong and
+# wmapi startpicture, maoyan adAdmin jpg, douban common_ads). Review again before changing this. This only catches overlaps by host: Advertising's
 # host-agnostic reject patterns (advertising, /ad/, ...) can still meet another module's redirect;
 # surge/README.md records that accepted difference.
+# fmz200 split modules reviewed on 2026-10-05: pinned to this commit and without scripts. Written out here
+# rather than read from build_surge_modules, so changing SOURCES cannot move the expectation with it.
+FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
+FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "chinatelecom", "maoyan", "leke", "douban-app", "chinamobile"}
 SHARED_MITM = {
     ("12306", "advertising"): {"ad.12306.cn"},
+    ("advertising", "chinamobile"): {"client.app.coc.10086.cn"},
+    ("advertising", "chinatelecom"): {"cloud.189.cn"},
+    ("advertising", "douban-app"): {"api.douban.com"},
+    ("advertising", "hupu"): {"games.mobileapi.hupu.com", "goblin.hupu.com", "i*.hoopchina.com.cn"},
+    ("advertising", "leke"): {"lens.leoao.com"},
+    ("advertising", "maoyan"): {"p0.pipi.cn"},
+    ("advertising", "meituan"): {"img.meituan.net", "s3plus.meituan.net", "flowplus.meituan.net"},
+    ("advertising", "mijia"): {"home.mi.com"},
+    ("advertising", "wechat-mp"): {"mp.weixin.qq.com"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "m5-zb.amap.com", "m5.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
@@ -388,6 +405,15 @@ def check_rewrite_module(failures: list[str]) -> None:
                         f"got {[p.name for p in on_disk]}")
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
+    fmz200 = {s["file"]: s for s in sources if "fmz200/wool_scripts" in (s.get("url") or "")}
+    if set(fmz200) != FMZ200_FILES:
+        failures.append(f"fmz200 sources must be exactly {sorted(FMZ200_FILES)}, got {sorted(fmz200)}")
+    for name, source in fmz200.items():
+        if f"/fmz200/wool_scripts/{FMZ200_COMMIT}/" not in source["url"]:
+            failures.append(f"{name}: fmz200 source must be pinned to {FMZ200_COMMIT}: {source['url']}")
+        path = build_surge_modules.MODULE_DIR / f"{name}.sgmodule"
+        if path.exists() and "Script" in sections(path.read_text(encoding="utf-8")):
+            failures.append(f"{path.name}: the reviewed fmz200 modules must not run scripts")
     for path, source in zip(SPLIT, sources):
         text = path.read_text(encoding="utf-8")
         for old, new in source.get("pins", {}).items():

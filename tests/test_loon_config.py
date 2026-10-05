@@ -319,6 +319,26 @@ def check_hosted_plugins(failures: list[str]) -> None:
         failures.append("loon/plugins/Q-Search.plugin: the catch-all Google rule must be the first rewrite")
 
 
+# fmz200 split plugins reviewed on 2026-10-05: script-free, pinned to this commit, off until each passes
+# a device check. Written out here so that editing the template cannot move the expectation with it.
+FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
+FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "ChinaTelecom", "MaoYan",
+                  "LeKe", "Douban", "ChinaMobile"}
+
+
+def check_fmz200_plugins(failures: list[str]) -> None:
+    lines = [l for l in sections(LOON_CONFIG.read_text(encoding="utf-8")).get("Plugin", []) if "fmz200/wool_scripts" in l]
+    names = {re.sub(r"\.lpx$", "", l.split(",")[0].rsplit("/", 1)[-1]) for l in lines}
+    if names != FMZ200_PLUGINS or len(lines) != len(FMZ200_PLUGINS):
+        failures.append(f"loon: fmz200 plugins must be exactly {sorted(FMZ200_PLUGINS)}, got {sorted(names)}")
+    for line in lines:
+        url, _, rest = line.partition(",")
+        if f"/fmz200/wool_scripts/{FMZ200_COMMIT}/Loon/plugin/split/" not in url:
+            failures.append(f"loon: fmz200 plugin must be pinned to {FMZ200_COMMIT}: {url}")
+        if "enabled=false" not in rest.replace(" ", ""):
+            failures.append(f"loon: fmz200 plugin must stay off until checked on the device: {url}")
+
+
 def check_generator(failures: list[str]) -> None:
     sample = {
         "domain_suffix": ["example.com"],
@@ -363,6 +383,7 @@ def main() -> int:
     check_rules(loon, failures)
     check_runtime(loon, failures)
     check_hosted_plugins(failures)
+    check_fmz200_plugins(failures)
     check_generator(failures)
     if failures:
         print("Loon config checks failed:", file=sys.stderr)
