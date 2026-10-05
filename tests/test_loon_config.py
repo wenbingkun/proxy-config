@@ -322,7 +322,7 @@ def check_hosted_plugins(failures: list[str]) -> None:
 # fmz200 split plugins reviewed on 2026-10-05: script-free, pinned to this commit, off until each passes
 # a device check. Written out here so that editing the template cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "ChinaTelecom", "MaoYan",
+FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan",
                   "LeKe", "Douban", "ChinaMobile"}
 
 

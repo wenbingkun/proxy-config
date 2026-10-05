@@ -36,10 +36,10 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # these hosts blackmatrix7 Advertising carries only URL Rewrite lines; where its host-specific
 # patterns and another module's URL Rewrite match the same URL, both reject (amap.com, uve.weibo.com)
 # or redirect to the same target (google.cn, General and SafeRedirect). The others use different
-# sections there. Reviewed 2026-10-05 for the six app modules added that day (12306, damai, neteasemail,
+# sections there. Reviewed 2026-10-05 for the app modules added that day (damai, neteasemail,
 # umetrip): Advertising still has only URL Rewrite there and they use Script, Map Local and Body Rewrite;
 # Advertising's rejects run first in the request stage either way (umetrip startup, mail.163 /mmad/,
-# damai popup.get). Reviewed 2026-10-05 for the nine fmz200 domestic modules (chinamobile, chinatelecom,
+# damai popup.get). Reviewed 2026-10-05 for the fmz200 domestic modules (chinamobile,
 # douban-app, hupu, leke, maoyan, meituan, mijia, wechat-mp): Advertising has only URL Rewrite there; where
 # it and a new URL Rewrite match the same request both reject, and its rejects run before their Map Local
 # (Codex's worked examples: hupu search/hotkey, goblin getOther, hoopchina blogfile, meituan linglong and
@@ -49,11 +49,9 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # fmz200 split modules reviewed on 2026-10-05: pinned to this commit and without scripts. Written out here
 # rather than read from build_surge_modules, so changing SOURCES cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "chinatelecom", "maoyan", "leke", "douban-app", "chinamobile"}
+FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile"}
 SHARED_MITM = {
-    ("12306", "advertising"): {"ad.12306.cn"},
     ("advertising", "chinamobile"): {"client.app.coc.10086.cn"},
-    ("advertising", "chinatelecom"): {"cloud.189.cn"},
     ("advertising", "douban-app"): {"api.douban.com"},
     ("advertising", "hupu"): {"games.mobileapi.hupu.com", "goblin.hupu.com", "i*.hoopchina.com.cn"},
     ("advertising", "leke"): {"lens.leoao.com"},

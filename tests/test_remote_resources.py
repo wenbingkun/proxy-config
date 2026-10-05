@@ -118,7 +118,6 @@ def main() -> int:
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/4ff1d89274c694454ac3a494ae1a2d4cfd1edf56/weibo_json.js",
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/08ad3524ab6924afd86ad6dc18ed48050a8abede/weibo_search_info.json",
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
-        "https://raw.githubusercontent.com/ddgksf2013/Scripts/14f55c382e175702e65fe0bc2141c7b108c43e2a/12306.js",
         "https://raw.githubusercontent.com/Maasea/sgmodule/2c2c0adba8454f16c82c05fe5ed415badcbdd3d8/Script/WeRead/weread.js",
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.ads.js",
     }, plugin_urls

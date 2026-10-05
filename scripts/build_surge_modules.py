@@ -152,11 +152,6 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 12306", "path": "surge/modules/converted/12306.sgmodule",
-        "file": "12306", "title": "12306 去广告", "desc": "12306 去广告",
-        "arguments": {},
-    },
-    {
         "name": "Maasea WeRead",
         "file": "weread", "title": "微信读书精简", "desc": "去除微信读书的小红点、小圈子提示和评论数等，不是去广告",
         "url": "https://raw.githubusercontent.com/Maasea/sgmodule/"
@@ -191,12 +186,6 @@ SOURCES = (
         "name": "fmz200 Mijia",
         "file": "mijia", "title": "米家去广告", "desc": "米家开屏与横幅",
         "url": f"{FMZ200}/Surge/module/split/partM/Mijia.sgmodule",
-        "arguments": {},
-    },
-    {
-        "name": "fmz200 ChinaTelecom",
-        "file": "chinatelecom", "title": "中国电信去广告", "desc": "中国电信开屏与广告",
-        "url": f"{FMZ200}/Surge/module/split/partZ/ChinaTelecom.sgmodule",
         "arguments": {},
     },
     {
