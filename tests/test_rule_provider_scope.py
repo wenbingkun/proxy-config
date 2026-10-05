@@ -82,11 +82,20 @@ REQUIRED_LOCAL_DOMAINS = {
         "img-s-msn-com.akamaized.net",
         "msftstatic.com",
     },
+    # Apple Intelligence / Private Cloud Compute, including the suffixes folded in from
+    # ddgksf2013's AppleIntelligence.list, which no client loads any more.
     ROOT / "rules" / "apple_extra.yaml": {
         "apple-relay.cloudflare.com",
         "apple-relay.fastly-edge.com",
         "apple-relay.akamaized.net",
         "cp4.cloudflare.com",
+        "gateway.icloud.com",
+        "apple-relay.apple.com",
+        "guzzoni.apple.com",
+        "gspe1-ssl.ls.apple.com",
+        "smoot.apple.com",
+        "apple-relay.mask.apple-dns.net",
+        "api-siri-prod.apple.com",
     },
     ROOT / "rules" / "game_extra.yaml": {
         "just-dance.com",
@@ -222,8 +231,12 @@ def load_qx_remote_filters() -> list[tuple[str, str]]:
     return filters
 
 
-APPLE_INTELLIGENCE_URL = (
-    "https://raw.githubusercontent.com/ddgksf2013/Filter/refs/heads/master/AppleIntelligence.list"
+# Folded into rules/apple_extra.yaml; the shared rule set replaces the remote list on every client.
+APPLE_INTELLIGENCE_LIST = "ddgksf2013/Filter/refs/heads/master/AppleIntelligence.list"
+CLIENT_TEMPLATES = (
+    ROOT / "quantumultx" / "bootstrap.example.conf",
+    ROOT / "loon" / "bootstrap.example.conf",
+    ROOT / "surge" / "proxy-config.conf",
 )
 
 
@@ -286,18 +299,11 @@ def assert_shared_service_policies() -> None:
 
     assert qx_policy["Gemini"] == "🤖 人工智能", "Gemini must stay in the AI group"
 
-    enabled = load_qx_enabled_filters()
-    urls = [url for url, _ in enabled]
-    matches = [i for i, url in enumerate(urls) if url == APPLE_INTELLIGENCE_URL]
-    assert len(matches) == 1, "QX must load the Apple Intelligence list exactly once"
-    params = enabled[matches[0]][1]
-    assert params.get("force-policy") == home_auto("🍎 苹果服务"), (
-        "Apple Intelligence must follow the Apple services group"
-    )
-    apple = [i for i, url in enumerate(urls) if url.endswith("/rule/QuantumultX/Apple/Apple.list")]
-    assert len(apple) == 1 and matches[0] < apple[0], (
-        "Apple Intelligence must load before the generic Apple list"
-    )
+    for path in CLIENT_TEMPLATES:
+        assert APPLE_INTELLIGENCE_LIST not in path.read_text(encoding="utf-8"), (
+            f"{path.relative_to(ROOT)} must not load {APPLE_INTELLIGENCE_LIST}: "
+            "its suffixes live in rules/apple_extra.yaml"
+        )
 
 
 def assert_qx_cloudflare_domain_only() -> None:
