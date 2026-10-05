@@ -47,10 +47,11 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、Safari 超级搜索 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交 |
-| 高德地图、微信外链 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
-| 网易邮箱大师、小宇宙、大麦、航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
+| 高德地图 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
+| 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
+| 网易邮箱大师、大麦、航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
 | 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，模块和脚本都固定到提交（脚本由 `SOURCES` 的 `pins` 在生成时替换）；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
-| 微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动（2026-10-05 新增） | fmz200/wool_scripts 按 App 拆分的原生模块，固定到提交 `5d5f63f`，都没有脚本（测试锁定提交和无脚本）。QX 用 fmz200 的 QX 版（重写与分流各加一次，开解析器），Loon 用托管副本（只换图标）。没有采用 fmz200「美团」（整段拒绝 `d.meituan.net` 等后缀）|
+| 微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动（2026-10-05 新增），小宇宙（同日替换墨鱼版） | fmz200/wool_scripts 按 App 拆分的原生模块，固定到提交 `5d5f63f`，都没有脚本（测试锁定提交和无脚本）。QX 用 fmz200 的 QX 版（含分流的重写与分流各加一次，开解析器），Loon 用托管副本（换小 PNG 图标）；小宇宙三端另保留 AI 总结、正常搜索、分类与推荐，只拦截开屏及已知搜索/分类推广提示接口，首页只去掉 `DISCOVERY_BANNER`。没有采用 fmz200「美团」（整段拒绝 `d.meituan.net` 等后缀）|
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，2026-10 真机检查闲鱼搜索页正常。
 
