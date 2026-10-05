@@ -127,6 +127,39 @@ SOURCES = (
         "file": "general", "title": "神机重定向", "desc": "神机重定向，如 google.cn 跳转到 google.com",
         "arguments": {},
     },
+    # Added 2026-10-05 for apps on the phone that blackmatrix7 Advertising barely covers.
+    {
+        "name": "ddgksf2013 NeteaseMailAds", "path": "surge/modules/converted/NeteaseMailAds.sgmodule",
+        "file": "neteasemail", "title": "网易邮箱大师去广告", "desc": "网易邮箱大师去广告",
+        "arguments": {},
+    },
+    {
+        "name": "ddgksf2013 XiaoYuZhouAds", "path": "surge/modules/converted/XiaoYuZhouAds.sgmodule",
+        "file": "xiaoyuzhou", "title": "小宇宙去广告", "desc": "小宇宙去广告",
+        "arguments": {},
+    },
+    {
+        "name": "ddgksf2013 DaMaiAds", "path": "surge/modules/converted/DaMaiAds.sgmodule",
+        "file": "damai", "title": "大麦去广告", "desc": "大麦去广告",
+        "arguments": {},
+    },
+    {
+        "name": "ddgksf2013 UmetripAds", "path": "surge/modules/converted/UmetripAds.sgmodule",
+        "file": "umetrip", "title": "航旅纵横去广告", "desc": "航旅纵横去广告",
+        "arguments": {},
+    },
+    {
+        "name": "ddgksf2013 12306", "path": "surge/modules/converted/12306.sgmodule",
+        "file": "12306", "title": "12306 去广告", "desc": "12306 去广告",
+        "arguments": {},
+    },
+    {
+        "name": "Maasea WeRead",
+        "file": "weread", "title": "微信读书精简", "desc": "去除微信读书的小红点、小圈子提示和评论数等，不是去广告",
+        "url": "https://raw.githubusercontent.com/Maasea/sgmodule/"
+        "db50d23ecb3900ad1d945526de50290d6e1bb044/WeRead.sgmodule",
+        "arguments": {},
+    },
 )
 # Sections a module may carry here. [General] and [MITM] are key = value sections whose
 # %APPEND% values are merged; the others are line lists kept in source order.

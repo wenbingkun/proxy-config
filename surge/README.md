@@ -48,6 +48,8 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 微博、闲鱼、豆瓣网页、Safari 超级搜索、神机重定向 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交 |
 | 高德地图、微信外链 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
+| 网易邮箱大师、小宇宙、大麦、航旅纵横、12306（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`（处理二进制响应体，加 `binary-body-mode=1`） |
+| 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，固定到提交；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，2026-10 真机检查闲鱼搜索页正常。
 
@@ -62,7 +64,8 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 - 按主机名看，不同模块在只执行第一条匹配的段（Script、Map Local、URL Rewrite、Header Rewrite）里没有冲突（amdc 脚本除外，两边结果相同，见下）。共享的 MitM 主机名上，blackmatrix7 通用去广告只有 URL Rewrite；它和高德、微博的 URL Rewrite 同时命中时都是 reject，`google.cn` 的跳转在神机重定向和安全重定向里写法相同。共享清单固定在 `tests/test_surge_config.py` 的 `SHARED_MITM`，来源更新后清单变化，测试会失败，要重新核对。
 - **例外**：通用去广告里有一批不限主机的 reject 模式，如 `(?i)\badvertising`、`(?i)\badvertisement`、`(?i)\bsplash_screen`、`(?i)\b\/ad\/`，以及按 IP 地址主机写的模式。被解密的请求或纯 HTTP 请求，URL 里带这些词时，会同时命中通用去广告和别的模块的跳转，结果由模块顺序决定。已知的情况：DuckDuckGo 搜索词含 advertising 等词时，Safari 超级搜索的跳转（被拒绝时搜索失败）；知乎外链 `link.zhihu.com/?target=` 的目标地址含 `/ad/` 时；`google.cn`、纯 HTTP 站点的路径带这些词时，与神机重定向 / 安全重定向的跳转。只涉及带这些词的请求，接受这个差异；`SHARED_MITM` 查不出这类重叠。
 - Rule 段：B 站的 `DEST-PORT` 拒绝和知乎的 `USER-AGENT,"AVOS*"` 拒绝不限主机，理论上可以与高德、微博的 DIRECT 域名规则同时命中，实际不会出现。
-- 高德去广告与闲鱼去广告都对纯 HTTP 的 `amdc.m.taobao.com/amdc/mobileDispatch` 执行同一个 `amdc.js`（同一提交、同一参数），无论谁先执行，结果都一样。
+- 高德去广告、闲鱼去广告、大麦去广告都对纯 HTTP 的 `amdc.m.taobao.com/amdc/mobileDispatch` 执行同一个 `amdc.js`（同一提交、同一参数），无论谁先执行，结果都一样。
+- 2026-10-05 新增的网易邮箱大师、大麦、航旅纵横、12306 与通用去广告共享 MitM 主机名，但通用去广告在这些主机上只有 URL Rewrite，新模块用的是 Script、Map Local 和 Body Rewrite，不在同一段。通用去广告的拒绝在请求阶段先执行，所以航旅纵横的 `startup` 接口、网易邮箱的 `/mmad/`、大麦的弹窗接口仍由它拒绝，新模块对这几处不起作用。
 - 通用去广告还带 `[General] force-http-engine-hosts`（其中有 `weibointl.api.weibo.cn`）。只启用微博去广告、不启用通用去广告时没有这一项，对微博国际版有没有影响未核实。
 
 在「模块 → 安装新模块」中填写以下 URL（复制时注意不要带上空格）：
@@ -86,6 +89,12 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 | 豆瓣网页增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/douban.sgmodule` | 按需启用 |
 | Safari 超级搜索 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/q-search.sgmodule` | 按需启用 |
 | 神机重定向 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/general.sgmodule` | 按需启用 |
+| 网易邮箱大师去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/neteasemail.sgmodule` | 按需启用 |
+| 小宇宙去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaoyuzhou.sgmodule` | 按需启用 |
+| 大麦去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/damai.sgmodule` | 按需启用 |
+| 航旅纵横去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/umetrip.sgmodule` | 按需启用 |
+| 12306 去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/12306.sgmodule` | 按需启用 |
+| 微信读书精简 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/weread.sgmodule` | 按需启用 |
 
 除两个家庭模块外，上表的模块都需要 MitM。Loon 中这些插件默认全部启用；不用的 App 可以不装，或在模块列表里关掉。
 

@@ -1,0 +1,23 @@
+#!name=XiaoYuZhouAds
+#!desc=XiaoYuZhouAds
+#!icon=https://github.com/Toperlock/Quantumult/raw/main/icon/Doraemon/Doraemon-1032.png
+# Frozen Loon conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Rewrite/8d19feb7390d192af3f7461c6998102074256eac/AdBlock/XiaoYuZhouAds.conf
+# Source SHA-256: 99fb43e0eab706d199cec15e265fd7e9da50125cc4f248d2ee714e98b688c181
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=loon-plugin) on 2026-10-05.
+# To refresh, reconvert the new source the same way, redo the edits above and send the result
+# through a PR.
+
+[Rewrite]
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/discovery-feed\/list response-body-json-jq '.data |= map(select(.type != "DISCOVERY_BANNER"))'
+# > 搜索推广@ddgksf2013
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/search\/get-express - reject-200
+# > 搜索填词@ddgksf2013
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/search\/get-preset - reject-200
+# > 搜索建议@ddgksf2013
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/category\/list-daily-suggestion - reject-200
+# > 开屏广告@ddgksf2013
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/flash-screen\/list - reject-200
+
+[MITM]
+hostname = api.xiaoyuzhoufm.com, 118.31.123.175, 112.124.203.116, 118.31.125.171, 47.57.181.112, 47.57.182.96

@@ -1,0 +1,17 @@
+#!name=12306
+#!desc=12306
+#!icon=https://github.com/Toperlock/Quantumult/raw/main/icon/Doraemon/Doraemon-1036.png
+# Frozen Loon conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Scripts/14f55c382e175702e65fe0bc2141c7b108c43e2a/12306.js (the rewrite is in the script header)
+# Source SHA-256: 4723bc2236835eea0a8b79529c832a9af1cfd37fa1b160becb3a4b51f9067cd5
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=loon-plugin) on 2026-10-05.
+# Edited after conversion:
+#   - script path pinned: https://raw.githubusercontent.com/ddgksf2013/Scripts/14f55c382e175702e65fe0bc2141c7b108c43e2a/12306.js
+# To refresh, reconvert the new source the same way, redo the edits above and send the result
+# through a PR.
+
+[Script]
+http-request ^https?:\/\/ad\.12306\.cn\/ad\/ser\/getAdList script-path=https://raw.githubusercontent.com/ddgksf2013/Scripts/14f55c382e175702e65fe0bc2141c7b108c43e2a/12306.js, requires-body=true, timeout=60, tag=12306
+
+[MITM]
+hostname = ad.12306.cn

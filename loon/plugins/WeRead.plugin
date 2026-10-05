@@ -1,0 +1,17 @@
+#!name=微信阅读精简
+#!desc=去除微信阅读扰人提示(beta)
+#!icon=https://github.com/Toperlock/Quantumult/raw/main/icon/Doraemon/Doraemon-1083.png
+# Frozen Loon conversion of Maasea's Surge module; do not edit by hand.
+# Source: https://raw.githubusercontent.com/Maasea/sgmodule/db50d23ecb3900ad1d945526de50290d6e1bb044/WeRead.sgmodule
+# Source SHA-256: 38f5cf3b3b7cd4c63b1e5b0e5b7b54248f6018a4389c2a0a4d775d083c226a63
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=surge-module&target=loon-plugin) on 2026-10-05.
+# Edited after conversion:
+#   - script path pinned: https://raw.githubusercontent.com/Maasea/sgmodule/2c2c0adba8454f16c82c05fe5ed415badcbdd3d8/Script/WeRead/weread.js
+# To refresh, reconvert the new source the same way, redo the edits above and send the result
+# through a PR.
+
+[Script]
+http-response https:\/\/i\.weread\.qq\.com\/(book\/(reading[sS]tat|chapterReview)|user\/profile|groups\/readerEntrance|review\/list|mobileSync) script-path=https://raw.githubusercontent.com/Maasea/sgmodule/2c2c0adba8454f16c82c05fe5ed415badcbdd3d8/Script/WeRead/weread.js, requires-body=true, tag=WeRead
+
+[MITM]
+hostname = i.weread.qq.com
