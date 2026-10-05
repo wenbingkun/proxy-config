@@ -51,6 +51,8 @@ PLAIN_JSON = json.dumps({"keep": "normal", "list": [1, 2]})
 CASES = [
     {"name": "json text with ads", "body": AD_JSON},
     {"name": "json bytes with ads", "jsonBytes": AD_JSON},
+    *[{"name": "json bytes prefix " + name, "jsonBytes": prefix + AD_JSON}
+      for name, prefix in (("space", " "), ("CR", "\r"), ("LF", "\n"), ("TAB", "\t"), ("mixed", " \r\n\t"))],
     {"name": "plain json text", "body": PLAIN_JSON},
     {"name": "protobuf rpid 1000019", "headers": {"rpid": "1000019"}, "bytes": [58, 2, 8, 1]},
     {"name": "protobuf unknown rpid", "headers": {"rpid": "42"}, "bytes": [58, 2, 8, 1]},
@@ -73,8 +75,10 @@ def main() -> int:
     got = {r["name"]: r for r in json.loads(run.stdout)}
     failures = [f"{name}: $done ran {r['calls']} times" for name, r in got.items() if r["calls"] != 1]
 
-    for name in ("json text with ads", "json bytes with ads"):
+    for name in (c["name"] for c in CASES if "with ads" in c["name"] or c["name"].startswith("json bytes prefix ")):
         r = got[name]
+        if name.startswith("json bytes") and r["kind"] != "bytes":
+            failures.append(f"{name}: must return bodyBytes")
         doc = json.loads(r.get("text") or "null") if r["kind"] != "pass" else None
         if not doc or doc.get("advertDataList") != [] or doc.get("keep") != "normal":
             failures.append(f"{name}: ads must be removed and keep kept, got {r}")
