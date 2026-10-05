@@ -49,7 +49,11 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # fmz200 split modules reviewed on 2026-10-05: pinned to this commit and without scripts. Written out here
 # rather than read from build_surge_modules, so changing SOURCES cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile"}
+FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou"}
+# fmz200 modules that run a script: only these scripts, pinned through SOURCES "pins" (2026-10-05).
+FMZ200_SCRIPTED = {
+    "wechat": {"https://raw.githubusercontent.com/zZPiglet/Task/0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js"},
+}
 SHARED_MITM = {
     ("advertising", "chinamobile"): {"client.app.coc.10086.cn"},
     ("advertising", "douban-app"): {"api.douban.com"},
@@ -404,13 +408,21 @@ def check_rewrite_module(failures: list[str]) -> None:
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
     fmz200 = {s["file"]: s for s in sources if "fmz200/wool_scripts" in (s.get("url") or "")}
-    if set(fmz200) != FMZ200_FILES:
-        failures.append(f"fmz200 sources must be exactly {sorted(FMZ200_FILES)}, got {sorted(fmz200)}")
+    if set(fmz200) != FMZ200_FILES | set(FMZ200_SCRIPTED):
+        failures.append(f"fmz200 sources must be exactly {sorted(FMZ200_FILES | set(FMZ200_SCRIPTED))}, "
+                        f"got {sorted(fmz200)}")
     for name, source in fmz200.items():
         if f"/fmz200/wool_scripts/{FMZ200_COMMIT}/" not in source["url"]:
             failures.append(f"{name}: fmz200 source must be pinned to {FMZ200_COMMIT}: {source['url']}")
         path = build_surge_modules.MODULE_DIR / f"{name}.sgmodule"
-        if path.exists() and "Script" in sections(path.read_text(encoding="utf-8")):
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        if name in FMZ200_SCRIPTED:
+            scripts = set(re.findall(r"script-path=([^,\s]+)", text))
+            if scripts != FMZ200_SCRIPTED[name]:
+                failures.append(f"{path.name}: scripts must be exactly {sorted(FMZ200_SCRIPTED[name])}, got {sorted(scripts)}")
+        elif "Script" in sections(text):
             failures.append(f"{path.name}: the reviewed fmz200 modules must not run scripts")
     for path, source in zip(SPLIT, sources):
         text = path.read_text(encoding="utf-8")

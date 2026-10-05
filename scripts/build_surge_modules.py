@@ -26,6 +26,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from xiaoyuzhou_rewrites import preserve_features
+
 ROOT = Path(__file__).resolve().parent.parent
 MODULE_DIR = ROOT / "surge" / "modules" / "rewrite"
 # fmz200/wool_scripts at the commit reviewed on 2026-10-05 (domestic app modules).
@@ -74,8 +76,15 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 微信外链解锁", "path": "surge/modules/converted/UnblockURLinWeChat.sgmodule",
+        # zZPiglet's original script (2026-10-05; it replaced ddgksf2013's repack). fmz200's module
+        # loads it from master; its main branch is empty, so pin master's last commit.
+        "name": "fmz200 WeChatUnlockLinkRestrict",
         "file": "wechat", "title": "微信外链解锁", "desc": "在微信内直接打开被拦截的外部链接",
+        "url": f"{FMZ200}/Surge/module/split/partW/WeChatUnlockLinkRestrict.sgmodule",
+        "pins": {
+            "https://raw.githubusercontent.com/zZPiglet/Task/master/asset/UnblockURLinWeChat.js":
+            "https://raw.githubusercontent.com/zZPiglet/Task/0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js",
+        },
         "arguments": {},
     },
     {
@@ -139,8 +148,10 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 XiaoYuZhouAds", "path": "surge/modules/converted/XiaoYuZhouAds.sgmodule",
+        # fmz200's split module (2026-10-05; it replaced ddgksf2013's XiaoYuZhouAds), script-free.
+        "name": "fmz200 XiaoYuZhou",
         "file": "xiaoyuzhou", "title": "小宇宙去广告", "desc": "小宇宙去广告",
+        "url": f"{FMZ200}/Surge/module/split/partX/XiaoYuZhou.sgmodule",
         "arguments": {},
     },
     {
@@ -321,6 +332,9 @@ def load_sources() -> list[tuple[dict, list[str], dict[str, list[str]]]]:
             + (", ".join(f"{k}={v}" for k, v in source["arguments"].items()) or "defaults"),
         ]
         text = apply_arguments(body.decode("utf-8"), source["name"], source["arguments"])
+        if source["file"] == "xiaoyuzhou":
+            text = preserve_features(text)
+            provenance.append("#   changes: preserve AI summaries, normal search, categories and recommendations")
         for old, new in source.get("pins", {}).items():
             if text.count(old) != 1:
                 raise SourceError(f"{source['name']}: pin target {old} must appear exactly once")

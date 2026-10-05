@@ -94,7 +94,6 @@ def main() -> int:
     assert {
         "https://ddgksf2013.top/rewrite/StartUpAds.conf",
         "https://ddgksf2013.top/rewrite/XiaoHongShuAds.conf",
-        "https://ddgksf2013.top/scripts/zhihu.ads.js",
     } <= set(urls)
 
     # A URL used by both QX and Loon is checked once for each client, each with its own UA.

@@ -41,15 +41,17 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 导入完成后，bootstrap 中已预配置的远程资源（规则、重写、脚本等）会在 QX 首次刷新时自动拉取。
 
-墨鱼规则同时使用其公开 GitHub 仓库和自建域名资源。`StartUpAds.conf`、`XiaoHongShuAds.conf`、`zhihu.ads.js` 和 `DaMaiAds.conf` 会根据客户端 User-Agent 返回不同内容：Quantumult X 请求可获取有效规则或脚本，普通浏览器请求则可能返回 HTML 页面。仓库的远程资源检查会对 QX 资源模拟 Quantumult X 请求。
+墨鱼规则同时使用其公开 GitHub 仓库和自建域名资源。`StartUpAds.conf`、`XiaoHongShuAds.conf` 和 `DaMaiAds.conf` 会根据客户端 User-Agent 返回不同内容：Quantumult X 请求可获取有效规则或脚本，普通浏览器请求则可能返回 HTML 页面。仓库的远程资源检查会对 QX 资源模拟 Quantumult X 请求。
 
 哔哩哔哩：使用仓库内冻结的旧版规则 `quantumultx/rewrite/bilibili_ad.conf`（deezertidal 转载的墨鱼 `biliad.conf`，最后更新 2023-06-08），其失效的 `bilibili_json.js` 已替换为仓库内 `quantumultx/scripts/bilibili_json.js`（墨鱼 GitHub 删除前的最后一版，2025-03-31）。上游均已停更，此版本不会再更新；它解密 `app.bilibili.com` 等 B 站接口主机，有意不解密 `grpc.biliapi.net`；只要解密 `app.bilibili.com`，Quantumult X 下历史记录与评论区加载就可能偏慢。视频播放页的广告（播放器下方的推广卡等）来自 `grpc.biliapi.net` 上的 `bilibili.app.viewunite` 接口，冻结版处理不到，真机已确认；在 QX 上接受这一点：要去掉它，需要解密 `grpc.biliapi.net` 并另加处理该接口的规则，这会让加载再次变慢。不要与墨鱼自建站 `BiliBiliAds.conf` 或 Biliverse ADBlock 同时启用。
 
 冻结版的规则、`bilibili_json.js` 和两个外部脚本（app2smile `bilibili-proto.js`、yjqiang `bilibili_dynamic.js`，链接固定到 2026-09-30 的提交）都不会随上游变化。它自带 hostname，使用 `opt-parser=true` 与原版一致，不需要 `#outhn=*`，也不依赖「仓库自定义重写」。脚本会把「我的」页会员字段改成大会员样式，这只影响客户端显示，不会获得服务端会员权益。冻结版中动态相关的两条规则原文都含 `DynAll`，其中 app2smile 那条的正则还包含 `app.bilibili.com` 上的旧接口 `view.v1.View/View`（如上，当前视频页广告不经过它），若要排除它们，把 bootstrap 中的链接写成 `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/bilibili_ad.conf#out=DynAll`（链接原本没有 `#` 参数，首个参数用 `#`，之后的参数才用 `&` 连接），这会把 app2smile 那条整行去掉；此做法未经真机验证。
 
-2026-10-05 新增的重写默认关闭，真机验收后再开：网易邮箱大师、小宇宙、大麦直接引用墨鱼原版；航旅纵横用仓库托管的 `quantumultx/rewrite/UmetripAds.conf`（原版引用的 `/rewrite/umetrip.ads.js` 对所有客户端都返回网页，改为指向托管的脚本副本 `quantumultx/scripts/umetrip.ads.js`；副本修正了上游没有接上的 JSON 清理入口，见 `tests/test_umetrip_script.py`）；微信读书精简是 Maasea 的 Surge 模块，Script-Hub 转换失败，`quantumultx/rewrite/WeRead.conf` 按原模块手写，脚本固定到提交。同日加入的 12306 重写已移除：Surge 真机记录显示 `ad.12306.cn` 被 AdRules 预匹配拒绝，脚本未执行；QX 的 AdRules 也包含该域名（走 🛡️ 安全防护），此次一并移除模板条目，QX 未单独做脚本执行顺序验收。
+2026-10-05 新增的重写默认关闭，真机验收后再开：网易邮箱大师、大麦直接引用墨鱼原版；航旅纵横用仓库托管的 `quantumultx/rewrite/UmetripAds.conf`（原版引用的 `/rewrite/umetrip.ads.js` 对所有客户端都返回网页，改为指向托管的脚本副本 `quantumultx/scripts/umetrip.ads.js`；副本修正了上游没有接上的 JSON 清理入口，见 `tests/test_umetrip_script.py`）；微信读书精简是 Maasea 的 Surge 模块，Script-Hub 转换失败，`quantumultx/rewrite/WeRead.conf` 按原模块手写，脚本固定到提交。同日加入的 12306 重写已移除：Surge 真机记录显示 `ad.12306.cn` 被 AdRules 预匹配拒绝，脚本未执行；QX 的 AdRules 也包含该域名（走 🛡️ 安全防护），此次一并移除模板条目，QX 未单独做脚本执行顺序验收。
 
 同日新增 fmz200 按 App 拆分的 8 个模块（微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动），与 Surge、Loon 同一提交 `5d5f63f`，默认关闭。它们的 `.snippet` 同时含重写和分流，所以同一地址加两次：`[rewrite_remote]` 8 行；含分流规则的虎扑、米家、豆瓣 App、中国移动另在 `[filter_remote]` 加 4 行，`force-policy=🛡️ 安全防护`，放在 AdRules 之后。两处都必须 `opt-parser=true`，由 `resource_parser_url`（KOP-XIAO 解析器，跟随其 master）分别取出重写和分流。2026-10-05 真机实验：虎扑在重写里读出 8 条、在分流里读出 5 条，没有混入另一类。解析器不可用时这 12 项读不出规则。重写排在 bm7、去开屏 2.0、小程序去广告之后，与它们重叠的请求（例如微信公众号文章广告、乐刻和豆瓣的广告接口）由前面的资源先处理。
+
+同日替换掉四项墨鱼资源，新条目同样默认关闭、真机验收后再开，原位置不变（QX 只执行第一条匹配的重写）：知乎改用仓库托管的 fmz200 冻结副本 `quantumultx/rewrite/fmz200-Zhihu.snippet`（只把 11 处脚本地址从 `main` 固定到 `5d5f63f`、图标换成 App Store 小 PNG；同时含分流，`[rewrite_remote]` 与 `[filter_remote]` 各一行，都 `opt-parser=true`）；微信外链改用 `quantumultx/rewrite/WeChatUnblock.conf`，直接加载 zZPiglet 原版脚本（固定到 `0a70fbe`，墨鱼版是它的重新打包）；YouTube 改用 `quantumultx/rewrite/YouTube.conf`，按 Maasea 的 Surge 模块手写，脚本固定到 `65075cd`（与 Surge 模块同一提交），只解密 `youtubei.googleapis.com`；小宇宙改用托管的 `fmz200-XiaoYuZhou.snippet`（无脚本）：移除 AI 总结拦截，搜索和分类只拦截旧版已针对的推广/提示接口，首页仅去掉 `DISCOVERY_BANNER`，保留普通推荐。`tests/test_qx_config.py` 锁定这些文件允许加载的脚本。
 
 ## 家庭 / 外出自动切换
 

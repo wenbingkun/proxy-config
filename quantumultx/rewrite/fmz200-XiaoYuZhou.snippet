@@ -1,0 +1,29 @@
+#!name=小宇宙
+#!desc=某些APP要清除缓存或者重新安装拦截广告才会生效！
+#!author=奶思
+#!homepage=https://github.com/fmz200/wool_scripts
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/01/79/78/01797835-05d5-f693-5b59-0937a2786021/AppIcon-0-0-1x_U007epad-0-1-85-220.png/100x100bb.png
+#!raw-url=https://github.com/fmz200/wool_scripts/raw/main/QuantumultX/rewrite/split/partX/XiaoYuZhou.snippet
+#!tg-group=https://t.me/QuantumultXCommunity
+#!date=undefined
+# Frozen modified fmz200 QX snippet; source changes require another review.
+# Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/partX/XiaoYuZhou.snippet
+# Source SHA-256: b8393c807c66c6dad18ff114dc54fc7745642099f52668f55b89dfd1cbb93d47
+# Changes: small PNG icon; keep AI summaries, normal search, categories and recommendations.
+# To refresh: apply scripts/xiaoyuzhou_rewrites.py preserve_features to the pinned source,
+# replace #!icon with the App Store PNG, and review the result with the Loon/Surge outputs.
+#############################################
+
+
+# 首页净化
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/discovery-feed\/list url jsonjq-response-body '.data |= map(select(.type != "DISCOVERY_BANNER"))'
+#
+
+# 移除开屏广告
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/flash-screen\/list(\?|$) url reject-dict
+
+# 移除搜索框内容
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/search\/(get-express|get-preset)(\?|$) url reject-dict
+^https?:\/\/api\.xiaoyuzhoufm\.com\/v\d\/category\/list-daily-suggestion(\?|$) url reject-dict
+
+hostname = api.xiaoyuzhoufm.com

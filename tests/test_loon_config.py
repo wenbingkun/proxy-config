@@ -253,8 +253,10 @@ def check_rules(loon: dict, failures: list[str]) -> None:
     for line in sections(QX_CONFIG.read_text(encoding="utf-8"))["filter_remote"]:
         opts = dict(p.strip().split("=", 1) for p in line.split(",")[1:] if "=" in p)
         # QX loads fmz200's app snippets twice, as rewrites and as filters; Loon gets those domain
-        # rules from the same apps' plugins ([Rule]), so they have no [Remote Rule] counterpart.
-        if "fmz200/wool_scripts" in line.split(",")[0]:
+        # rules from the same apps' plugins ([Rule]), so they have no [Remote Rule] counterpart. The
+        # same holds for the hosted fmz200 copies (quantumultx/rewrite/fmz200-*.snippet).
+        url = line.split(",")[0]
+        if "fmz200/wool_scripts" in url or url.startswith(REPO_RAW + "quantumultx/rewrite/fmz200-"):
             continue
         if "force-policy" in opts:
             qx_remote.append((opts["tag"], wrapped(loon, opts["force-policy"]), opts.get("enabled")))
@@ -328,7 +330,7 @@ def check_hosted_plugins(failures: list[str]) -> None:
 # here so that editing the template or the generator cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
 FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban",
-                  "ChinaMobile"}
+                  "ChinaMobile", "XiaoYuZhou"}
 MIRROR_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/fmz200-"
 
 

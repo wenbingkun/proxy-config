@@ -7,6 +7,7 @@ build_rules.HOME_AUTO_GROUPS, which also generates the QX snippet policies.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -176,6 +177,86 @@ def check_fmz200(failures: list[str]) -> None:
                 failures.append(f"QX [filter_remote]: {url.rsplit('/', 1)[-1]} must use force-policy=🛡️ 安全防护")
 
 
+# Hosted rewrites that replaced ddgksf2013's (2026-10-05): the scripts each may load, pinned to the
+# reviewed commits, and whether QX also loads the file as a filter (mixed snippet). Off until checked
+# on the device.
+REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/"
+HOSTED_REWRITES = {
+    "fmz200-XiaoYuZhou.snippet": (set(), False),
+    "fmz200-Zhihu.snippet": ({"https://raw.githubusercontent.com/fmz200/wool_scripts/"
+                              "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js"}, True),
+    "WeChatUnblock.conf": ({"https://raw.githubusercontent.com/zZPiglet/Task/"
+                            "0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js"}, False),
+    "YouTube.conf": ({"https://raw.githubusercontent.com/Maasea/sgmodule/"
+                      "65075cdb388fc5e3094afd7e7314c67b243f3525/Script/Youtube/youtube.response.js"}, False),
+}
+REPLACED_DDGKSF2013 = ("scripts/zhihu.ads.js", "AdBlock/YoutubeAds.conf", "Function/UnblockURLinWeChat.conf",
+                       "AdBlock/XiaoYuZhouAds.conf")
+
+
+def check_hosted_rewrites(failures: list[str]) -> None:
+    text = QX_CONFIG.read_text(encoding="utf-8")
+    sec = sections(text)
+    for old in REPLACED_DDGKSF2013:
+        if old in text:
+            failures.append(f"QX: {old} was replaced by a pinned source and must not come back")
+    for name, (scripts, as_filter) in HOSTED_REWRITES.items():
+        body = (ROOT / "quantumultx" / "rewrite" / name).read_text(encoding="utf-8")
+        found = set(re.findall(r"\burl script-[a-z-]+ (\S+)", body))
+        if found != scripts:
+            failures.append(f"quantumultx/rewrite/{name}: scripts must be exactly {sorted(scripts)}, got {sorted(found)}")
+        for section, wanted in (("rewrite_remote", True), ("filter_remote", as_filter)):
+            lines = [l for l in sec.get(section, []) if l.split(",")[0].strip() == REPO_REWRITE + name]
+            if len(lines) != (1 if wanted else 0):
+                failures.append(f"QX [{section}]: {name} must be loaded {'once' if wanted else 'not at all'}")
+            for line in lines:
+                opts = line.replace(" ", "")
+                if "enabled=false" not in opts:
+                    failures.append(f"QX [{section}]: {name} must stay off until checked on the device")
+                if name.endswith(".snippet") and "opt-parser=true" not in opts:
+                    failures.append(f"QX [{section}]: snippet {name} needs opt-parser=true")
+                if section == "filter_remote" and "force-policy=🛡️安全防护" not in opts:
+                    failures.append(f"QX [filter_remote]: {name} must use force-policy=🛡️ 安全防护")
+
+
+def check_xiaoyuzhou_features(failures: list[str]) -> None:
+    # Exercise the actual native URL patterns on all three clients. A source can stay pinned
+    # while still blocking normal features, which the pin-only checks cannot catch.
+    paths = (
+        ROOT / "quantumultx/rewrite/fmz200-XiaoYuZhou.snippet",
+        ROOT / "loon/plugins/fmz200-XiaoYuZhou.plugin",
+        ROOT / "surge/modules/rewrite/xiaoyuzhou.sgmodule",
+    )
+    normal = (
+        "ai", "ai/summary", "search/get", "search/get-results", "search/query",
+        "search/get-preset-result", "category/list", "category/list-podcasts",
+        "category/list-daily-suggestion-extra", "related-episode/list", "operation-resource/list",
+        "flashcards/list",
+    )
+    cleanup = ("flash-screen/list", "search/get-express", "search/get-preset", "category/list-daily-suggestion",
+               "discovery-feed/list")
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        rules = [line for line in text.splitlines() if line.startswith(("^https", "http-response-jq "))]
+        patterns = [re.compile(next(part for part in line.split() if part.startswith("^https"))) for line in rules]
+        if len(rules) != 4:
+            failures.append(f"{path.relative_to(ROOT)}: expected four scoped XiaoYuZhou rewrites")
+        for version in (1, 2):
+            for query in ("", "?q=example"):
+                for endpoint in normal:
+                    url = f"https://api.xiaoyuzhoufm.com/v{version}/{endpoint}{query}"
+                    if any(p.search(url) for p in patterns):
+                        failures.append(f"{path.relative_to(ROOT)}: normal feature must pass through: {url}")
+                for endpoint in cleanup:
+                    url = f"https://api.xiaoyuzhoufm.com/v{version}/{endpoint}{query}"
+                    if sum(bool(p.search(url)) for p in patterns) != 1:
+                        failures.append(f"{path.relative_to(ROOT)}: cleanup endpoint must match exactly once: {url}")
+        discovery = [line for line in rules if "discovery-feed" in line]
+        expected_jq = "'" + '.data |= map(select(.type != "DISCOVERY_BANNER"))' + "'"
+        if len(discovery) != 1 or not discovery[0].endswith(expected_jq):
+            failures.append(f"{path.relative_to(ROOT)}: discovery must keep all items except DISCOVERY_BANNER")
+
+
 def check_generator(failures: list[str]) -> None:
     for policy in ("DIRECT", "REJECT", AD_GROUP, "🌏 全球加速"):
         if build_rules.home_auto(policy) != policy:
@@ -192,6 +273,8 @@ def main() -> int:
     check(failures)
     check_dns(failures)
     check_fmz200(failures)
+    check_hosted_rewrites(failures)
+    check_xiaoyuzhou_features(failures)
     check_generator(failures)
     if failures:
         print("QX config checks failed:", file=sys.stderr)
