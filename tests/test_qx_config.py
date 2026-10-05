@@ -156,8 +156,9 @@ def check_dns(failures: list[str]) -> None:
 # each is loaded as a rewrite and, where it carries domain rules, again as a filter. Both need the
 # resource parser (opt-parser=true): on the device it kept the two kinds apart (Hupu: 8 rewrites, 5 filters).
 FMZ200_SNIPPETS = "https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/"
-FMZ200_REWRITES = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban", "ChinaMobile"}
-FMZ200_FILTERS = {"Hupu", "Mijia", "Douban", "ChinaMobile"}
+FMZ200_REWRITES = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban", "ChinaMobile",
+                   "AutoNavi"}
+FMZ200_FILTERS = {"Hupu", "Mijia", "Douban", "ChinaMobile", "AutoNavi"}
 
 
 def check_fmz200(failures: list[str]) -> None:
@@ -184,6 +185,7 @@ REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/q
 REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
     "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
+    "AlibabaAmdc.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}, False),
     "fmz200-XiaoYuZhou.snippet": (set(), False),
     "fmz200-Zhihu.snippet": ({"https://raw.githubusercontent.com/fmz200/wool_scripts/"
                               "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js"}, True),
@@ -194,7 +196,8 @@ HOSTED_REWRITES = {
 }
 HOSTED_ACCEPTED = {"fmz200-XiaoYuZhou.snippet", "fmz200-Zhihu.snippet", "WeChatUnblock.conf", "YouTube.conf"}
 REPLACED_DDGKSF2013 = ("scripts/zhihu.ads.js", "AdBlock/YoutubeAds.conf", "Function/UnblockURLinWeChat.conf",
-                       "AdBlock/XiaoYuZhouAds.conf", "rewrite/XiaoHongShuAds.conf")
+                       "AdBlock/XiaoYuZhouAds.conf", "rewrite/XiaoHongShuAds.conf",
+                       "AdBlock/AmapAds.conf")
 
 
 def check_hosted_rewrites(failures: list[str]) -> None:

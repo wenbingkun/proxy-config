@@ -55,6 +55,8 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 小红书（2026-10-05）：墨鱼 `XiaoHongShuAds.conf` 换成仓库托管的 fmz200 冻结副本 `quantumultx/rewrite/fmz200-Xiaohongshu.snippet`（重写与分流各一行，`opt-parser=true`，验收前默认关闭）。其中 12 处脚本地址指向仓库托管的 `quantumultx/scripts/xiaohongshu.js`：fmz200 `xiaohongshu.js`（`5d5f63f`，GPL-3.0，许可见同目录 `LICENSE.fmz200`）加三处修改——首页推荐去掉视频笔记（条目 `type` 为 `video`，2026-10-05 Surge 采样确认）、首页频道去掉「视频」（`/v6/homefeed/categories` 中 `oid` 以 `homefeed.video` 开头的频道，另加一条规则匹配该接口）、非 JSON 响应原样放行且 `$done` 只调用一次（`tests/test_xiaohongshu_script.py`）。关注页与搜索里的视频不过滤。Loon、Surge 加载同一个脚本。同日验收通过的知乎、微信外链、YouTube、小宇宙改为默认开启。
 
+高德与阿里系 amdc（2026-10-06）：墨鱼高德换成 fmz200 的 `AutoNavi.snippet`（固定 `5d5f63f`，无脚本，重写与分流各一行，验收前默认关闭）。阿里系 App 纯 HTTP `/amdc/mobileDispatch` 的处理改由仓库自写的 `quantumultx/rewrite/AlibabaAmdc.conf`（脚本 `quantumultx/scripts/amdc.js`，与墨鱼版同一 UA 清单，`tests/test_amdc_script.py`）负责，放在墨鱼去开屏 2.0 之前：QX 只执行第一条匹配的重写，所以它先于墨鱼去开屏、闲鱼、大麦中仍存在的同类规则执行。
+
 ## 家庭 / 外出自动切换
 
 与 Loon 相同（见 [Loon 说明](../loon/README.md#家庭--外出自动切换)）：不使用 `running_mode_trigger` 或 `ssid_suspended_list`，运行模式在任何网络下都保持「规则分流」。策略页上方的 32 个组与路由器、Loon 同名同序，在这些组里选择节点。规则实际引用的是排在最后的 16 个「· 自动」ssid 策略（如 `🤖 人工智能 · 自动`、`🐟 兜底分流 · 自动`、`🇭🇰 香港节点 · 自动`）：

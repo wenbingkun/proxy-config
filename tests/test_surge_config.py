@@ -49,9 +49,10 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # fmz200 split modules reviewed on 2026-10-05: pinned to this commit and without scripts. Written out here
 # rather than read from build_surge_modules, so changing SOURCES cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou"}
+FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou", "amap"}
 # Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
 REPO_SCRIPTED = {
+    "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
     "xiaohongshu": {
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
         "https://raw.githubusercontent.com/Script-Hub-Org/Script-Hub/6b4fb62240629d2fc66b08bc271f8c1f83a5dcd1/scripts/replace-body.js",
@@ -70,7 +71,7 @@ SHARED_MITM = {
     ("advertising", "meituan"): {"img.meituan.net", "s3plus.meituan.net", "flowplus.meituan.net"},
     ("advertising", "mijia"): {"home.mi.com"},
     ("advertising", "wechat-mp"): {"mp.weixin.qq.com"},
-    ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "m5-zb.amap.com", "m5.amap.com"},
+    ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
     ("advertising", "neteasemail"): {"appconf.mail.163.com"},
@@ -374,7 +375,11 @@ def check_generated_module(path: Path, sources: list[dict], failures: list[str])
     if set(sec) - allowed:
         failures.append(f"{name}: unexpected sections {sorted(set(sec) - allowed)}")
     hostnames = sec.get("MITM", [])
-    if len(hostnames) != 1 or "%APPEND%" not in hostnames[0]:
+    # Only alibaba-amdc is HTTP-only; keep the MitM requirement for all existing modules.
+    if path.stem == "alibaba-amdc":
+        if "MITM" in sec:
+            failures.append(f"{name}: HTTP-only amdc module must not add MitM")
+    elif len(hostnames) != 1 or "%APPEND%" not in hostnames[0]:
         failures.append(f"{name}: [MITM] must be one merged 'hostname = %APPEND% ...' line")
     for line in sec.get("Rule", []):
         # Module rules sit at the top of the rule list; an IP rule there without no-resolve would
