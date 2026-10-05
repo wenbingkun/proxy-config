@@ -1,0 +1,33 @@
+#!name=NeteaseMailAds
+#!desc=NeteaseMailAds
+# Frozen Surge conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Rewrite/be5666475964a430f0ce4515639687d1b5550743/AdBlock/NeteaseMailAds.conf
+# Source SHA-256: 3b60dfb83759c90263db50310a947324c3760c1d513ba52eb6d0c9d39a12a949
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=surge-module) on 2026-10-05.
+# Edited after conversion:
+#   - added 2 [Body Rewrite] http-response-jq lines from the QX jsonjq-response-body rules, which Script-Hub drops for Surge
+# Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
+# the new source the same way, redo the edits above and send the result through a PR.
+
+[Map Local]
+# > 任务推广@ddgksf2013
+^https?:\/\/dashi\.163\.com\/task-center-api\/fapi\/task data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# > 通用广告请求@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mmad\/master\/get\.do data-type=text data=" " status-code=200
+
+# > 状态判断@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mailoperating\/mailmaster\/api\/operator\/get data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# > 免费邮箱提醒@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mailmaster\/getRegConfig\.do data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# > 浮ICON推广@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mailmaster\/api\/config\/function\.do data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% dashi.163.com, appconf.mail.163.com, mail.163.com
+
+[Body Rewrite]
+http-response-jq ^https?:\/\/appconf\.mail\.163\.com\/mailmaster\/api\/page\/.*conf\.do '.data |= del(.masterLoginGuideList, .masterOperatorList, .functionOperatorInfoList, .memberOperator, .activityTabInfoList, .extList)'
+http-response-jq ^https?:\/\/mail\.163\.com\/fgw\/mailsrv-webrobot\/.*user\/info '.result |= del(.assistantInfo, .quotaData)'

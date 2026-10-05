@@ -36,15 +36,26 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # these hosts blackmatrix7 Advertising carries only URL Rewrite lines; where its host-specific
 # patterns and another module's URL Rewrite match the same URL, both reject (amap.com, uve.weibo.com)
 # or redirect to the same target (google.cn, General and SafeRedirect). The others use different
-# sections there. Review again before changing this. This only catches overlaps by host: Advertising's
+# sections there. Reviewed 2026-10-05 for the six app modules added that day (12306, damai, neteasemail,
+# umetrip): Advertising still has only URL Rewrite there and they use Script, Map Local and Body Rewrite;
+# Advertising's rejects run first in the request stage either way (umetrip startup, mail.163 /mmad/,
+# damai popup.get). Review again before changing this. This only catches overlaps by host: Advertising's
 # host-agnostic reject patterns (advertising, /ad/, ...) can still meet another module's redirect;
 # surge/README.md records that accepted difference.
 SHARED_MITM = {
+    ("12306", "advertising"): {"ad.12306.cn"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "m5-zb.amap.com", "m5.amap.com"},
+    ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
+    ("advertising", "neteasemail"): {"appconf.mail.163.com"},
     ("advertising", "safe-redirect"): {"*.google.cn", "app.biliintl.com", "ditu.google.cn", "map.google.cn",
                                        "passport.biliintl.com", "www.firefox.com.cn", "www.google.cn"},
     ("advertising", "spotify"): {"spclient.wg.spotify.com"},
+    ("advertising", "umetrip"): {"*.umetrip.com", "activity.umetrip.com", "appmsg.umetrip.com", "event.umetrip.com",
+                                 "flightstatus.umetrip.com", "home.umetrip.com", "opactivity.umetrip.com",
+                                 "oss.umetrip.com", "sns.umetrip.com", "startup.umetrip.com",
+                                 "umeflightstatus.umetrip.com", "umehome.umetrip.com", "umerp.umetrip.com",
+                                 "umestartup.umetrip.com", "umeuser.umetrip.com", "user.umetrip.com"},
     ("advertising", "wechat"): {"security.wechat.com", "weixin110.qq.com"},
     ("advertising", "weibo"): {"*.api.weibo.*", "*.uve.weibo.com", "api.weibo.*", "api.weibo.cn", "mapi.weibo.*",
                                "mapi.weibo.com", "new.vip.weibo.cn", "weibointl.api.weibo.cn"},
@@ -377,6 +388,11 @@ def check_rewrite_module(failures: list[str]) -> None:
                         f"got {[p.name for p in on_disk]}")
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
+    for path, source in zip(SPLIT, sources):
+        text = path.read_text(encoding="utf-8")
+        for old, new in source.get("pins", {}).items():
+            if old in text or f"script-path={new}" not in text:
+                failures.append(f"{path.name}: script must be pinned to {new}")
 
     bilibili = build_surge_modules.MODULE_DIR / "bilibili.sgmodule"
     text = "\n".join(line for lines in split.get("bilibili", {}).values() for line in lines)

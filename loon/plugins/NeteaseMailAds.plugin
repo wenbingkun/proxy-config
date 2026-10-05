@@ -1,0 +1,26 @@
+#!name=NeteaseMailAds
+#!desc=NeteaseMailAds
+#!icon=https://github.com/Toperlock/Quantumult/raw/main/icon/Doraemon/Doraemon-1021.png
+# Frozen Loon conversion of ddgksf2013's Quantumult X rewrite; do not edit by hand.
+# Source: https://raw.githubusercontent.com/ddgksf2013/Rewrite/be5666475964a430f0ce4515639687d1b5550743/AdBlock/NeteaseMailAds.conf
+# Source SHA-256: 3b60dfb83759c90263db50310a947324c3760c1d513ba52eb6d0c9d39a12a949
+# Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=loon-plugin) on 2026-10-05.
+# To refresh, reconvert the new source the same way, redo the edits above and send the result
+# through a PR.
+
+[Rewrite]
+^https?:\/\/appconf\.mail\.163\.com\/mailmaster\/api\/page\/.*conf\.do response-body-json-jq '.data |= del(.masterLoginGuideList, .masterOperatorList, .functionOperatorInfoList, .memberOperator, .activityTabInfoList, .extList)'
+^https?:\/\/mail\.163\.com\/fgw\/mailsrv-webrobot\/.*user\/info response-body-json-jq '.result |= del(.assistantInfo, .quotaData)'
+# > 任务推广@ddgksf2013
+^https?:\/\/dashi\.163\.com\/task-center-api\/fapi\/task - reject-dict
+# > 通用广告请求@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mmad\/master\/get\.do - reject-200
+# > 状态判断@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mailoperating\/mailmaster\/api\/operator\/get - reject-dict
+# > 免费邮箱提醒@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mailmaster\/getRegConfig\.do - reject-dict
+# > 浮ICON推广@ddgksf2013
+^https?:\/\/appconf\.mail\.163\.com\/mailmaster\/api\/config\/function\.do - reject-dict
+
+[MITM]
+hostname = dashi.163.com, appconf.mail.163.com, mail.163.com
