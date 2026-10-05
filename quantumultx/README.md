@@ -49,7 +49,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 2026-10-05 新增的重写默认关闭，真机验收后再开：网易邮箱大师、小宇宙、大麦直接引用墨鱼原版；航旅纵横用仓库托管的 `quantumultx/rewrite/UmetripAds.conf`（原版引用的 `/rewrite/umetrip.ads.js` 对所有客户端都返回网页，改为指向托管的脚本副本 `quantumultx/scripts/umetrip.ads.js`；副本修正了上游没有接上的 JSON 清理入口，见 `tests/test_umetrip_script.py`）；微信读书精简是 Maasea 的 Surge 模块，Script-Hub 转换失败，`quantumultx/rewrite/WeRead.conf` 按原模块手写，脚本固定到提交。同日加入的 12306 重写已移除：Surge 真机记录显示 `ad.12306.cn` 被 AdRules 预匹配拒绝，脚本未执行；QX 的 AdRules 也包含该域名（走 🛡️ 安全防护），此次一并移除模板条目，QX 未单独做脚本执行顺序验收。
 
-同日在 Surge、Loon 新增的 8 个 fmz200 按 App 拆分的模块（微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动），QX 本阶段不新增：已知部分重写与现有的 bm7、墨鱼去开屏 2.0、小程序去广告重叠，其他增量尚未完整验证；这 8 个模块的 `.snippet` 共混有 9 条分流规则，QX 未额外接入。微信公众号文章广告在 QX 上由小程序去广告（Applet.conf）中的同一规则处理。
+同日新增 fmz200 按 App 拆分的 8 个模块（微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动），与 Surge、Loon 同一提交 `5d5f63f`，默认关闭。它们的 `.snippet` 同时含重写和分流，所以同一地址加两次：`[rewrite_remote]` 8 行；含分流规则的虎扑、米家、豆瓣 App、中国移动另在 `[filter_remote]` 加 4 行，`force-policy=🛡️ 安全防护`，放在 AdRules 之后。两处都必须 `opt-parser=true`，由 `resource_parser_url`（KOP-XIAO 解析器，跟随其 master）分别取出重写和分流。2026-10-05 真机实验：虎扑在重写里读出 8 条、在分流里读出 5 条，没有混入另一类。解析器不可用时这 12 项读不出规则。重写排在 bm7、去开屏 2.0、小程序去广告之后，与它们重叠的请求（例如微信公众号文章广告、乐刻和豆瓣的广告接口）由前面的资源先处理。
 
 ## 家庭 / 外出自动切换
 

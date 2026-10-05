@@ -151,6 +151,31 @@ def check_dns(failures: list[str]) -> None:
             failures.append(f"[dns] only the global doh-server may skip the home Wi-Fi: {line}")
 
 
+# fmz200 app snippets (2026-10-05), written out so editing the template cannot move the expectation:
+# each is loaded as a rewrite and, where it carries domain rules, again as a filter. Both need the
+# resource parser (opt-parser=true): on the device it kept the two kinds apart (Hupu: 8 rewrites, 5 filters).
+FMZ200_SNIPPETS = "https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/"
+FMZ200_REWRITES = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban", "ChinaMobile"}
+FMZ200_FILTERS = {"Hupu", "Mijia", "Douban", "ChinaMobile"}
+
+
+def check_fmz200(failures: list[str]) -> None:
+    sec = sections(QX_CONFIG.read_text(encoding="utf-8"))
+    for section, expected in (("rewrite_remote", FMZ200_REWRITES), ("filter_remote", FMZ200_FILTERS)):
+        lines = [l for l in sec.get(section, []) if "fmz200/wool_scripts" in l]
+        names = {l.split(",")[0].rsplit("/", 1)[-1].removesuffix(".snippet") for l in lines}
+        if names != expected or len(lines) != len(expected):
+            failures.append(f"QX [{section}]: fmz200 snippets must be exactly {sorted(expected)}, got {sorted(names)}")
+        for line in lines:
+            url, opts = line.split(",", 1)[0], line.replace(" ", "")
+            if not url.startswith(FMZ200_SNIPPETS):
+                failures.append(f"QX [{section}]: fmz200 snippet must be pinned: {url}")
+            if "opt-parser=true" not in opts or "enabled=false" not in opts:
+                failures.append(f"QX [{section}]: {url.rsplit('/', 1)[-1]} needs opt-parser=true and enabled=false")
+            if section == "filter_remote" and "force-policy=🛡️安全防护" not in opts:
+                failures.append(f"QX [filter_remote]: {url.rsplit('/', 1)[-1]} must use force-policy=🛡️ 安全防护")
+
+
 def check_generator(failures: list[str]) -> None:
     for policy in ("DIRECT", "REJECT", AD_GROUP, "🌏 全球加速"):
         if build_rules.home_auto(policy) != policy:
@@ -166,6 +191,7 @@ def main() -> int:
     failures: list[str] = []
     check(failures)
     check_dns(failures)
+    check_fmz200(failures)
     check_generator(failures)
     if failures:
         print("QX config checks failed:", file=sys.stderr)

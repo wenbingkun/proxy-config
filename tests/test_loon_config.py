@@ -252,6 +252,10 @@ def check_rules(loon: dict, failures: list[str]) -> None:
     qx_remote = []
     for line in sections(QX_CONFIG.read_text(encoding="utf-8"))["filter_remote"]:
         opts = dict(p.strip().split("=", 1) for p in line.split(",")[1:] if "=" in p)
+        # QX loads fmz200's app snippets twice, as rewrites and as filters; Loon gets those domain
+        # rules from the same apps' plugins ([Rule]), so they have no [Remote Rule] counterpart.
+        if "fmz200/wool_scripts" in line.split(",")[0]:
+            continue
         if "force-policy" in opts:
             qx_remote.append((opts["tag"], wrapped(loon, opts["force-policy"]), opts.get("enabled")))
     loon_remote = [
@@ -319,24 +323,41 @@ def check_hosted_plugins(failures: list[str]) -> None:
         failures.append("loon/plugins/Q-Search.plugin: the catch-all Google rule must be the first rewrite")
 
 
-# fmz200 split plugins reviewed on 2026-10-05: script-free, pinned to this commit, off until each passes
-# a device check. Written out here so that editing the template cannot move the expectation with it.
+# fmz200 split plugins reviewed on 2026-10-05: script-free, from this commit, off until each passes a
+# device check. Hosted as mirrors that only swap the icon (scripts/build_loon_plugins.py). Written out
+# here so that editing the template or the generator cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan",
-                  "LeKe", "Douban", "ChinaMobile"}
+FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban",
+                  "ChinaMobile"}
+MIRROR_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/fmz200-"
 
 
 def check_fmz200_plugins(failures: list[str]) -> None:
-    lines = [l for l in sections(LOON_CONFIG.read_text(encoding="utf-8")).get("Plugin", []) if "fmz200/wool_scripts" in l]
-    names = {re.sub(r"\.lpx$", "", l.split(",")[0].rsplit("/", 1)[-1]) for l in lines}
+    plugin = sections(LOON_CONFIG.read_text(encoding="utf-8")).get("Plugin", [])
+    if any("fmz200/wool_scripts" in l for l in plugin):
+        failures.append("loon: fmz200 plugins must load the hosted mirrors, not upstream")
+    lines = [l for l in plugin if l.startswith(MIRROR_URL)]
+    names = {l.split(",")[0][len(MIRROR_URL):].removesuffix(".plugin") for l in lines}
     if names != FMZ200_PLUGINS or len(lines) != len(FMZ200_PLUGINS):
         failures.append(f"loon: fmz200 plugins must be exactly {sorted(FMZ200_PLUGINS)}, got {sorted(names)}")
     for line in lines:
-        url, _, rest = line.partition(",")
-        if f"/fmz200/wool_scripts/{FMZ200_COMMIT}/Loon/plugin/split/" not in url:
-            failures.append(f"loon: fmz200 plugin must be pinned to {FMZ200_COMMIT}: {url}")
-        if "enabled=false" not in rest.replace(" ", ""):
-            failures.append(f"loon: fmz200 plugin must stay off until checked on the device: {url}")
+        if "enabled=false" not in line.split(",", 1)[1].replace(" ", ""):
+            failures.append(f"loon: fmz200 plugin must stay off until checked on the device: {line.split(',')[0]}")
+    for name in FMZ200_PLUGINS:
+        path = ROOT / "loon" / "plugins" / f"fmz200-{name}.plugin"
+        text = path.read_text(encoding="utf-8") if path.exists() else ""
+        if f"# Source: https://raw.githubusercontent.com/fmz200/wool_scripts/{FMZ200_COMMIT}/Loon/plugin/split/" not in text:
+            failures.append(f"{path.name}: must be a mirror of fmz200 at {FMZ200_COMMIT}")
+        if "script-path" in text:
+            failures.append(f"{path.name}: the reviewed fmz200 plugins must not run scripts")
+
+
+def check_plugin_icons(failures: list[str]) -> None:
+    # Loon kept spinning on fmz200's 560 KB GIF icon (2026-10-05). Hosted plugins use small PNG icons.
+    for path in sorted((ROOT / "loon" / "plugins").glob("*.plugin")):
+        icons = re.findall(r"^#!icon\s*=\s*(\S+)", path.read_text(encoding="utf-8"), re.M)
+        if len(icons) != 1 or not icons[0].lower().endswith(".png"):
+            failures.append(f"{path.name}: needs exactly one small PNG #!icon (no GIF), got {icons}")
 
 
 def check_generator(failures: list[str]) -> None:
@@ -384,6 +405,7 @@ def main() -> int:
     check_runtime(loon, failures)
     check_hosted_plugins(failures)
     check_fmz200_plugins(failures)
+    check_plugin_icons(failures)
     check_generator(failures)
     if failures:
         print("Loon config checks failed:", file=sys.stderr)
