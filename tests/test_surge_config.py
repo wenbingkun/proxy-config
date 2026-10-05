@@ -388,6 +388,11 @@ def check_rewrite_module(failures: list[str]) -> None:
                         f"got {[p.name for p in on_disk]}")
         return
     split = {path.stem: check_generated_module(path, [source], failures) for path, source in zip(SPLIT, sources)}
+    for path, source in zip(SPLIT, sources):
+        text = path.read_text(encoding="utf-8")
+        for old, new in source.get("pins", {}).items():
+            if old in text or f"script-path={new}" not in text:
+                failures.append(f"{path.name}: script must be pinned to {new}")
 
     bilibili = build_surge_modules.MODULE_DIR / "bilibili.sgmodule"
     text = "\n".join(line for lines in split.get("bilibili", {}).values() for line in lines)

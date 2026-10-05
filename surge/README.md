@@ -48,8 +48,8 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 微博、闲鱼、豆瓣网页、Safari 超级搜索、神机重定向 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交 |
 | 高德地图、微信外链 | 墨鱼的 QX 原版（QX 端在用的版本），同样冻结转换 |
-| 网易邮箱大师、小宇宙、大麦、航旅纵横、12306（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`（处理二进制响应体，加 `binary-body-mode=1`） |
-| 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，固定到提交；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
+| 网易邮箱大师、小宇宙、大麦、航旅纵横、12306（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
+| 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，模块和脚本都固定到提交（脚本由 `SOURCES` 的 `pins` 在生成时替换）；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
 
 注意：Surge 会依次执行所有命中的 Body Rewrite（QX 只执行第一条），闲鱼的通用搜索 jq 规则因此也作用于搜索底纹和发现页，效果与 Loon 版相同，2026-10 真机检查闲鱼搜索页正常。
 
@@ -57,7 +57,7 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 
 冻结转换的共同修改：脚本名编号保证唯一；模块里的 IP 规则加 `no-resolve`（否则排在规则最前面的 IP 规则会让每个请求先在本地解析）；QX 的 `response-body` 由 Script-Hub 转成它的 `replace-body.js`，固定到 Script-Hub `6b4fb62`。
 
-生成：`python3 scripts/build_surge_modules.py`，每个来源生成一个模块（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以 `SOURCES` 保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
+生成：`python3 scripts/build_surge_modules.py`，每个来源生成一个模块（参数在生成时写入，例如空降助手 `#`、YouTube 与 Siri 用作者默认值）；`--check` 联网重新生成并比对，CI 也会运行。kokoryh 等模块引用的脚本仍跟随各自上游（与 Loon 相同）；`SOURCES` 中写了 `pins` 的来源例外，生成时把脚本换成审核过的提交（目前是微信读书）。Surge 只执行第一个匹配的 http-response 脚本和第一个匹配的 header 模式 URL Rewrite，所以 `SOURCES` 保持 Loon 的插件顺序，转换的 QX 规则保持 QX 原顺序。
 
 多个模块之间谁先执行，Surge 文档没有说明，所以 Loon 里「专用插件排在 blackmatrix7 合集之前」的先后在 Surge 上没有保证。2026-10-05 的核对结果：
 
@@ -96,7 +96,7 @@ Loon 上小红书、高德、知乎、微信外链用的是 Kelee 的插件，�
 | 12306 去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/12306.sgmodule` | 按需启用 |
 | 微信读书精简 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/weread.sgmodule` | 按需启用 |
 
-除两个家庭模块外，上表的模块都需要 MitM。Loon 中这些插件默认全部启用；不用的 App 可以不装，或在模块列表里关掉。
+除两个家庭模块外，上表的模块都需要 MitM。前 15 个对应 Loon 中已验收、默认启用的插件；2026-10-05 新增的 6 个（网易邮箱大师到微信读书精简）在 QX、Loon 中默认关闭，真机逐个验收前不要当作已验证。不用的 App 可以不装，或在模块列表里关掉。
 
 **模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块**之后**，目前是哔哩哔哩增强、小红书去广告、知乎去广告、微博去广告、闲鱼去广告（它们的模块说明里都写了这一点）。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。也可以用 `python3 scripts/netdiag.py get surge /v1/rules` 查看实际生效的规则顺序：上述模块的规则应排在 `SUBNET,SSID:` 之前。
 
