@@ -93,7 +93,6 @@ def main() -> int:
     assert any(resource.source.startswith("quantumultx/") for resource in resources)
     assert {
         "https://ddgksf2013.top/rewrite/StartUpAds.conf",
-        "https://ddgksf2013.top/rewrite/XiaoHongShuAds.conf",
     } <= set(urls)
 
     # A URL used by both QX and Loon is checked once for each client, each with its own UA.
@@ -119,6 +118,7 @@ def main() -> int:
         "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
         "https://raw.githubusercontent.com/Maasea/sgmodule/2c2c0adba8454f16c82c05fe5ed415badcbdd3d8/Script/WeRead/weread.js",
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.ads.js",
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
     }, plugin_urls
     # The generated Surge rewrite modules are treated like hosted plugins: only their script-path URLs.
     rewrite_scripts = {
