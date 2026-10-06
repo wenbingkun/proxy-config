@@ -184,6 +184,7 @@ def check_fmz200(failures: list[str]) -> None:
 REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/"
 REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
+    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"}, False),
     "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
     "AlibabaAmdc.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}, False),
     "fmz200-XiaoYuZhou.snippet": (set(), False),

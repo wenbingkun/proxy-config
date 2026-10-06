@@ -169,7 +169,7 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 UmetripAds", "path": "surge/modules/converted/UmetripAds.sgmodule",
+        "name": "proxy-config Umetrip", "path": "surge/modules/converted/Umetrip.sgmodule",
         "file": "umetrip", "title": "航旅纵横去广告", "desc": "航旅纵横去广告",
         "arguments": {},
     },

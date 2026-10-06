@@ -52,6 +52,7 @@ FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
 FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou", "amap"}
 # Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
 REPO_SCRIPTED = {
+    "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"},
     "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
     "xiaohongshu": {
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
@@ -410,7 +411,10 @@ def check_rewrite_module(failures: list[str]) -> None:
         path = source.get("path")
         if path:
             converted = (ROOT / path).read_text(encoding="utf-8")
-            if not re.search(r"^# Frozen (Surge conversion of \S+'s Quantumult X rewrite|copy of \S+'s Surge [^;]*); do not edit by hand\.$",
+            if path == "surge/modules/converted/Umetrip.sgmodule":
+                if "# Native Surge source maintained by proxy-config; endpoint and image rules match" not in converted:
+                    failures.append(f"{path}: missing the maintained native-source header")
+            elif not re.search(r"^# Frozen (Surge conversion of \S+'s Quantumult X rewrite|copy of \S+'s Surge [^;]*); do not edit by hand\.$",
                              converted, re.M):
                 failures.append(f"{path}: missing the frozen-conversion header")
             if re.search(r"refs/heads/master|script\.hub", converted):

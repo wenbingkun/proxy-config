@@ -41,7 +41,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 导入完成后，bootstrap 中已预配置的远程资源（规则、重写、脚本等）会在 QX 首次刷新时自动拉取。
 
-2026-10-06 起，三端不再加载任何墨鱼（ddgksf2013）资源（QX 哔哩哔哩冻结版与航旅纵横托管副本除外，它们已在仓库内）：微博改用 fmz200 `weibo` 的冻结副本（脚本固定到提交：fmz200 `5d5f63f`、zmqcherish `1d9f51b`、Keywos `a06d921`；去掉解锁会员图标那条；Loon、Surge 补上 QX 版才有的微博国际版开屏 `get_coopen_ads` 与 `api.touch-moblie.com`）；闲鱼改用 fmz200 `XianYu` 冻结副本（ishowshu 脚本固定 `d38e228`，去掉 amdc 拦截，补 `idle.ad.expose`）；网易邮箱大师、大麦为仓库自写规则（fmz200 QX 版规则加补充；fmz200 网易邮箱的 Loon、Surge 文件内容实为网易云音乐规则，未采用）；Safari 超级搜索为仓库自写精简版，前缀 yd、trc、tre、gh、yt、bli、wk、zh、db、bd 与 App Store 地区页面跳转 cn / us / hk。新条目验收前默认关闭；旧的托管文件在兼容期内保留不改。 QX 还去掉了墨鱼去开屏 2.0 与微信小程序去广告（保留 blackmatrix7 去广告合集，不能保证完全覆盖）；其中仍对已装 App 有效、别处没有覆盖的处理（航旅纵横 startup / discardrp、神州租车投放位）由 `quantumultx/rewrite/StartUpGaps.conf` 接手，放在原去开屏的位置。
+2026-10-06 起，三端不再加载任何墨鱼（ddgksf2013）资源（QX 哔哩哔哩冻结版除外，它已在仓库内）：微博改用 fmz200 `weibo` 的冻结副本（脚本固定到提交：fmz200 `5d5f63f`、zmqcherish `1d9f51b`、Keywos `a06d921`；去掉解锁会员图标那条；Loon、Surge 补上 QX 版才有的微博国际版开屏 `get_coopen_ads` 与 `api.touch-moblie.com`）；闲鱼改用 fmz200 `XianYu` 冻结副本（ishowshu 脚本固定 `d38e228`，去掉 amdc 拦截，补 `idle.ad.expose`）；网易邮箱大师、大麦为仓库自写规则（fmz200 QX 版规则加补充；fmz200 网易邮箱的 Loon、Surge 文件内容实为网易云音乐规则，未采用）；Safari 超级搜索为仓库自写精简版，前缀 yd、trc、tre、gh、yt、bli、wk、zh、db、bd 与 App Store 地区页面跳转 cn / us / hk。新条目验收前默认关闭；旧的托管文件在兼容期内保留不改。 QX 还去掉了墨鱼去开屏 2.0 与微信小程序去广告（保留 blackmatrix7 去广告合集，不能保证完全覆盖）；其中仍对已装 App 有效、别处没有覆盖的处理（航旅纵横 startup / discardrp、神州租车投放位）由 `quantumultx/rewrite/StartUpGaps.conf` 接手，放在原去开屏的位置。
 
 2026-10-06 三端真机验收：网易邮箱、大麦正常，闲鱼小程序与旧版一致，Safari 跳转正常；微博国际版在 Surge 比旧版多一些内容，Loon/QX 的去广告效果弱于 Surge，差异已接受。App Store 地区链接不会修改 Apple 账号地区，跨区下载仍需切换账号或账号地区；QX 微信小程序开屏仍有残留。新条目保持按需开启，旧路径继续保留作为回滚方案。
 
@@ -49,7 +49,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 冻结版的规则、`bilibili_json.js` 和两个外部脚本（app2smile `bilibili-proto.js`、yjqiang `bilibili_dynamic.js`，链接固定到 2026-09-30 的提交）都不会随上游变化。它自带 hostname，使用 `opt-parser=true` 与原版一致，不需要 `#outhn=*`，也不依赖「仓库自定义重写」。脚本会把「我的」页会员字段改成大会员样式，这只影响客户端显示，不会获得服务端会员权益。冻结版中动态相关的两条规则原文都含 `DynAll`，其中 app2smile 那条的正则还包含 `app.bilibili.com` 上的旧接口 `view.v1.View/View`（如上，当前视频页广告不经过它），若要排除它们，把 bootstrap 中的链接写成 `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/bilibili_ad.conf#out=DynAll`（链接原本没有 `#` 参数，首个参数用 `#`，之后的参数才用 `&` 连接），这会把 app2smile 那条整行去掉；此做法未经真机验证。
 
-2026-10-05 新增的重写默认关闭，真机验收后再开：网易邮箱大师、大麦直接引用墨鱼原版；航旅纵横用仓库托管的 `quantumultx/rewrite/UmetripAds.conf`（原版引用的 `/rewrite/umetrip.ads.js` 对所有客户端都返回网页，改为指向托管的脚本副本 `quantumultx/scripts/umetrip.ads.js`；副本修正了上游没有接上的 JSON 清理入口，见 `tests/test_umetrip_script.py`）；微信读书精简是 Maasea 的 Surge 模块，Script-Hub 转换失败，`quantumultx/rewrite/WeRead.conf` 按原模块手写，脚本固定到提交。同日加入的 12306 重写已移除：Surge 真机记录显示 `ad.12306.cn` 被 AdRules 预匹配拒绝，脚本未执行；QX 的 AdRules 也包含该域名（走 🛡️ 安全防护），此次一并移除模板条目，QX 未单独做脚本执行顺序验收。
+航旅纵横改用仓库维护的可读 JSON / Protobuf 实现 `quantumultx/scripts/umetrip.js`，三端使用同一脚本；QX 入口为 `quantumultx/rewrite/Umetrip.conf`，模板仍默认关闭，需真机验收后按需启用。旧 `UmetripAds.conf`、`umetrip.ads.js` 保留原内容作为兼容与回滚入口。网易邮箱大师、大麦已改用仓库自写规则。微信读书精简仍为 Maasea 的 Surge 模块，`quantumultx/rewrite/WeRead.conf` 按原模块手写，脚本固定到提交。12306 专用重写已移除：Surge 真机记录显示广告域名被 AdRules 预匹配拒绝，脚本未执行；QX 的 AdRules 也包含该域名。
 
 同日新增 fmz200 按 App 拆分的 8 个模块（微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动），与 Surge、Loon 同一提交 `5d5f63f`，默认关闭。它们的 `.snippet` 同时含重写和分流，所以同一地址加两次：`[rewrite_remote]` 8 行；含分流规则的虎扑、米家、豆瓣 App、中国移动另在 `[filter_remote]` 加 4 行，`force-policy=🛡️ 安全防护`，放在 AdRules 之后。两处都必须 `opt-parser=true`，由 `resource_parser_url`（KOP-XIAO 解析器，跟随其 master）分别取出重写和分流。2026-10-05 真机实验：虎扑在重写里读出 8 条、在分流里读出 5 条，没有混入另一类。解析器不可用时这 12 项读不出规则。重写排在 bm7、去开屏 2.0、小程序去广告之后，与它们重叠的请求（例如微信公众号文章广告、乐刻和豆瓣的广告接口）由前面的资源先处理。
 
