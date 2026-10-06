@@ -164,3 +164,13 @@ find "$T" -type f -exec chmod 600 {} +
 关闭 Surge VPN，打开 Loon 或 QX，它们的配置不受影响。Surge 的本地文件都是新增的，不会覆盖其他客户端的文件。
 
 2026-10-06 剩余替换项三端真机验收已完成，效果差异和已知限制见 [QX README](../quantumultx/README.md)。App Store 地区跳转不会自动修改账号地区。
+
+## 2026-10-06 页面净化与开屏补充
+
+高德页面净化独立保留个人页明确推广卡片、首页「关注 / 推荐 / 附近」社交栏目和帖子、打车推广列表清理；保留地图、定位、搜索、路线与未知组件。首页顶部商业卡片尚未覆盖。微博发现页的空「热门视频」区块及排序入口已合入原微博规则，保留原广告 banner 过滤和正常发现内容。
+
+开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 仅完成对应规则及模拟检查，新增项模板默认关闭，需逐项验收。
+
+按需添加 `modules/rewrite/amap-page-cleanup.sgmodule` 和 `modules/rewrite/startup-supplement.sgmodule`；与原高德、通用去广告并用。共享高德主机上的原模块只拦其他路径；神州通用规则匹配旧 `carrctapi/home/marketing`，补充匹配 `cardes/toufang/marketing/v1`，互不依赖执行顺序。
+
+高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。

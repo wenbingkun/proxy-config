@@ -52,6 +52,7 @@ FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
 FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou", "amap"}
 # Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
 REPO_SCRIPTED = {
+    "amap-page-cleanup": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8/quantumultx/scripts/amap-page-cleanup.js"},
     "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"},
     "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
     "xiaohongshu": {
@@ -72,6 +73,9 @@ SHARED_MITM = {
     ("advertising", "meituan"): {"img.meituan.net", "s3plus.meituan.net", "flowplus.meituan.net"},
     ("advertising", "mijia"): {"home.mi.com"},
     ("advertising", "wechat-mp"): {"mp.weixin.qq.com"},
+    ("advertising", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
+    ("amap", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
+    ("advertising", "startup-supplement"): {"apiproxy.zuche.com"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
@@ -411,7 +415,9 @@ def check_rewrite_module(failures: list[str]) -> None:
         path = source.get("path")
         if path:
             converted = (ROOT / path).read_text(encoding="utf-8")
-            if path == "surge/modules/converted/Umetrip.sgmodule":
+            if path in {"surge/modules/converted/Umetrip.sgmodule",
+                        "surge/modules/converted/AmapPageCleanup.sgmodule",
+                        "surge/modules/converted/StartupSupplement.sgmodule"}:
                 if "# Native Surge source maintained by proxy-config; endpoint and image rules match" not in converted:
                     failures.append(f"{path}: missing the maintained native-source header")
             elif not re.search(r"^# Frozen (Surge conversion of \S+'s Quantumult X rewrite|copy of \S+'s Surge [^;]*); do not edit by hand\.$",
