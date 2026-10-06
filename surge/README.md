@@ -83,6 +83,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 | YouTube 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/youtube.sgmodule` | 按需启用 |
 | 小红书去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaohongshu.sgmodule` | 按需启用 |
 | 高德地图去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap.sgmodule` | 按需启用 |
+| 高德页面净化 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap-page-cleanup.sgmodule` | 按需启用；与高德地图去广告、通用去广告并用 |
 | 阿里系 amdc | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/alibaba-amdc.sgmodule` | 用高德、闲鱼、大麦等阿里系 App 时启用 |
 | 知乎去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/zhihu.sgmodule` | 按需启用 |
 | 微信外链解锁 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/wechat.sgmodule` | 按需启用 |
@@ -99,6 +100,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 | 小宇宙去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaoyuzhou.sgmodule` | 按需启用 |
 | 大麦去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/damai.sgmodule` | 按需启用 |
 | 航旅纵横去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/umetrip.sgmodule` | 按需启用 |
+| 开屏补充 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/startup-supplement.sgmodule` | 按需启用；补充通用去广告（神州、滴滴、一嗨） |
 | 微信读书精简 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/weread.sgmodule` | 按需启用 |
 | 微信公众号去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/wechat-mp.sgmodule` | 按需启用 |
 | 美团去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/meituan.sgmodule` | 按需启用 |
