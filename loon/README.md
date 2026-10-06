@@ -64,3 +64,5 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 ## 后续更新
 
 `[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/rules/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
+
+2026-10-06 剩余替换项三端真机验收已完成，效果差异和已知限制见 [QX README](../quantumultx/README.md)。网易邮箱、大麦现使用仓库自写的 `NeteaseMail.plugin`、`DaMai.plugin`；上表中旧转换文件只作为兼容与回滚保留。

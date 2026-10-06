@@ -162,3 +162,5 @@ find "$T" -type f -exec chmod 600 {} +
 ## 回滚
 
 关闭 Surge VPN，打开 Loon 或 QX，它们的配置不受影响。Surge 的本地文件都是新增的，不会覆盖其他客户端的文件。
+
+2026-10-06 剩余替换项三端真机验收已完成，效果差异和已知限制见 [QX README](../quantumultx/README.md)。App Store 地区跳转不会自动修改账号地区。
