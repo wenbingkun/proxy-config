@@ -363,13 +363,23 @@ function transformJson(text) {
 (function run() {
   let result = {};
   try {
-    if (typeof $response !== "undefined" && $response.bodyBytes) {
-      const bytes = new Uint8Array($response.bodyBytes), text = decodeUtf8(bytes);
+    const response = typeof $response === "undefined" ? {} : $response;
+    const qx = response.bodyBytes !== undefined;
+    const binary = qx ? response.bodyBytes : response.body;
+    if (binary instanceof ArrayBuffer || ArrayBuffer.isView(binary)) {
+      // Preserve the byte window: a client may expose a slice of a larger buffer.
+      const bytes = ArrayBuffer.isView(binary)
+        ? new Uint8Array(binary.buffer, binary.byteOffset, binary.byteLength)
+        : new Uint8Array(binary);
+      const finish = bytes => qx
+        ? {bodyBytes: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)}
+        : {body: bytes};
+      const text = decodeUtf8(bytes);
       const json = text === null ? null : transformJson(text);
-      if (json !== null) result = {bodyBytes: encodeUtf8(json).buffer};
+      if (json !== null) result = finish(encodeUtf8(json));
       else {
         const cleaned = cleanProtobuf(bytes);
-        if (cleaned.count) result = {bodyBytes: cleaned.bytes.buffer.slice(cleaned.bytes.byteOffset, cleaned.bytes.byteOffset + cleaned.bytes.byteLength)};
+        if (cleaned.count) result = finish(cleaned.bytes);
         else console.log("[Umetrip] No recognized Protobuf cleanup; response unchanged");
       }
     } else if (typeof $response !== "undefined" && typeof $response.body === "string") {
