@@ -253,6 +253,15 @@ def test_full_download_must_be_complete() -> None:
             assert not result.ok and not result.body
     with patch.object(check, "read_response", return_value=(200, "text/plain", body, resource.url)):
         assert check.fetch(resource, "light", 1, 0).body == b""
+    # A valid-looking 200 prefix must not pass when HTTP framing says bytes are missing.
+    for length, expected_ok in ((str(len(body)), True), (str(len(body) + 10), False), ("broken", False)):
+        response = FakeResponse(200, body, resource.url)
+        response.headers["Content-Length"] = length
+        with patch.object(check.urllib.request, "urlopen", return_value=response):
+            assert check.fetch(resource, "full", 1, 0).ok == expected_ok
+    with patch.object(check, "read_response", side_effect=check.http.client.IncompleteRead(body, 10)):
+        result = check.fetch(resource, "full", 1, 0)
+        assert not result.ok and not result.body and "IncompleteRead" in result.message
 
 
 def main() -> int:

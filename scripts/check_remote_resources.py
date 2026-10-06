@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import hashlib
+import http.client
 import ipaddress
 import os
 import re
@@ -275,10 +276,16 @@ def user_agent_for(resource: Resource) -> str:
 def read_response(url: str, headers: dict[str, str], timeout: float, limit: int) -> tuple[int, str, bytes, str]:
     request = urllib.request.Request(url, headers=headers, method="GET")
     with urllib.request.urlopen(request, timeout=timeout) as response:
+        body = response.read(limit + 1)
+        # A truncated 200 can leave a valid YAML/text prefix. Never classify it as a full list.
+        length = response.headers.get("Content-Length")
+        if limit == FULL_LIMIT and length is not None:
+            if not re.fullmatch(r"[0-9]+", length) or len(body) < min(int(length), limit + 1):
+                raise OSError("invalid Content-Length or incomplete HTTP response body")
         return (
             response.status,
             response.headers.get_content_type().lower(),
-            response.read(limit + 1),
+            body,
             response.geturl(),
         )
 
@@ -325,7 +332,7 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
         except urllib.error.HTTPError as exc:
             last_error = f"HTTP {exc.code}"
             status = exc.code
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as exc:
             last_error = f"{exc.__class__.__name__}: {exc.reason if isinstance(exc, urllib.error.URLError) else exc}"
             status = None
         if attempt < retries:
@@ -539,7 +546,7 @@ def reject_overlap_report(timeout: float) -> tuple[list[str], list[str]]:
     for url in urls:
         try:
             status, _, body, _ = read_response(url, headers, timeout, FULL_LIMIT)
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as exc:
             failures.append(f"{redact_url(url)}: {exc.__class__.__name__}: {exc}")
             continue
         if not 200 <= status < 300 or len(body) > FULL_LIMIT:
