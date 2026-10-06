@@ -41,7 +41,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 
 导入完成后，bootstrap 中已预配置的远程资源（规则、重写、脚本等）会在 QX 首次刷新时自动拉取。
 
-2026-10-06 起，三端不再加载任何墨鱼（ddgksf2013）资源（QX 哔哩哔哩冻结版除外，它已在仓库内）：微博改用 fmz200 `weibo` 的冻结副本（脚本固定到提交：fmz200 `5d5f63f`、zmqcherish `1d9f51b`、Keywos `a06d921`；去掉解锁会员图标那条；Loon、Surge 补上 QX 版才有的微博国际版开屏 `get_coopen_ads` 与 `api.touch-moblie.com`）；闲鱼改用 fmz200 `XianYu` 冻结副本（ishowshu 脚本固定 `d38e228`，去掉 amdc 拦截，补 `idle.ad.expose`）；网易邮箱大师、大麦为仓库自写规则（fmz200 QX 版规则加补充；fmz200 网易邮箱的 Loon、Surge 文件内容实为网易云音乐规则，未采用）；Safari 超级搜索为仓库自写精简版，前缀 yd、trc、tre、gh、yt、bli、wk、zh、db、bd 与 App Store 地区页面跳转 cn / us / hk。新条目验收前默认关闭；旧的托管文件在兼容期内保留不改。 QX 还去掉了墨鱼去开屏 2.0 与微信小程序去广告（保留 blackmatrix7 去广告合集，不能保证完全覆盖）；其中仍对已装 App 有效、别处没有覆盖的处理（航旅纵横 startup / discardrp、神州租车投放位）由 `quantumultx/rewrite/StartUpGaps.conf` 接手，放在原去开屏的位置。
+2026-10-06 初轮替换时，三端退出了墨鱼（ddgksf2013）资源（QX 哔哩哔哩冻结版除外，它已在仓库内）；后续按效果优先回取审核过的固定来源，当前高德入口见下文。初轮替换的其他改动：微博改用 fmz200 `weibo` 的冻结副本（脚本固定到提交：fmz200 `5d5f63f`、zmqcherish `1d9f51b`、Keywos `a06d921`；去掉解锁会员图标那条；Loon、Surge 补上 QX 版才有的微博国际版开屏 `get_coopen_ads` 与 `api.touch-moblie.com`）；闲鱼改用 fmz200 `XianYu` 冻结副本（ishowshu 脚本固定 `d38e228`，去掉 amdc 拦截，补 `idle.ad.expose`）；网易邮箱大师、大麦为仓库自写规则（fmz200 QX 版规则加补充；fmz200 网易邮箱的 Loon、Surge 文件内容实为网易云音乐规则，未采用）；Safari 超级搜索为仓库自写精简版，前缀 yd、trc、tre、gh、yt、bli、wk、zh、db、bd 与 App Store 地区页面跳转 cn / us / hk。新条目验收前默认关闭；旧的托管文件在兼容期内保留不改。 QX 还去掉了墨鱼去开屏 2.0 与微信小程序去广告（保留 blackmatrix7 去广告合集，不能保证完全覆盖）；当前航旅纵横 startup / discardrp 拒绝规则已归入唯一航旅入口 `quantumultx/rewrite/Umetrip.conf`；神州租车投放位及其他仅去开屏的补充统一归入 `quantumultx/rewrite/StartupSupplement.conf`。`StartUpGaps.conf` 已退出模板，仅保留旧公开文件用于兼容回滚，不与上述入口同时启用。
 
 2026-10-06 三端真机验收：网易邮箱、大麦正常，闲鱼小程序与旧版一致，Safari 跳转正常；微博国际版在 Surge 比旧版多一些内容，Loon/QX 的去广告效果弱于 Surge，差异已接受。App Store 地区链接不会修改 Apple 账号地区，跨区下载仍需切换账号或账号地区；QX 微信小程序开屏仍有残留。新条目保持按需开启，旧路径继续保留作为回滚方案。
 
@@ -93,7 +93,7 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filte
 
 开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 仅完成对应规则及模拟检查，新增项模板默认关闭，需逐项验收。
 
-历史版本新增的 `rewrite/AmapPageCleanup.conf` 已退出模板，保留公开兼容路径；`rewrite/StartupSupplement.conf` 继续提供开屏补充。旧 `StartUpGaps.conf` 保留航旅与神州覆盖；新神州精确路径先返回空字典，两条结果一致。
+历史版本新增的 `rewrite/AmapPageCleanup.conf` 已退出模板，保留公开兼容路径；`rewrite/StartupSupplement.conf` 继续提供开屏补充。航旅 startup / discardrp 由 `rewrite/Umetrip.conf` 处理；神州、滴滴、一嗨及阿里巴巴（1688）、拼多多、淘宝、得物开屏补充统一由 `rewrite/StartupSupplement.conf` 处理。旧 `StartUpGaps.conf` 仅供兼容回滚，不再作为当前配置入口，也不与航旅或开屏补充并行启用。
 
 高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
 

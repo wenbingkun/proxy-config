@@ -50,7 +50,7 @@ SOURCES = (
     {
         "name": "proxy-config StartupSupplement", "path": "surge/modules/converted/StartupSupplement.sgmodule",
         "file": "startup-supplement", "title": "开屏补充",
-        "desc": "神州、滴滴与一嗨开屏补充；一嗨仅覆盖4张已核验素材", "arguments": {},
+        "desc": "神州、滴滴、一嗨、阿里巴巴（1688）、拼多多、淘宝与得物开屏补充；一嗨仅覆盖4张已核验素材", "arguments": {},
     },
     {
         "name": "kokoryh 哔哩哔哩增强",
