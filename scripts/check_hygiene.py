@@ -15,6 +15,8 @@ from pathlib import Path
 
 import yaml
 
+from build_rules import RULE_METADATA_FILES
+
 ROOT = Path(__file__).resolve().parent.parent
 RULES_DIR = ROOT / "rules"
 
@@ -26,10 +28,6 @@ ALLOWED_KEYS = {
     "ip_cidr",
     "ip_cidr6",
 }
-
-# Files to skip in the rules directory
-SKIP_FILES = {"local_rules.yaml"}
-
 
 def check_file(path: Path, errors: list[str], warnings: list[str]) -> dict[str, list[str]]:
     """Check a single rule file. Returns the parsed data for cross-file checks."""
@@ -92,7 +90,7 @@ def main() -> int:
     warnings: list[str] = []
 
     rule_files = sorted(
-        p for p in RULES_DIR.glob("*.yaml") if p.name not in SKIP_FILES
+        p for p in RULES_DIR.glob("*.yaml") if p.name not in RULE_METADATA_FILES
     )
 
     if not rule_files:

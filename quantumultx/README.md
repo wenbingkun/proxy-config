@@ -55,6 +55,8 @@ hostname =   需要解密的域名列表（如 *.example.com）
 | 阿里系 amdc | `rewrite/AlibabaAmdc.conf`，其他专用入口不再带 amdc |
 | 共用开屏补充 | `rewrite/StartupSupplement.conf`：神州、滴滴、一嗨、1688、拼多多、淘宝、得物；航旅 startup/discardrp 归航旅入口 |
 
+资源解析器固定到审核过的 KOP 完整提交，更新解析器需重新核验字节和解析结果；其他 KOP 辅助任务保留现有更新方式。
+
 脚本固定版本及来源记录在资源文件头和生成器中。fmz200 的混合资源含分流时需在 `[rewrite_remote]`、`[filter_remote]` 各引用一次，并开启 `opt-parser=true`；只有重写的资源不加分流。微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动为按需启用的补充。
 
 知乎重写 URL 的 `#regout=^(USER-AGENT|IP6-CIDR)%2C&ntf=0` 排除会被解析为 `url reject` 策略的混合分流行；独立分流 URL 不加此参数。保留模板参数，避免出现多余策略组。
