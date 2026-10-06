@@ -70,6 +70,7 @@ jobs:
               "tests/test_umetrip_script.py",
               "tests/test_xiaohongshu_script.py",
               "tests/test_amdc_script.py",
+              "tests/test_app_ad_cleanup.py",
               "tests/test_remote_resources.py",
               "mihomo/shellcrash/deploy.sh",
               "tests/test_deploy_shellcrash.py",
@@ -160,6 +161,7 @@ jobs:
           python3 tests/test_umetrip_script.py
           python3 tests/test_xiaohongshu_script.py
           python3 tests/test_amdc_script.py
+          python3 tests/test_app_ad_cleanup.py
           python3 scripts/check_reject_conflicts.py --self-test
 
       - name: Check shell script syntax
