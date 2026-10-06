@@ -96,3 +96,5 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filte
 新增 `rewrite/AmapPageCleanup.conf`、`rewrite/StartupSupplement.conf`，放在通用去广告和既有高德规则之前。旧 `StartUpGaps.conf` 保留航旅与神州覆盖；新神州精确路径先返回空字典，两条结果一致。
 
 高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
+
+闲鱼 `fmz200-XianYu.snippet` 移除 amdc 后只含重写，不作为分流资源导入；加载到 `[filter_remote]` 会得到空分流并报错。

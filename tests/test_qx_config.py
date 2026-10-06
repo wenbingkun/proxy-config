@@ -228,6 +228,31 @@ def check_hosted_rewrites(failures: list[str]) -> None:
                     failures.append(f"QX [filter_remote]: {name} must use force-policy=🛡️ 安全防护")
 
 
+def check_local_filter_content(failures: list[str]) -> None:
+    """A rewrite-only source cannot be imported as a filter after its last policy is removed."""
+    prefix = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/"
+    kinds = {"host", "host-suffix", "host-keyword", "host-wildcard", "host-regex",
+             "ip-cidr", "ip6-cidr", "ip-asn", "geoip", "user-agent"}
+    for line in sections(QX_CONFIG.read_text(encoding="utf-8")).get("filter_remote", []):
+        url = line.split(",", 1)[0].strip().split("#", 1)[0]
+        if not url.startswith(prefix):
+            continue
+        path = ROOT / url.removeprefix(prefix)
+        if not path.is_file():
+            failures.append(f"QX filter source is missing: {path.relative_to(ROOT)}")
+            continue
+        policies = [l for l in path.read_text(encoding="utf-8").splitlines()
+                    if l.split(",", 1)[0].strip().lower() in kinds]
+        if not policies:
+            failures.append(f"QX [filter_remote]: {path.name} has no filter policies; load it only as a rewrite")
+    # XianYu's only policy was amdc, which now belongs to AlibabaAmdc.
+    references = sections(QX_CONFIG.read_text(encoding="utf-8"))
+    for section, count in (("rewrite_remote", 1), ("filter_remote", 0)):
+        got = sum("quantumultx/rewrite/fmz200-XianYu.snippet," in l for l in references.get(section, []))
+        if got != count:
+            failures.append(f"QX [{section}]: XianYu must be referenced {count} time(s), got {got}")
+
+
 def check_xiaoyuzhou_features(failures: list[str]) -> None:
     # Exercise the actual native URL patterns on all three clients. A source can stay pinned
     # while still blocking normal features, which the pin-only checks cannot catch.
@@ -302,6 +327,7 @@ def main() -> int:
     check_fmz200(failures)
     check_hosted_rewrites(failures)
     check_no_ddgksf2013(failures)
+    check_local_filter_content(failures)
     check_xiaoyuzhou_features(failures)
     check_generator(failures)
     if failures:
