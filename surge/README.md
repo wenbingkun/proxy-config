@@ -172,3 +172,5 @@ find "$T" -type f -exec chmod 600 {} +
 开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 仅完成对应规则及模拟检查，新增项模板默认关闭，需逐项验收。
 
 按需添加 `modules/rewrite/amap-page-cleanup.sgmodule` 和 `modules/rewrite/startup-supplement.sgmodule`；与原高德、通用去广告并用。共享高德主机上的原模块只拦其他路径；神州通用规则匹配旧 `carrctapi/home/marketing`，补充匹配 `cardes/toufang/marketing/v1`，互不依赖执行顺序。
+
+高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。

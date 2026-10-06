@@ -63,3 +63,7 @@ for path,names in [('quantumultx/bootstrap.example.conf',['AmapPageCleanup.conf'
   line=next(l for l in (h/path).read_text().splitlines() if name in l)
   assert line.endswith('enabled=false')
 print('Three-client URL boundaries, normal-resource negatives, jq preservation and disabled defaults passed.')
+
+script_url='https://raw.githubusercontent.com/wenbingkun/proxy-config/ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8/quantumultx/scripts/amap-page-cleanup.js'
+for path in ['quantumultx/rewrite/AmapPageCleanup.conf','loon/plugins/AmapPageCleanup.plugin','surge/modules/converted/AmapPageCleanup.sgmodule']:
+ assert script_url in (h/path).read_text()

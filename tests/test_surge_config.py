@@ -52,7 +52,7 @@ FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
 FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou", "amap"}
 # Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
 REPO_SCRIPTED = {
-    "amap-page-cleanup": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amap-page-cleanup.js"},
+    "amap-page-cleanup": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8/quantumultx/scripts/amap-page-cleanup.js"},
     "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"},
     "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
     "xiaohongshu": {
