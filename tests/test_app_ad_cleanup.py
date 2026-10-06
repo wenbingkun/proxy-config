@@ -58,7 +58,7 @@ for obj in [{'data':{'banner':[1],'native_content':[1],'order':['hot','native_co
  if isinstance(expected['data'].get('order'),list):expected['data']['order']=[x for x in expected['data']['order'] if x!='native_content']
  assert out==expected
 assert '$persistentStore' not in (h/'quantumultx/scripts/amap-page-cleanup.js').read_text()
-for path,names in [('quantumultx/bootstrap.example.conf',['AmapPageCleanup.conf','StartupSupplement.conf']),('loon/bootstrap.example.conf',['AmapPageCleanup.plugin','StartupSupplement.plugin'])]:
+for path,names in [('quantumultx/bootstrap.example.conf',['AmapPageCleanup.conf','StartupSupplement.conf']),('loon/bootstrap.example.conf',['StartupSupplement.plugin'])]:
  for name in names:
   line=next(l for l in (h/path).read_text().splitlines() if name in l)
   assert line.endswith('enabled=false')
@@ -67,3 +67,7 @@ print('Three-client URL boundaries, normal-resource negatives, jq preservation a
 script_url='https://raw.githubusercontent.com/wenbingkun/proxy-config/ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8/quantumultx/scripts/amap-page-cleanup.js'
 for path in ['quantumultx/rewrite/AmapPageCleanup.conf','loon/plugins/AmapPageCleanup.plugin','surge/modules/converted/AmapPageCleanup.sgmodule']:
  assert script_url in (h/path).read_text()
+
+loon_template=(h/"loon/bootstrap.example.conf").read_text()
+assert "https://kelee.one/Tool/Loon/Lpx/Amap_remove_ads.lpx," in loon_template
+assert "loon/plugins/AmapPageCleanup.plugin," not in loon_template

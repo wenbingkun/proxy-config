@@ -46,6 +46,8 @@ sh -n mihomo/shellcrash/deploy.sh
 
 ## 各端约定（改动前先读，别“补齐”有意的差异）
 
+去广告以各端能力相近为目标，优先采用适合该客户端的原生实现，不为统一来源替换已验证方案。当前 Loon 高德保留可莉插件；新增补充前先核对现有覆盖，避免同一 App 出现容易混淆的重复条目。墨鱼替换的目标是退出不透明的依赖，不要求三端规则完全一致。
+
 **策略组**：以路由器模板为基准，三端的 32 个基础策略组组名、组序一致；QX 与 Loon 另有 16 个 ssid 包装组（见下）。
 - 家庭/外出切换（QX、Loon 相同）：需要区分的策略由排在最后的 16 个「· 自动」ssid 组包装，在家走 DIRECT 交给路由器，外出（其他 Wi-Fi、蜂窝）走同名基础组；规则只引用包装组。REJECT、DIRECT、`🛡️ 安全防护` 等不需要切换的策略不包装。全程规则模式：Loon 不用 `ssid-trigger`，QX 不用 `running_mode_trigger` / `ssid_suspended_list`。包装组清单唯一来源是 `scripts/build_rules.py` 的 `HOME_AUTO_GROUPS`（同时决定 `repo.snippet` 的策略名），`tests/test_qx_config.py` 与 `tests/test_loon_config.py` 校验两端模板与之一致。
 - QX 的 `🌏 全球加速` 有意不挂规则；ProxyLite 有意不移植到 QX。
