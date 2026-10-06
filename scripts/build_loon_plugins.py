@@ -60,6 +60,7 @@ ICONS = {
     "NeteaseMailAds.plugin": MZ + "Purple211/v4/ac/2d/4f/ac2d4ffc-f481-f3aa-cbff-65a7ebc9c04c/AppIconStore-0-0-1x_U007emarketing-0-8-0-85-220.png/100x100bb.png",
     "Q-Search.plugin": MZ + "Purple211/v4/40/fa/0b/40fa0b23-e17b-977e-740f-2b5fa9962d2c/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-85-220.png/100x100bb.png",
     "UmetripAds.plugin": MZ + "Purple221/v4/f3/24/9f/f3249f91-f692-a1a4-ea79-df11a012566f/AppIcon-0-0-1x_U007emarketing-0-7-0-85-220.png/100x100bb.png",
+    "Umetrip.plugin": MZ + "Purple221/v4/f3/24/9f/f3249f91-f692-a1a4-ea79-df11a012566f/AppIcon-0-0-1x_U007emarketing-0-7-0-85-220.png/100x100bb.png",
     "WeRead.plugin": MZ + "Purple211/v4/35/92/e6/3592e6f4-0b0b-f2e4-7968-7033b281e1f5/AppIcon-0-1x_U007epad-0-11-0-85-220-0.png/100x100bb.png",
     "WeiboAds.plugin": MZ + "Purple211/v4/a8/52/27/a85227af-35ed-aea1-c7ac-51ede3a7a45e/WeiboAppIcon-0-0-1x_U007epad-0-1-0-85-220.png/100x100bb.png",
     "Xiaohongshu.plugin": MZ + "Purple221/v4/ae/f7/20/aef720a0-32ec-e719-2ea0-5b98afdaba74/AppIcon-0-0-1x_U007epad-0-11-0-85-220.png/100x100bb.png",
