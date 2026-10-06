@@ -116,6 +116,25 @@ def infer_qx_kind(line: str, url: str) -> str:
     return "qx-resource"
 
 
+def source_policy_error(url: str) -> str | None:
+    """Recovered Moyu code must be reproducible; Kelee's native Loon sources stay allowed."""
+    parsed = urllib.parse.urlsplit(url)
+    host = (parsed.hostname or "").lower()
+    if host == "ddgksf2013.top" or host.endswith(".ddgksf2013.top"):
+        return "Moyu's personal-site resources must use a reviewed repository snapshot"
+    path = urllib.parse.unquote(parsed.path)
+    if host == "raw.githubusercontent.com" and path.lower().startswith("/ddgksf2013/"):
+        if parsed.scheme != "https" or not re.fullmatch(r"/ddgksf2013/[^/]+/[0-9a-f]{40}/.+", path, re.I):
+            return "Moyu GitHub resources must use a full commit SHA"
+    elif host.endswith("jsdelivr.net") and path.lower().startswith("/gh/ddgksf2013/"):
+        if parsed.scheme != "https" or not re.fullmatch(r"/gh/ddgksf2013/[^/@]+@[0-9a-f]{40}/.+", path, re.I):
+            return "Moyu jsDelivr resources must use a full commit SHA"
+    elif host in {"github.com", "www.github.com"} and path.lower().startswith("/ddgksf2013/"):
+        if parsed.scheme != "https" or not re.fullmatch(r"/ddgksf2013/[^/]+/(?:raw|blob)/[0-9a-f]{40}/.+", path, re.I):
+            return "Moyu GitHub download URLs must use a full commit SHA"
+    return None
+
+
 def resource_kind(path: Path, line: str, url: str) -> str:
     kind = infer_qx_kind(line, url)
     if path in LOON_FILES:
@@ -251,6 +270,9 @@ def read_response(url: str, headers: dict[str, str], timeout: float, limit: int)
 
 
 def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result:
+    problem = source_policy_error(resource.url)
+    if problem:
+        return Result(resource, False, None, "", resource.url, 0, problem)
     full_rule_check = mode == "full" and resource.kind in FULL_CHECK_KINDS
     limit = FULL_LIMIT if full_rule_check else LIGHT_BYTES
     headers = {"User-Agent": user_agent_for(resource), "Accept": "*/*"}
@@ -273,7 +295,7 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
                 last_error = f"resource exceeds {FULL_LIMIT // (1024 * 1024)} MiB full-check limit"
             else:
                 body = body[:limit]
-                problem = validate_body(resource, content_type, body, mode)
+                problem = source_policy_error(final_url) or validate_body(resource, content_type, body, mode)
                 return Result(
                     resource=resource,
                     ok=problem is None,

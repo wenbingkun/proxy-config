@@ -47,7 +47,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、Safari 超级搜索（2026-10-06 起） | 微博、闲鱼为 fmz200 Surge 模块的冻结副本（`surge/modules/converted/Weibo.sgmodule`、`XianYu.sgmodule`，脚本固定到提交，微博的重复脚本名已编号）；Safari 超级搜索为仓库自写精简版 `QSearch.sgmodule`。微博模块解密 `*.weibo.cn`、`*.weibo.com`，范围比墨鱼版宽 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本自 2026-10-05 起改指仓库托管的 `quantumultx/scripts/xiaohongshu.js`（三端同一份：首页推荐去视频笔记、去「视频」频道），并为频道列表接口加了 `xiaohongshu_11` |
-| 高德地图（2026-10-06 起） | fmz200 按 App 拆分的原生模块（`5d5f63f`，无脚本，含拒绝规则）；原墨鱼版里的 amdc 处理移到「阿里系 amdc」 |
+| 高德地图（效果优先批次） | 仓库合并源：墨鱼固定规则与可读响应脚本、已验证页面清理，以及既有 fmz200 开屏/拒绝规则；amdc 独立，新组合待真机验收 |
 | 阿里系 amdc（2026-10-06 新增） | 仓库自写的 `quantumultx/scripts/amdc.js`（与墨鱼 `amdc.js` 同一 UA 清单），只有一条 http-response 脚本、不需要 MitM；三端各一项 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
 | 网易邮箱大师、大麦（2026-10-06 起） | 仓库自写规则 `NeteaseMail.sgmodule`、`DaMai.sgmodule`（与 QX 同一份规则）；大麦不再带 amdc |
@@ -83,7 +83,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 | YouTube 增强 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/youtube.sgmodule` | 按需启用 |
 | 小红书去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaohongshu.sgmodule` | 按需启用 |
 | 高德地图去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap.sgmodule` | 按需启用 |
-| 高德页面净化 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap-page-cleanup.sgmodule` | 按需启用；与高德地图去广告、通用去广告并用 |
+| 高德页面净化（旧兼容入口） | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/amap-page-cleanup.sgmodule` | 保留旧内容供回滚；新高德已合并其功能，不同时启用 |
 | 阿里系 amdc | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/alibaba-amdc.sgmodule` | 用高德、闲鱼、大麦等阿里系 App 时启用 |
 | 知乎去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/zhihu.sgmodule` | 按需启用 |
 | 微信外链解锁 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/wechat.sgmodule` | 按需启用 |
@@ -176,3 +176,9 @@ find "$T" -type f -exec chmod 600 {} +
 按需添加 `modules/rewrite/amap-page-cleanup.sgmodule` 和 `modules/rewrite/startup-supplement.sgmodule`；与原高德、通用去广告并用。共享高德主机上的原模块只拦其他路径；神州通用规则匹配旧 `carrctapi/home/marketing`，补充匹配 `cardes/toufang/marketing/v1`，互不依赖执行顺序。
 
 高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
+
+## 效果优先：高德单入口
+
+`amap.sgmodule` 由仓库维护的 `converted/Amap.sgmodule` 生成，合并墨鱼高德与已验证页面清理。个人页、打车两个重叠接口只运行一个响应脚本，首页 ContentCenter 使用同一脚本的独立匹配；保留原 fmz200 的开屏/域名拒绝，amdc 仍独立。请启用一个高德模块并关闭旧「高德页面净化」，家庭拦截模块继续排在含拒绝规则的高德模块之后。
+
+旧 `amap-page-cleanup.sgmodule` 保留原字节，仅作兼容；生成器将其标为 compat_only，活跃模块冲突检查不把它算作新配置的第二个高德入口，测试仍固定校验其原内容。新组合须完成真机 A/B 后再发布，模拟通过不证明顶部商业卡片已消失。

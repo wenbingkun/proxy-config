@@ -1,0 +1,46 @@
+#!name=高德地图去广告
+#!desc=墨鱼高德规则与已验证页面清理；阿里系 amdc 独立处理。
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/3d/0d/b7/3d0db700-cb0f-62e2-aa78-6e7a7341cba2/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/100x100bb.png
+# Sources: ddgksf2013/Rewrite@dc3ea2c1fb2db870676b26da24006083eb1d44d3; fmz200/wool_scripts@5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97
+# Changes: one readable response handler, keep AutoNavi filters and startup rejects, remove amdc and optimus DIRECT.
+
+host-suffix, adiu.amap.com, reject
+host, aboard.apilocate.amap.com, reject
+host, apiinit.amap.com, reject
+host, icloud-amap.com, reject
+host, logs.amap.com, reject
+host-suffix, dualstack-logs.amap.com, reject
+host-suffix, logs.amap.com, reject
+host-suffix, optimus-ads.amap.com, reject
+host-suffix, page.amap.com, reject
+host, optimus-ads.amap.com, reject
+host, optimus-ads.amap.com.w.alikunlun.com, reject
+host-suffix, shouji.sougou.com, reject
+host, u51.me, reject
+host-suffix, u51.me, reject
+
+hostname = m*.amap.com, center.amap.com, ai.amap.com, optimus-ads.amap.com, amap-aos-info-nogw.amap.com
+
+^https?:\/\/m5\.amap\.com\/ws\/shield\/dsp\/app\/startup\/init\? url reject-dict
+^https?:\/\/m5\.amap\.com\/ws\/valueadded\/ url reject
+^https?:\/\/optimus-ads\.amap\.com\/uploadimg\/[a-zA-Z0-9]+.gif url reject-200
+^https?:\/\/amap-aos-info-nogw\.amap\.com\/ws\/aos\/alimama\/splash_screen_rt url reject
+
+^https?:\/\/.*\.amap\.com\/ws\/aos\/alimama\/splash_screen url reject-200
+^https?:\/\/.*\.amap\.com\/v\d\/ai_rec\/ url reject-dict
+^https?:\/\/.*\.amap\.com\/ws\/message\/notice\/list url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/faas\/amap-navigation\/card-service-route-plan\? url reject-dict
+^https?:\/\/.*\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/shield\/search\/nearbyrec_smart url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/promotion-web\/resource url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/boss\/order_web\/\w{8}_information url reject-200
+^https?:\/\/.*\.amap\.com\/ws\/faas\/amap-navigation\/main-page url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/asa\/ads_attribution url reject
+^https?:\/\/.*\.amap\.com\/ws\/valueadded\/alimama\/splash_screen url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/msgbox\/pull url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/shield\/dsp\/profile\/index\/nodefaas url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/shield\/search\/new_hotword url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js
+^https?:\/\/.*\.amap\.com\/ws\/shield\/scene\/recommend url reject-dict
+^https?:\/\/.*\.amap\.com\/uploadimg\/\w+\.gif url reject-img
+^https?:\/\/.*\.amap\.com\/ws\/valueadded\/weather url reject-dict
+^https:\/\/m5\.amap\.com\/ws\/info_bff\/ContentCenter(?:\?|$) url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js

@@ -58,7 +58,7 @@ for obj in [{'data':{'banner':[1],'native_content':[1],'order':['hot','native_co
  if isinstance(expected['data'].get('order'),list):expected['data']['order']=[x for x in expected['data']['order'] if x!='native_content']
  assert out==expected
 assert '$persistentStore' not in (h/'quantumultx/scripts/amap-page-cleanup.js').read_text()
-for path,names in [('quantumultx/bootstrap.example.conf',['AmapPageCleanup.conf','StartupSupplement.conf']),('loon/bootstrap.example.conf',['StartupSupplement.plugin'])]:
+for path,names in [('quantumultx/bootstrap.example.conf',['Amap.snippet','StartupSupplement.conf']),('loon/bootstrap.example.conf',['StartupSupplement.plugin'])]:
  for name in names:
   line=next(l for l in (h/path).read_text().splitlines() if name in l)
   assert line.endswith('enabled=false')
@@ -71,3 +71,5 @@ for path in ['quantumultx/rewrite/AmapPageCleanup.conf','loon/plugins/AmapPageCl
 loon_template=(h/"loon/bootstrap.example.conf").read_text()
 assert "https://kelee.one/Tool/Loon/Lpx/Amap_remove_ads.lpx," in loon_template
 assert "loon/plugins/AmapPageCleanup.plugin," not in loon_template
+
+assert "quantumultx/rewrite/AmapPageCleanup.conf," not in (h/"quantumultx/bootstrap.example.conf").read_text()

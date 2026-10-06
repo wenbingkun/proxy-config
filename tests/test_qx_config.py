@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 import build_rules  # noqa: E402
+import check_remote_resources  # noqa: E402
 import test_loon_config  # noqa: E402
 
 QX_CONFIG = ROOT / "quantumultx" / "bootstrap.example.conf"
@@ -156,9 +157,8 @@ def check_dns(failures: list[str]) -> None:
 # each is loaded as a rewrite and, where it carries domain rules, again as a filter. Both need the
 # resource parser (opt-parser=true): on the device it kept the two kinds apart (Hupu: 8 rewrites, 5 filters).
 FMZ200_SNIPPETS = "https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/"
-FMZ200_REWRITES = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban", "ChinaMobile",
-                   "AutoNavi"}
-FMZ200_FILTERS = {"Hupu", "Mijia", "Douban", "ChinaMobile", "AutoNavi"}
+FMZ200_REWRITES = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban", "ChinaMobile"}
+FMZ200_FILTERS = {"Hupu", "Mijia", "Douban", "ChinaMobile"}
 
 
 def check_fmz200(failures: list[str]) -> None:
@@ -184,6 +184,7 @@ def check_fmz200(failures: list[str]) -> None:
 REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/"
 REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
+    "Amap.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js"}, True),
     "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"}, False),
     "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
     "AlibabaAmdc.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}, False),
@@ -196,17 +197,12 @@ HOSTED_REWRITES = {
                       "65075cdb388fc5e3094afd7e7314c67b243f3525/Script/Youtube/youtube.response.js"}, False),
 }
 HOSTED_ACCEPTED = {"fmz200-XiaoYuZhou.snippet", "fmz200-Zhihu.snippet", "WeChatUnblock.conf", "YouTube.conf"}
-REPLACED_DDGKSF2013 = ("scripts/zhihu.ads.js", "AdBlock/YoutubeAds.conf", "Function/UnblockURLinWeChat.conf",
-                       "AdBlock/XiaoYuZhouAds.conf", "rewrite/XiaoHongShuAds.conf",
-                       "AdBlock/AmapAds.conf")
+
 
 
 def check_hosted_rewrites(failures: list[str]) -> None:
     text = QX_CONFIG.read_text(encoding="utf-8")
     sec = sections(text)
-    for old in REPLACED_DDGKSF2013:
-        if old in text:
-            failures.append(f"QX: {old} was replaced by a pinned source and must not come back")
     for name, (scripts, as_filter) in HOSTED_REWRITES.items():
         body = (ROOT / "quantumultx" / "rewrite" / name).read_text(encoding="utf-8")
         found = set(re.findall(r"\burl script-[a-z-]+ (\S+)", body))
@@ -295,11 +291,15 @@ PINNED_URL = re.compile(r"^https://raw\.githubusercontent\.com/[^/]+/[^/]+/[0-9a
 OWN_SCRIPTS = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/"
 
 
-def check_no_ddgksf2013(failures: list[str]) -> None:
-    """2026-10-06: every ddgksf2013 resource is replaced; hosted rewrites only load pinned or own scripts."""
+def check_pinned_rewrites(failures: list[str]) -> None:
+    """Recovered sources use pinned code rather than an author-name ban."""
     for line in QX_CONFIG.read_text(encoding="utf-8").splitlines():
-        if not line.lstrip().startswith(("#", ";")) and "ddgksf2013" in line.split(",")[0]:
-            failures.append(f"QX: ddgksf2013 resources were replaced and must not come back: {line.split(',')[0]}")
+        if line.lstrip().startswith(("#", ";")):
+            continue
+        url = line.split(",", 1)[0].strip()
+        problem = check_remote_resources.source_policy_error(url)
+        if problem:
+            failures.append(f"QX: {problem}: {url}")
     for path in sorted((ROOT / "quantumultx" / "rewrite").glob("*")):
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.lstrip().startswith(("#", ";")):
@@ -326,7 +326,7 @@ def main() -> int:
     check_dns(failures)
     check_fmz200(failures)
     check_hosted_rewrites(failures)
-    check_no_ddgksf2013(failures)
+    check_pinned_rewrites(failures)
     check_local_filter_content(failures)
     check_xiaoyuzhou_features(failures)
     check_generator(failures)
