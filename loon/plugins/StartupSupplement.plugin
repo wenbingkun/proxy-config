@@ -1,5 +1,8 @@
+# Installed-app startup subset of ddgksf2013 StartUpAds snapshot fetched 2026-10-05.
+# Source SHA-256: fb9c1530eac7e921c007f7d1e9113aef11b7319fa8613e3a2bdaf15f88690a72
+# No scripts, amdc or full legacy MitM list; existing verified three-app rules retained.
 #!name=开屏补充
-#!desc=神州、滴滴与一嗨开屏补充；一嗨仅覆盖4张已核验素材
+#!desc=已安装 App 裁剪开屏补充；保留神州、滴滴、一嗨已验证规则；不包含 amdc
 #!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/9d/81/f8/9d81f836-fcaf-f7fc-6150-04f2761764fe/AppIcon-0-0-1x_U007emarketing-0-10-0-85-220.png/100x100bb.png
 
 [Rewrite]
@@ -7,5 +10,26 @@
 ^https:\/\/externalimage\.1hai\.cn\/512\/(?:987dcb4241584cca926c2d34f5ff59db|499f25d69e14475a89e5436bd47f8293|3e3b519297244eeca14710366411df22|04c29fd6157947c882ceb04f311f64fe)\.jpg(?:\?|$) reject
 ^https:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/ reject
 
+# alibaba
+^https?:\/\/acs\.m\.taobao\.com\/gw\/mtop\.alibaba\.advertisementservice\.getadv\/ - reject-200
+# alibaba
+^https?:\/\/acs\.m\.taobao\.com\/gw\/mtop\.alibaba\.cbu\.app\.homepage\.startup - reject-200
+# jingdong[invalid]
+^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(start|queryMaterialAdverts) - reject-200
+# jingdong[invalid]
+^https?:\/\/(bdsp-x|dsp-x)\.jd\.com\/adx\/ - reject-200
+# pinduoduo
+^https?:\/\/api\.(pinduoduo|yangkeduo)\.com\/api\/cappuccino\/splash - reject-200
+# taobao
+^https?:\/\/guide-acs\.m\.taobao\.com\/gw\/mtop\.taobao\.wireless\.home\.splash\.awesome\.get - reject-200
+# dewu
+^https:\/\/app\.dewu\.com\/api\/v1\/app\/advertisement\/ - reject-200
+# jianhanglife
+^https?:\/\/yunbusiness\.ccb\.com\/clp_service\/txCtrl\?txcode=A3341A00(2|9) - reject-200
+# didichuxing
+^https?://res\.xiaojukeji\.com\/resapi\/activity\/mget - reject-200
+# didichuxing
+^https?:\/\/res\.xiaojukeji\.com\/resapi\/activity\/get(Ruled|Preload|PasMultiNotices) - reject-200
+
 [MITM]
-hostname = apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn
+hostname = apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn, acs.m.taobao.com, api.m.jd.com, bdsp-x.jd.com, dsp-x.jd.com, api.pinduoduo.com, api.yangkeduo.com, guide-acs.m.taobao.com, app.dewu.com, yunbusiness.ccb.com, res.xiaojukeji.com

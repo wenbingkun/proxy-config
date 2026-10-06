@@ -1,10 +1,34 @@
+# Installed-app startup subset of ddgksf2013 StartUpAds snapshot fetched 2026-10-05.
+# Source SHA-256: fb9c1530eac7e921c007f7d1e9113aef11b7319fa8613e3a2bdaf15f88690a72
+# No scripts, amdc or full legacy MitM list; existing verified three-app rules retained.
 # Native Surge source maintained by proxy-config; endpoint and image rules match
 # quantumultx/rewrite/StartupSupplement.conf. Reviewed device results: 2026-10-06.
 #!name=开屏补充
-#!desc=补充blackmatrix7：神州营销投放空响应；滴滴独立广告素材路径拦截；一嗨精确拦截4张已核实开屏素材
+#!desc=已安装 App 裁剪开屏补充；保留神州、滴滴、一嗨已验证规则；不包含 amdc
 #!category=proxy-config
 
 [Map Local]
+# alibaba
+^https?:\/\/acs\.m\.taobao\.com\/gw\/mtop\.alibaba\.advertisementservice\.getadv\/ data-type=text data=" " status-code=200
+# alibaba
+^https?:\/\/acs\.m\.taobao\.com\/gw\/mtop\.alibaba\.cbu\.app\.homepage\.startup data-type=text data=" " status-code=200
+# jingdong[invalid]
+^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(start|queryMaterialAdverts) data-type=text data=" " status-code=200
+# jingdong[invalid]
+^https?:\/\/(bdsp-x|dsp-x)\.jd\.com\/adx\/ data-type=text data=" " status-code=200
+# pinduoduo
+^https?:\/\/api\.(pinduoduo|yangkeduo)\.com\/api\/cappuccino\/splash data-type=text data=" " status-code=200
+# taobao
+^https?:\/\/guide-acs\.m\.taobao\.com\/gw\/mtop\.taobao\.wireless\.home\.splash\.awesome\.get data-type=text data=" " status-code=200
+# dewu
+^https:\/\/app\.dewu\.com\/api\/v1\/app\/advertisement\/ data-type=text data=" " status-code=200
+# jianhanglife
+^https?:\/\/yunbusiness\.ccb\.com\/clp_service\/txCtrl\?txcode=A3341A00(2|9) data-type=text data=" " status-code=200
+# didichuxing
+^https?://res\.xiaojukeji\.com\/resapi\/activity\/mget data-type=text data=" " status-code=200
+# didichuxing
+^https?:\/\/res\.xiaojukeji\.com\/resapi\/activity\/get(Ruled|Preload|PasMultiNotices) data-type=text data=" " status-code=200
+
 ^https:\/\/apiproxy\.zuche\.com\/resource\/cardes\/toufang\/marketing\/v1(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [URL Rewrite]
@@ -13,4 +37,4 @@
 ^https:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/ - reject
 
 [MITM]
-hostname = %APPEND% apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn
+hostname = %APPEND% apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn, acs.m.taobao.com, api.m.jd.com, bdsp-x.jd.com, dsp-x.jd.com, api.pinduoduo.com, api.yangkeduo.com, guide-acs.m.taobao.com, app.dewu.com, yunbusiness.ccb.com, res.xiaojukeji.com

@@ -53,7 +53,7 @@ FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "doub
 # Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
 REPO_SCRIPTED = {
     "amap-page-cleanup": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8/quantumultx/scripts/amap-page-cleanup.js"},
-    "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"},
+    "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/442b4ef2a10564bbbecbdcdd392abc806e7d222e/quantumultx/scripts/umetrip.js"},
     "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
     "xiaohongshu": {
         "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
@@ -64,7 +64,10 @@ REPO_SCRIPTED = {
 FMZ200_SCRIPTED = {
     "wechat": {"https://raw.githubusercontent.com/zZPiglet/Task/0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js"},
 }
+# Startup subset uses only request-stage empty replies; its acs host has no
+# Damai endpoint overlap. Umetrip discardrp is also request-stage, before response scripts.
 SHARED_MITM = {
+    ("damai", "startup-supplement"): {"acs.m.taobao.com"},
     ("advertising", "chinamobile"): {"client.app.coc.10086.cn"},
     ("advertising", "douban-app"): {"api.douban.com"},
     ("advertising", "hupu"): {"games.mobileapi.hupu.com", "goblin.hupu.com", "i*.hoopchina.com.cn"},
@@ -75,7 +78,7 @@ SHARED_MITM = {
     ("advertising", "wechat-mp"): {"mp.weixin.qq.com"},
     ("advertising", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
     ("amap", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
-    ("advertising", "startup-supplement"): {"apiproxy.zuche.com"},
+    ("advertising", "startup-supplement"): {"apiproxy.zuche.com", "acs.m.taobao.com", "api.m.jd.com", "bdsp-x.jd.com", "dsp-x.jd.com", "api.pinduoduo.com", "api.yangkeduo.com", "app.dewu.com", "yunbusiness.ccb.com", "res.xiaojukeji.com"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
@@ -83,7 +86,7 @@ SHARED_MITM = {
     ("advertising", "safe-redirect"): {"*.google.cn", "app.biliintl.com", "ditu.google.cn", "map.google.cn",
                                        "passport.biliintl.com", "www.firefox.com.cn", "www.google.cn"},
     ("advertising", "spotify"): {"spclient.wg.spotify.com"},
-    ("advertising", "umetrip"): {"*.umetrip.com", "activity.umetrip.com", "appmsg.umetrip.com", "event.umetrip.com",
+    ("advertising", "umetrip"): {"discardrp.umetrip.com", "*.umetrip.com", "activity.umetrip.com", "appmsg.umetrip.com", "event.umetrip.com",
                                  "flightstatus.umetrip.com", "home.umetrip.com", "opactivity.umetrip.com",
                                  "oss.umetrip.com", "sns.umetrip.com", "startup.umetrip.com",
                                  "umeflightstatus.umetrip.com", "umehome.umetrip.com", "umerp.umetrip.com",
