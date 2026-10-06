@@ -11,6 +11,7 @@
 #!system_version = 
 #!loon_version = 
 #!date=2025-12-16 21:33:23
+# Local change (2026-10-06): remove empty native_content section and its order entry; retain trends content.
 # Frozen copy of fmz200's Loon plugin for Weibo; do not edit by hand.
 # Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Loon/plugin/weibo.plugin
 # Source SHA-256: 6fb8f00e4d2b02b347388c824ea5ae9621c3ac9777ec88ee6823776b48f66a0e
@@ -82,7 +83,7 @@ DOMAIN, adpinpai.video.weibocdn.com, REJECT
 # 微博轻享版热搜词
 ^https?:\/\/weibointl\.api\.weibo\.cn\/portal\.php\?a=get_searching_info reject-dict
 # 微博轻享版banner广告
-^https?:\/\/weibointl\.api\.weibo\.cn\/portal\.php\?a=trends& response-body-json-jq 'del(.data.banner)'
+^https?:\/\/weibointl\.api\.weibo\.cn\/portal\.php\?a=trends& response-body-json-jq 'del(.data.banner, .data.native_content) | if (.data.order | type) == "array" then .data.order |= map(select(. != "native_content")) else . end'
 # 私信中绿洲的擦边诱导推广
 ^https?:\/\/weibointl\.api\.weibo\.c(n|om)\/portal\.php\?a=treehole&auth= reject-dict
 # 屏蔽首页左上角每日的弹窗tips

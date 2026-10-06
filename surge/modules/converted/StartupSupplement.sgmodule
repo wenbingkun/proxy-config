@@ -1,0 +1,16 @@
+# Native Surge source maintained by proxy-config; endpoint and image rules match
+# quantumultx/rewrite/StartupSupplement.conf. Reviewed device results: 2026-10-06.
+#!name=开屏补充
+#!desc=补充blackmatrix7：神州营销投放空响应；滴滴独立广告素材路径拦截；一嗨精确拦截4张已核实开屏素材
+#!category=proxy-config
+
+[Map Local]
+^https:\/\/apiproxy\.zuche\.com\/resource\/cardes\/toufang\/marketing\/v1(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[URL Rewrite]
+# Ehi: verified campaign assets only; this shared directory also serves normal images.
+^https:\/\/externalimage\.1hai\.cn\/512\/(?:987dcb4241584cca926c2d34f5ff59db|499f25d69e14475a89e5436bd47f8293|3e3b519297244eeca14710366411df22|04c29fd6157947c882ceb04f311f64fe)\.jpg(?:\?|$) - reject
+^https:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/ - reject
+
+[MITM]
+hostname = %APPEND% apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn

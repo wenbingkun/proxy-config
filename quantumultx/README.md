@@ -86,3 +86,11 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filte
 ```
 
 修改 `rules/` 下的规则后，按[日常维护](../rules/README.md#日常维护)生成 `filter/repo.snippet` 并合入 `main`，QX 会在后续按配置刷新（示例间隔 24 小时）成功加载时取得新规则；也可手动触发「更新资源」。这只更新 snippet 的内容；本地 `bootstrap.conf` 的策略组和资源行不会随之改变，见[日常维护](../rules/README.md#日常维护)末尾的同步边界说明。
+
+## 2026-10-06 页面净化与开屏补充
+
+高德页面净化独立保留个人页明确推广卡片、首页「关注 / 推荐 / 附近」社交栏目和帖子、打车推广列表清理；保留地图、定位、搜索、路线与未知组件。首页顶部商业卡片尚未覆盖。微博发现页的空「热门视频」区块及排序入口已合入原微博规则，保留原广告 banner 过滤和正常发现内容。
+
+开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 仅完成对应规则及模拟检查，新增项模板默认关闭，需逐项验收。
+
+新增 `rewrite/AmapPageCleanup.conf`、`rewrite/StartupSupplement.conf`，放在通用去广告和既有高德规则之前。旧 `StartUpGaps.conf` 保留航旅与神州覆盖；新神州精确路径先返回空字典，两条结果一致。

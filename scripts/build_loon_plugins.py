@@ -47,6 +47,8 @@ MZ = "https://is1-ssl.mzstatic.com/image/thumb/"
 # installed on the phone, artworkUrl100 as PNG). Q-Search uses DuckDuckGo (it rewrites DuckDuckGo
 # searches); General uses Google (it redirects google.cn).
 ICONS = {
+    "AmapPageCleanup.plugin": 'https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/3d/0d/b7/3d0db700-cb0f-62e2-aa78-6e7a7341cba2/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/100x100bb.png',
+    "StartupSupplement.plugin": 'https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/9d/81/f8/9d81f836-fcaf-f7fc-6150-04f2761764fe/AppIcon-0-0-1x_U007emarketing-0-10-0-85-220.png/100x100bb.png',
     "AlibabaAmdc.plugin": MZ + "Purple221/v4/9d/81/f8/9d81f836-fcaf-f7fc-6150-04f2761764fe/AppIcon-0-0-1x_U007emarketing-0-10-0-85-220.png/100x100bb.png",
     "DaMai.plugin": MZ + "Purple211/v4/c5/23/4c/c5234cd0-5980-c184-e14a-41ca193e83f0/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/100x100bb.png",
     "NeteaseMail.plugin": MZ + "Purple211/v4/ac/2d/4f/ac2d4ffc-f481-f3aa-cbff-65a7ebc9c04c/AppIconStore-0-0-1x_U007emarketing-0-8-0-85-220.png/100x100bb.png",

@@ -1,0 +1,9 @@
+#!name=高德页面净化
+#!desc=个人页推广、首页社交栏目与打车推广；顶部商业卡片未覆盖
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/3d/0d/b7/3d0db700-cb0f-62e2-aa78-6e7a7341cba2/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/100x100bb.png
+
+[Script]
+http-response ^https:\/\/(?:m5\.amap\.com\/ws\/(?:shield\/dsp\/profile\/index\/nodefaasv3|info_bff\/ContentCenter)|m5-zb\.amap\.com\/ws\/promotion-web\/resource\/home)(?:\?|$) script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amap-page-cleanup.js, requires-body=true, timeout=10, tag=amap-page-cleanup
+
+[MITM]
+hostname = m5.amap.com, m5-zb.amap.com

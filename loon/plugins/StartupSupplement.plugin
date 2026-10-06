@@ -1,0 +1,11 @@
+#!name=开屏补充
+#!desc=神州、滴滴与一嗨开屏补充；一嗨仅覆盖4张已核验素材
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/9d/81/f8/9d81f836-fcaf-f7fc-6150-04f2761764fe/AppIcon-0-0-1x_U007emarketing-0-10-0-85-220.png/100x100bb.png
+
+[Rewrite]
+^https:\/\/apiproxy\.zuche\.com\/resource\/cardes\/toufang\/marketing\/v1(?:\?|$) reject-dict
+^https:\/\/externalimage\.1hai\.cn\/512\/(?:987dcb4241584cca926c2d34f5ff59db|499f25d69e14475a89e5436bd47f8293|3e3b519297244eeca14710366411df22|04c29fd6157947c882ceb04f311f64fe)\.jpg(?:\?|$) reject
+^https:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/ reject
+
+[MITM]
+hostname = apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn
