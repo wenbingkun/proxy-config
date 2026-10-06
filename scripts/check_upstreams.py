@@ -181,6 +181,9 @@ def load_policy(path: Path) -> dict:
             raise ValueError('exception fields must be nonempty strings')
         if not item['url'].startswith('https://') or any(c in item['url'] for c in ('*', '?')):
             raise ValueError('exceptions must use exact HTTPS URLs without wildcards')
+        parsed = urlsplit(item['url'])
+        if parsed.username is not None or parsed.password is not None or not parsed.hostname:
+            raise ValueError('exceptions must not embed credentials and need a host')
         key = exception_key(item)
         if key in seen:
             raise ValueError(f'duplicate exception: {key}')

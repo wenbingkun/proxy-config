@@ -92,16 +92,18 @@ def main():
         loaded = check_reject_conflicts.load_repo(directory)
         assert loaded == {'domain_suffix': [('ordinary.yaml', 'fixture.invalid')]}, loaded
         path = directory / 'policy.yaml'
-        for bad in ('*', '?'):
+        # Wildcards and userinfo (credentials in a public repo) are both refused.
+        for bad in (dynamic.replace('test.js', '*'), dynamic.replace('test.js', '?'),
+                    dynamic.replace('https://', 'https://user:secret@'), dynamic.replace('https://', 'https://token@')):
             policy = deepcopy(check.load_policy(ROOT / 'rules/upstreams.yaml'))
-            policy['exceptions'] = [{**exception, 'url': dynamic.replace('test.js', bad)}]
+            policy['exceptions'] = [{**exception, 'url': bad}]
             path.write_text(yaml.safe_dump(policy))
             try:
                 check.load_policy(path)
             except ValueError:
                 pass
             else:
-                raise AssertionError('wildcard exception accepted')
+                raise AssertionError(f'invalid exception accepted: {bad}')
     # Exercise the actual command so future CI discovery cannot leave the gate unused.
     subprocess.run([sys.executable, str(ROOT / 'scripts/check_upstreams.py')], check=True)
     print('Upstream governance: field/source/version/exception/coverage negative cases passed.')
