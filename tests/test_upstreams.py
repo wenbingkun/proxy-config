@@ -51,6 +51,14 @@ def main():
         text = f'^https://fixture.invalid url script-response-body {url}, img-url={icon}'
         found = check.scan_text(text, 'quantumultx/rewrite/fixture.conf', 'qx')
         assert len(found) == 2 and validate(found)[1], (url, found)
+    # Header-matching scripts and echo-response bodies are fetched as well; a mutable URL must fail.
+    for directive in ('url-and-header script-response-body', 'url-and-header script-request-body',
+                      'url-and-header echo-response text/html echo-response'):
+        found = check.scan_text(f'^https://fixture.invalid Fixture {directive} {dynamic}', 'fixture.conf', 'qx')
+        assert len(found) == 1 and validate(found)[1], (directive, found)
+        assert not validate(check.scan_text(f'^https://fixture.invalid Fixture {directive} {pinned}', 'fixture.conf', 'qx'))[1]
+    weibo = [r for r in refs if r.source.startswith('quantumultx/rewrite/fmz200-Weibo.snippet:') and r.field == 'script']
+    assert len(weibo) == 22, len(weibo)
     for url in ('https://raw.githubusercontent.com/ddgksf2013/Scripts/master/test.js',
                 'https://ddgksf2013.top/scripts/test.js'):
         ref = check.Reference(url, 'qx', 'script', 'fixture', 'executable')

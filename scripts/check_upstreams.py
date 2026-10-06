@@ -23,7 +23,9 @@ URL = r'https?://[^\s,"\']+'
 URL_RE = re.compile(URL)
 SCRIPT_RE = re.compile(r'script-path\s*=\s*(' + URL + r')', re.I)
 ICON_RE = re.compile(r'(?:img-url|profile_img_url|#!icon)\s*=\s*(' + URL + r')')
-QX_SCRIPT_RE = re.compile(r'\burl\s+script-\S+\s+(' + URL + r')', re.I)
+# QX loads a remote body for `url` and `url-and-header` scripts and for echo-response with a URL.
+QX_SCRIPT_RE = re.compile(
+    r'\burl(?:-and-header)?\s+(?:script-\S+|echo-response\s+\S+\s+echo-response)\s+(' + URL + r')', re.I)
 RULE_RE = re.compile(r'RULE-SET,\s*(' + URL + r')', re.I)
 OWN_PREFIXES = ('quantumultx/', 'loon/', 'surge/', 'mihomo/')
 
