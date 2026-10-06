@@ -1,0 +1,73 @@
+# Independent expectations; provider contents never come from production URLs.
+providers:
+  LocalNetwork:
+    behavior: classical
+    payload: ["DOMAIN,local-domain.test", "IP-CIDR,198.18.0.0/24"]
+  Lan:
+    behavior: ipcidr
+    payload: ["10.0.0.0/8"]
+  AdGuard:
+    behavior: classical
+    payload: ["DOMAIN,ad-domain.test", "IP-CIDR,192.0.2.0/24"]
+  OpenAI:
+    behavior: domain
+    payload: ["known-ai.test"]
+  Telegram:
+    behavior: classical
+    payload: ["IP-CIDR,198.51.100.0/24"]
+  GitHub:
+    behavior: classical
+    payload: ["DOMAIN,priority.test"]
+  Developer:
+    behavior: classical
+    payload: ["DOMAIN,priority.test"]
+cases:
+  - host: local-domain.test
+    answer: 203.0.113.10
+    rule: RuleSet(LocalNetwork)
+    policy: DIRECT
+    dns: 0
+  - host: ad-domain.test
+    answer: 203.0.113.11
+    rule: RuleSet(AdGuard)
+    policy: 🛡️ 安全防护
+    dns: 0
+  - host: known-ai.test
+    answer: 192.0.2.66
+    rule: RuleSet(OpenAI)
+    policy: 🤖 人工智能
+    dns: 0
+  - host: priority.test
+    answer: 203.0.113.12
+    rule: RuleSet(GitHub)
+    policy: 👨‍💻 开发服务
+    dns: 0
+  - host: unlisted-local.test
+    answer: 198.18.0.8
+    rule: RuleSet(LocalNetwork)
+    policy: DIRECT
+    dns: 1
+  - host: unlisted-lan.test
+    answer: 10.2.3.4
+    rule: RuleSet(Lan)
+    policy: DIRECT
+    dns: 1
+  - host: unlisted-ad.test
+    answer: 192.0.2.66
+    rule: RuleSet(AdGuard)
+    policy: 🛡️ 安全防护
+    dns: 1
+  - host: unlisted-service.test
+    answer: 198.51.100.22
+    rule: RuleSet(Telegram)
+    policy: 🌐 社交平台
+    dns: 1
+  - host: unlisted-final.test
+    answer: 203.0.113.22
+    rule: Match
+    policy: 🐟 兜底分流
+    dns: 1
+  - host: 192.0.2.66
+    rule: RuleSet(AdGuard)
+    policy: 🛡️ 安全防护
+    dns: 0

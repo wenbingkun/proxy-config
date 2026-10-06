@@ -85,6 +85,9 @@ jobs:
               "mihomo/shellcrash/deploy.sh",
               "tests/test_deploy_shellcrash.py",
               "tests/test_shellcrash_override.py",
+              "tests/integration_mihomo_rules.py",
+              "tests/test_mihomo_rule_fixture.py",
+              "tests/fixtures/mihomo_rule_matching.yaml",
               "tests/test_rule_provider_scope.py",
               "tests/test_region_groups.py",
               "tests/test_steam_policy.py",
@@ -198,6 +201,9 @@ jobs:
             --core /tmp/proxy-config-mihomo/CrashCore \
             --mmdb /tmp/proxy-config-mihomo/Country.mmdb \
             --template mihomo/shellcrash/config-router-single.template.yaml
+          python3 tests/integration_mihomo_rules.py \
+            --core /tmp/proxy-config-mihomo/CrashCore \
+            --mmdb /tmp/proxy-config-mihomo/Country.mmdb
 
   # Candidate router core: slim Mihomo v1.19.31 built from source with the same
   # parameters as the local reproducible build. Kept alongside the v1.19.17 job
@@ -266,3 +272,6 @@ jobs:
             --core /tmp/slim/out/CrashCore \
             --mmdb /tmp/slim/out/Country.mmdb \
             --template mihomo/shellcrash/config-router-single.template.yaml
+          python3 tests/integration_mihomo_rules.py \
+            --core /tmp/slim/out/CrashCore \
+            --mmdb /tmp/slim/out/Country.mmdb
