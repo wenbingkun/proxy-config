@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import email.message
+import contextlib
+import hashlib
+import io
+import os
 import re
 import sys
+import tempfile
 import urllib.request
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -78,6 +84,184 @@ def test_surge_reject_overlap_warns_but_bad_input_fails() -> None:
     assert any("ads.coingecko.com" in w and "excluded" not in w for w in warnings), warnings
     assert any("metrics.citi.com" in w and "[excluded by reject_allow.list]" in w for w in warnings), warnings
     assert not any("noconflict.invalid" in w for w in warnings), warnings
+
+
+def test_provider_content_types() -> None:
+    cases = (
+        (b'payload: ["DOMAIN,a.test", "IP-CIDR,192.0.2.0/24", "IP-CIDR6,2001:db8::/32,no-resolve", "IP-ASN,13335", "GEOIP,CN"]', "classical", "yaml", 4),
+        (b'# header\n! comment\nDOMAIN-SUFFIX,example.test\nPROCESS-NAME,fixture.exe\nIP-ASN,13335,no-resolve\n', "classical", "text", 1),
+        (b'payload: ["+.example.test", "192.0.2.1"]', "domain", "yaml", 0),
+        (b'192.0.2.1\n*.example.test\n', "domain", "text", 0),
+        (b'payload: ["192.0.2.0/24", "2001:db8::/32"]', "ipcidr", "yaml", 2),
+        (b'192.0.2.0/24\n', "ipcidr", "text", 1),
+        (b'payload: []', "classical", "yaml", 0),
+    )
+    for body, behavior, fmt, expected in cases:
+        assert check.provider_ip_count(body, behavior, fmt) == expected
+    negatives = (
+        (b'payload: ["IP-CIDR,broken"]', "classical", "yaml"),
+        (b'payload: ["IP-CIDR,2001:db8::/32"]', "classical", "yaml"),
+        (b'payload: ["IP-CIDR6,192.0.2.0/24"]', "classical", "yaml"),
+        (b'payload: ["IP-ASN,AS13335"]', "classical", "yaml"),
+        (b'payload: ["IP-ASN,4294967296"]', "classical", "yaml"),
+        (b'payload: ["GEOIP,not-a-code"]', "classical", "yaml"),
+        (b'payload: ["DOMAIN,a.test,no-resolve"]', "classical", "yaml"),
+        (b'payload: ["FUTURE-TYPE,value"]', "classical", "yaml"),
+        (b'payload: ["AND,((DOMAIN,a.test),(IP-CIDR,192.0.2.0/24))"]', "classical", "yaml"),
+        (b'payload: ["IP-CIDR,192.0.2.0/24"]', "domain", "yaml"),
+        (b'192.0.2.0/24', "domain", "text"),
+        (b'192.0.2.1', "ipcidr", "text"),
+        (b'payload: [12]', "classical", "yaml"),
+        (b'payload: [""]', "classical", "yaml"),
+        (b'payload: [', "classical", "yaml"),
+        (b'<html>404</html>', "classical", "yaml"),
+        (b'payload: ["DOMAIN,a\xff.test"]', "classical", "yaml"),
+        (b'payload: []', "unknown", "yaml"),
+        (b'payload: []', "domain", "mrs"),
+    )
+    for body, behavior, fmt in negatives:
+        try:
+            check.provider_ip_count(body, behavior, fmt)
+        except (ValueError, UnicodeError, check.yaml.YAMLError):
+            continue
+        raise AssertionError((body, behavior, fmt))
+
+
+def content_fixture(tail: tuple[str, ...] = ()) -> dict:
+    return {
+        "rule-providers": {
+            "Fixture": {"type": "http", "url": "https://rules.example/fixture.yaml", "behavior": "classical"},
+        },
+        "rules": ["RULE-SET,Fixture,DIRECT,no-resolve"] + list(tail) + ["GEOIP,CN,DIRECT", "MATCH,REJECT"],
+    }
+
+
+def fixture_result(body: bytes, ok: bool = True) -> check.Result:
+    return check.Result(
+        check.Resource("https://rules.example/fixture.yaml", "clash-rule", "test", "yaml"),
+        ok, 200 if ok else None, "text/plain", "https://rules.example/fixture.yaml", len(body),
+        "ok" if ok else "timed out", body,
+    )
+
+
+def test_mihomo_content_coverage() -> None:
+    ip_body = b'payload: ["DOMAIN,a.test", "IP-CIDR,192.0.2.0/24,no-resolve"]'
+    # A new IP rule must be caught even when its inner rule says no-resolve.
+    comparisons, missing, stale = check.mihomo_content_report([fixture_result(ip_body)], content_fixture())
+    assert comparisons[0].ip_rules == 1 and missing == ["Fixture"] and stale == []
+    covered = content_fixture(("RULE-SET,Fixture,DIRECT",))
+    assert check.mihomo_content_report([fixture_result(ip_body)], covered)[1:] == ([], [])
+    domain_body = b'payload: ["DOMAIN,a.test"]'
+    comparisons, missing, stale = check.mihomo_content_report([fixture_result(domain_body)], covered)
+    assert missing == [] and stale == ["Fixture"] and comparisons[0].ip_rules == 0
+    assert covered["rules"][1] == "RULE-SET,Fixture,DIRECT", "inspection must never remove an old fallback"
+    comparisons, missing, stale = check.mihomo_content_report([fixture_result(b"", False)], covered)
+    assert comparisons[0].ip_rules is None and "not compared" in comparisons[0].message
+    assert missing == [] and stale == [], "failure must not look like a provider without IP"
+    for body in (b'payload: ["FUTURE,value"]', b'payload: [12]', b'payload: ["DOMAIN,\xff.test"]'):
+        comparisons, missing, stale = check.mihomo_content_report([fixture_result(body)], covered)
+        assert comparisons[0].ip_rules is None and not missing and not stale
+    assert check.mihomo_content_report([], covered)[0][0].ip_rules is None
+    # A reference after GEOIP,CN cannot count as IP-stage coverage.
+    late = content_fixture()
+    late["rules"].append("RULE-SET,Fixture,DIRECT")
+    assert check.mihomo_content_report([fixture_result(ip_body)], late)[1] == ["Fixture"]
+    bad = content_fixture()
+    bad["rules"][0] = "RULE-SET,Undefined,DIRECT,no-resolve"
+    try:
+        check.mihomo_content_report([fixture_result(ip_body)], bad)
+    except ValueError as exc:
+        assert "undefined provider" in str(exc)
+    else:
+        raise AssertionError("undefined provider accepted")
+    # A shared URL must still be compared under every provider's own definition.
+    aliases = content_fixture(("RULE-SET,Fixture,DIRECT",))
+    aliases["rule-providers"]["Alias"] = dict(aliases["rule-providers"]["Fixture"])
+    aliases["rules"].insert(1, "RULE-SET,Alias,DIRECT,no-resolve")
+    comparisons, missing, stale = check.mihomo_content_report([fixture_result(ip_body)], aliases)
+    assert len(comparisons) == 2 and missing == ["Alias"]
+    aliases["rule-providers"]["Alias"]["behavior"] = "domain"
+    comparisons, _, _ = check.mihomo_content_report([fixture_result(ip_body)], aliases)
+    assert comparisons[1].ip_rules is None, "alias behavior must not be copied from the first definition"
+
+
+def test_candidate_checkout_and_summary() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        path = root / "mihomo/rules/fixture.yaml"
+        path.parent.mkdir(parents=True)
+        body = b'payload: ["IP-CIDR6,2001:db8::/32"]'
+        path.write_bytes(body)
+        config = content_fixture()
+        config["rule-providers"]["Fixture"]["url"] = "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/fixture.yaml"
+        with patch.object(check, "ROOT", root):
+            # A failed remote URL must not substitute stale remote bytes for the candidate.
+            comparisons, missing, stale = check.mihomo_content_report([], config)
+            assert comparisons[0].ip_rules == 1 and comparisons[0].origin == "checkout:mihomo/rules/fixture.yaml"
+            assert comparisons[0].sha256 == hashlib.sha256(body).hexdigest() and missing == ["Fixture"]
+            path.unlink()
+            missing_file, missing, stale = check.mihomo_content_report([], config)
+            assert missing_file[0].ip_rules is None and missing == [] and stale == []
+            assert check.checkout_provider_path("https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@other/mihomo/rules/fixture.yaml") is None
+            assert check.checkout_provider_path("https://elsewhere.example/gh/wenbingkun/proxy-config@main/mihomo/rules/fixture.yaml") is None
+        summary = root / "summary.md"
+        with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}), contextlib.redirect_stdout(io.StringIO()):
+            check.emit_mihomo_report(missing_file, [], [])
+        assert "not compared=1" in summary.read_text() and "not compared" in summary.read_text()
+
+
+def test_content_main_exit_and_modes() -> None:
+    """Exercise the actual full-mode exit path, including unavailable comparisons."""
+    config = content_fixture()
+    ip_result = fixture_result(b'payload: ["IP-CIDR,192.0.2.0/24"]')
+    original_report = check.mihomo_content_report
+    with patch.object(check, "extract_resources", return_value=[ip_result.resource]), \
+         patch.object(check, "fetch", return_value=ip_result), \
+         patch.object(check, "reject_overlap_report", return_value=([], [])), \
+         patch.object(check, "mihomo_content_report", side_effect=lambda results: original_report(results, config)) as report, \
+         patch.dict(os.environ, {}, clear=True), contextlib.redirect_stdout(io.StringIO()) as output:
+        with patch.object(sys, "argv", ["check", "--mode", "light"]):
+            assert check.main() == 0 and report.call_count == 0
+        with patch.object(sys, "argv", ["check", "--mode", "full"]):
+            assert check.main() == 1 and "lack an IP-stage reference" in output.getvalue()
+            config["rules"].insert(1, "RULE-SET,Fixture,DIRECT")
+            assert check.main() == 0
+            with patch.object(check, "fetch", return_value=fixture_result(b"", False)):
+                assert check.main() == 1 and "not compared" in output.getvalue()
+            with patch.object(check, "fetch", return_value=fixture_result(b'payload: ["FUTURE,value"]')):
+                assert check.main() == 1
+            # Successful checkout classification cannot hide remote availability failure.
+            valid = [check.ProviderComparison("Fixture", 1, "checkout:fixture.yaml", "hash", "compared")]
+            with patch.object(check, "mihomo_content_report", return_value=(valid, [], [])), \
+                 patch.object(check, "fetch", return_value=fixture_result(b"", False)):
+                assert check.main() == 1
+            # Removing current IP content only warns; it never fails or mutates rules.
+            with patch.object(check, "fetch", return_value=fixture_result(b'payload: ["DOMAIN,a.test"]')):
+                assert check.main() == 0 and "do not auto-remove" in output.getvalue()
+
+
+def test_full_download_must_be_complete() -> None:
+    resource = fixture_result(b"").resource
+    body = b'payload: ["DOMAIN,a.test"]'
+    with patch.object(check, "read_response", return_value=(200, "text/plain", body, resource.url)) as read:
+        result = check.fetch(resource, "full", 1, 0)
+        assert result.ok and result.body == body and read.call_count == 1
+        assert "Range" not in read.call_args.args[1]
+    for status, content in ((206, body), (200, b"x" * (check.FULL_LIMIT + 1))):
+        with patch.object(check, "read_response", return_value=(status, "text/plain", content, resource.url)):
+            result = check.fetch(resource, "full", 1, 0)
+            assert not result.ok and not result.body
+    with patch.object(check, "read_response", return_value=(200, "text/plain", body, resource.url)):
+        assert check.fetch(resource, "light", 1, 0).body == b""
+    # A valid-looking 200 prefix must not pass when HTTP framing says bytes are missing.
+    for length, expected_ok in ((str(len(body)), True), (str(len(body) + 10), False), ("broken", False)):
+        response = FakeResponse(200, body, resource.url)
+        response.headers["Content-Length"] = length
+        with patch.object(check.urllib.request, "urlopen", return_value=response):
+            assert check.fetch(resource, "full", 1, 0).ok == expected_ok
+    with patch.object(check, "read_response", side_effect=check.http.client.IncompleteRead(body, 10)):
+        result = check.fetch(resource, "full", 1, 0)
+        assert not result.ok and not result.body and "IncompleteRead" in result.message
 
 
 def main() -> int:
@@ -196,6 +380,11 @@ def main() -> int:
 
     test_empty_range_falls_back_to_plain_get()
     test_surge_reject_overlap_warns_but_bad_input_fails()
+    test_provider_content_types()
+    test_mihomo_content_coverage()
+    test_candidate_checkout_and_summary()
+    test_content_main_exit_and_modes()
+    test_full_download_must_be_complete()
 
     print(
         f"Remote resource offline tests passed "
