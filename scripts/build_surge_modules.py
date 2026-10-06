@@ -124,12 +124,12 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 WeiboAds", "path": "surge/modules/converted/WeiboAds.sgmodule",
+        "name": "fmz200 Weibo", "path": "surge/modules/converted/Weibo.sgmodule",
         "file": "weibo", "title": "微博去广告", "desc": "微博与微博国际版去广告",
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 GoofishAds", "path": "surge/modules/converted/GoofishAds.sgmodule",
+        "name": "fmz200 XianYu", "path": "surge/modules/converted/XianYu.sgmodule",
         "file": "goofish", "title": "闲鱼去广告", "desc": "闲鱼去广告",
         "arguments": {},
     },
@@ -141,7 +141,7 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 Q-Search", "path": "surge/modules/converted/Q-Search.sgmodule",
+        "name": "proxy-config Q-Search", "path": "surge/modules/converted/QSearch.sgmodule",
         "file": "q-search", "title": "Safari 超级搜索", "desc": "Safari 超级搜索：搜索引擎设为 DuckDuckGo，用关键字前缀跳转到其他站点搜索",
         "arguments": {},
     },
@@ -152,7 +152,7 @@ SOURCES = (
     },
     # Added 2026-10-05 for apps on the phone that blackmatrix7 Advertising barely covers.
     {
-        "name": "ddgksf2013 NeteaseMailAds", "path": "surge/modules/converted/NeteaseMailAds.sgmodule",
+        "name": "proxy-config NeteaseMail", "path": "surge/modules/converted/NeteaseMail.sgmodule",
         "file": "neteasemail", "title": "网易邮箱大师去广告", "desc": "网易邮箱大师去广告",
         "arguments": {},
     },
@@ -164,7 +164,7 @@ SOURCES = (
         "arguments": {},
     },
     {
-        "name": "ddgksf2013 DaMaiAds", "path": "surge/modules/converted/DaMaiAds.sgmodule",
+        "name": "proxy-config DaMai", "path": "surge/modules/converted/DaMai.sgmodule",
         "file": "damai", "title": "大麦去广告", "desc": "大麦去广告",
         "arguments": {},
     },

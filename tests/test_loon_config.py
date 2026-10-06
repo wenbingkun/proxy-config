@@ -362,6 +362,9 @@ def check_fmz200_plugins(failures: list[str]) -> None:
     amdc_text = (ROOT / "loon" / "plugins" / "AlibabaAmdc.plugin").read_text(encoding="utf-8")
     if set(re.findall(r"script-path=([^,\s]+)", amdc_text)) != {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}:
         failures.append("AlibabaAmdc.plugin: must load only the repo's amdc.js")
+    for l in plugin:
+        if "ddgksf2013" in l.split(",")[0]:
+            failures.append(f"loon: ddgksf2013 resources were replaced and must not come back: {l.split(',')[0]}")
     if any("RedPaper" in l for l in plugin):
         failures.append("loon: Kelee's RedPaper was replaced by loon/plugins/Xiaohongshu.plugin")
     xhs_text = (ROOT / "loon" / "plugins" / "Xiaohongshu.plugin").read_text(encoding="utf-8")

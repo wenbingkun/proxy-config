@@ -45,12 +45,13 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 内容 | 来源 |
 |---|---|
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
-| 微博、闲鱼、Safari 超级搜索 | 墨鱼 QX 原版没有 Surge 版，冻结在 `surge/modules/converted/`：Script-Hub 转换，脚本固定到 Loon 版审核过的提交，补回 Script-Hub 丢掉的 jq 改写，修正 sg 商店地区，微博脚本按序编号 |
+| 微博、闲鱼、Safari 超级搜索（2026-10-06 起） | 微博、闲鱼为 fmz200 Surge 模块的冻结副本（`surge/modules/converted/Weibo.sgmodule`、`XianYu.sgmodule`，脚本固定到提交，微博的重复脚本名已编号）；Safari 超级搜索为仓库自写精简版 `QSearch.sgmodule`。微博模块解密 `*.weibo.cn`、`*.weibo.com`，范围比墨鱼版宽 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本自 2026-10-05 起改指仓库托管的 `quantumultx/scripts/xiaohongshu.js`（三端同一份：首页推荐去视频笔记、去「视频」频道），并为频道列表接口加了 `xiaohongshu_11` |
 | 高德地图（2026-10-06 起） | fmz200 按 App 拆分的原生模块（`5d5f63f`，无脚本，含拒绝规则）；原墨鱼版里的 amdc 处理移到「阿里系 amdc」 |
 | 阿里系 amdc（2026-10-06 新增） | 仓库自写的 `quantumultx/scripts/amdc.js`（与墨鱼 `amdc.js` 同一 UA 清单），只有一条 http-response 脚本、不需要 MitM；三端各一项 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
-| 网易邮箱大师、大麦、航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版，同样冻结转换。大麦、航旅纵横在 ddgksf2013.top 上，没有提交可固定，记录抓取日期和哈希；航旅纵横原版引用的脚本地址对所有客户端都返回网页，仓库托管了改正地址的 `quantumultx/rewrite/UmetripAds.conf` 和脚本副本 `quantumultx/scripts/umetrip.ads.js`。上游脚本由 Protobuf 和 JSON 两段拼成，JSON 那段从未被调用；副本只改了入口，按内容选择路径，`$done` 只调用一次，由 `tests/test_umetrip_script.py` 回归（处理二进制响应体，加 `binary-body-mode=1`） |
+| 网易邮箱大师、大麦（2026-10-06 起） | 仓库自写规则 `NeteaseMail.sgmodule`、`DaMai.sgmodule`（与 QX 同一份规则）；大麦不再带 amdc |
+| 航旅纵横（2026-10-05 新增） | 墨鱼的 QX 原版冻结转换，脚本副本托管在 `quantumultx/scripts/umetrip.ads.js`（仓库自有、带回归测试） |
 | 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，模块和脚本都固定到提交（脚本由 `SOURCES` 的 `pins` 在生成时替换）；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
 | 微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动（2026-10-05 新增），小宇宙（同日替换墨鱼版） | fmz200/wool_scripts 按 App 拆分的原生模块，固定到提交 `5d5f63f`，都没有脚本（测试锁定提交和无脚本）。QX 用 fmz200 的 QX 版（含分流的重写与分流各加一次，开解析器），Loon 用托管副本（换小 PNG 图标）；小宇宙三端另保留 AI 总结、正常搜索、分类与推荐，只拦截开屏及已知搜索/分类推广提示接口，首页只去掉 `DISCOVERY_BANNER`。没有采用 fmz200「美团」（整段拒绝 `d.meituan.net` 等后缀）|
 

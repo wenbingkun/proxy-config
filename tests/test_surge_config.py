@@ -74,7 +74,7 @@ SHARED_MITM = {
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
-    ("advertising", "neteasemail"): {"appconf.mail.163.com"},
+    ("advertising", "neteasemail"): {"appconf.mail.163.com", "client.mail.163.com"},
     ("advertising", "safe-redirect"): {"*.google.cn", "app.biliintl.com", "ditu.google.cn", "map.google.cn",
                                        "passport.biliintl.com", "www.firefox.com.cn", "www.google.cn"},
     ("advertising", "spotify"): {"spclient.wg.spotify.com"},
@@ -84,8 +84,9 @@ SHARED_MITM = {
                                  "umeflightstatus.umetrip.com", "umehome.umetrip.com", "umerp.umetrip.com",
                                  "umestartup.umetrip.com", "umeuser.umetrip.com", "user.umetrip.com"},
     ("advertising", "wechat"): {"security.wechat.com", "weixin110.qq.com"},
-    ("advertising", "weibo"): {"*.api.weibo.*", "*.uve.weibo.com", "api.weibo.*", "api.weibo.cn", "mapi.weibo.*",
-                               "mapi.weibo.com", "new.vip.weibo.cn", "weibointl.api.weibo.cn"},
+    # fmz200 Weibo (2026-10-06) decrypts *.weibo.cn and *.weibo.com: wider than ddgksf2013's list.
+    ("advertising", "weibo"): {"*.uve.weibo.com", "*.weibo.cn", "*.weibo.com", "api.weibo.cn", "mapi.weibo.com",
+                               "new.vip.weibo.cn", "tqt.weibo.cn", "weibointl.api.weibo.cn"},
     ("advertising", "xiaohongshu"): {"edith.xiaohongshu.com", "www.xiaohongshu.com"},
     ("general", "safe-redirect"): {"www.google.cn"},
 }
@@ -113,7 +114,9 @@ RESOLVING_TAIL = [LAN_IP_STAGE] + [
     f"GEOIP,CN,{DOMESTIC}", "FINAL,🐟 兜底分流,dns-failed"]
 IP_RULES = {"IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP"}
 KNOWN_RULES = IP_RULES | {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-WILDCARD", "RULE-SET",
-                          "AND", "OR", "NOT", "SUBNET", "DEST-PORT", "USER-AGENT", "PROTOCOL", "FINAL"}
+                          "AND", "OR", "NOT", "SUBNET", "DEST-PORT", "USER-AGENT", "PROTOCOL", "FINAL",
+                          # Matches the URL of decrypted / plain-HTTP requests; never resolves (fmz200 Weibo, 2026-10-06).
+                          "URL-REGEX"}
 GROUP_KIND = {"url-test": "smart", "select": "select", "fallback": "fallback"}
 
 
@@ -407,7 +410,7 @@ def check_rewrite_module(failures: list[str]) -> None:
         path = source.get("path")
         if path:
             converted = (ROOT / path).read_text(encoding="utf-8")
-            if not re.search(r"^# Frozen Surge conversion of \S+'s Quantumult X rewrite; do not edit by hand\.$",
+            if not re.search(r"^# Frozen (Surge conversion of \S+'s Quantumult X rewrite|copy of \S+'s Surge [^;]*); do not edit by hand\.$",
                              converted, re.M):
                 failures.append(f"{path}: missing the frozen-conversion header")
             if re.search(r"refs/heads/master|script\.hub", converted):

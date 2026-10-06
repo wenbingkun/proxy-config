@@ -48,6 +48,11 @@ MZ = "https://is1-ssl.mzstatic.com/image/thumb/"
 # searches); General uses Google (it redirects google.cn).
 ICONS = {
     "AlibabaAmdc.plugin": MZ + "Purple221/v4/9d/81/f8/9d81f836-fcaf-f7fc-6150-04f2761764fe/AppIcon-0-0-1x_U007emarketing-0-10-0-85-220.png/100x100bb.png",
+    "DaMai.plugin": MZ + "Purple211/v4/c5/23/4c/c5234cd0-5980-c184-e14a-41ca193e83f0/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/100x100bb.png",
+    "NeteaseMail.plugin": MZ + "Purple211/v4/ac/2d/4f/ac2d4ffc-f481-f3aa-cbff-65a7ebc9c04c/AppIconStore-0-0-1x_U007emarketing-0-8-0-85-220.png/100x100bb.png",
+    "QSearch.plugin": MZ + "Purple211/v4/40/fa/0b/40fa0b23-e17b-977e-740f-2b5fa9962d2c/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-85-220.png/100x100bb.png",
+    "Weibo.plugin": MZ + "Purple211/v4/a8/52/27/a85227af-35ed-aea1-c7ac-51ede3a7a45e/WeiboAppIcon-0-0-1x_U007epad-0-1-0-85-220.png/100x100bb.png",
+    "XianYu.plugin": MZ + "Purple211/v4/a7/7d/97/a77d970b-9da7-9154-56ab-46f114ea7736/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/100x100bb.png",
     "DaMaiAds.plugin": MZ + "Purple211/v4/c5/23/4c/c5234cd0-5980-c184-e14a-41ca193e83f0/AppIcon-0-0-1x_U007emarketing-0-6-0-85-220.png/100x100bb.png",
     "Douban.plugin": MZ + "Purple211/v4/79/54/c5/7954c588-8484-b8cb-747b-9f94e897ac22/AppIcon-0-0-1x_U007emarketing-0-7-0-85-220.png/100x100bb.png",
     "General.plugin": MZ + "Purple211/v4/4f/d3/5b/4fd35b53-e6d3-ee49-342a-8a7ace6fe960/SuperG_ios26-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-0-0-0-85-220.png/100x100bb.png",
