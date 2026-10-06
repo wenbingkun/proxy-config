@@ -81,7 +81,6 @@ SHARED_MITM = {
     ("advertising", "startup-supplement"): {"apiproxy.zuche.com", "acs.m.taobao.com", "api.pinduoduo.com", "api.yangkeduo.com", "app.dewu.com", "res.xiaojukeji.com"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
-    ("advertising", "general"): {"*.google.cn", "www.google.cn"},
     ("advertising", "neteasemail"): {"appconf.mail.163.com", "client.mail.163.com"},
     ("advertising", "safe-redirect"): {"*.google.cn", "app.biliintl.com", "ditu.google.cn", "map.google.cn",
                                        "passport.biliintl.com", "www.firefox.com.cn", "www.google.cn"},
@@ -96,7 +95,6 @@ SHARED_MITM = {
     ("advertising", "weibo"): {"*.uve.weibo.com", "*.weibo.cn", "*.weibo.com", "api.weibo.cn", "mapi.weibo.com",
                                "new.vip.weibo.cn", "tqt.weibo.cn", "weibointl.api.weibo.cn"},
     ("advertising", "xiaohongshu"): {"edith.xiaohongshu.com", "www.xiaohongshu.com"},
-    ("general", "safe-redirect"): {"www.google.cn"},
 }
 README = ROOT / "surge" / "README.md"
 REPO_RULES = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/rules/"
@@ -472,11 +470,15 @@ def check_rewrite_module(failures: list[str]) -> None:
 
     shared = {}
     compat = {s["file"] for s in sources if s.get("compat_only")}
-    if compat != {"amap-page-cleanup"}:
+    if compat != {"amap-page-cleanup", "douban", "general"}:
         failures.append(f"unexpected compatibility-only sources: {compat}")
     legacy = ROOT / "surge/modules/rewrite/amap-page-cleanup.sgmodule"
     if hashlib.sha256(legacy.read_bytes()).hexdigest() != "c8f7a3dfe0b668d6d9c2661f4384ad9dc3e1e8af5ddeee049b91e4400bcdd523":
         failures.append("compatibility AMap page-cleanup module must retain its published bytes")
+    if hashlib.sha256((ROOT / "surge/modules/rewrite/douban.sgmodule").read_bytes()).hexdigest() != "18da8e3eff861971a601dffa78212eb55c1f24ab5fbc5cad2522b605702822ee":
+        failures.append("compatibility douban module must retain its published bytes")
+    if hashlib.sha256((ROOT / "surge/modules/rewrite/general.sgmodule").read_bytes()).hexdigest() != "8162d8241d150da97ac683bf4b5573ae902c515078d20f140ccda133546f6542":
+        failures.append("compatibility general module must retain its published bytes")
     for a, b in itertools.combinations(sorted(set(split) - compat), 2):
         ha, hb = mitm_hosts(split[a]), mitm_hosts(split[b])
         common = {x for x in ha for y in hb if fnmatch.fnmatchcase(x, y) or fnmatch.fnmatchcase(y, x)}

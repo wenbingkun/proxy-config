@@ -152,25 +152,13 @@ jobs:
         run: |
           python3 scripts/check_hygiene.py
           python3 scripts/check_acceptance.py
-          python3 tests/test_region_groups.py
-          python3 tests/test_remote_resources.py
-          python3 tests/test_rule_provider_scope.py
-          python3 tests/test_steam_policy.py
-          python3 tests/test_loon_config.py
-          python3 tests/test_qx_config.py
-          python3 tests/test_surge_config.py
-          python3 tests/test_umetrip_script.py
-          python3 tests/test_xiaohongshu_script.py
-          python3 tests/test_amdc_script.py
-          python3 tests/test_app_ad_cleanup.py
-          python3 tests/test_amap_script.py
+          for t in tests/test_*.py; do
+            [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"
+          done
           python3 scripts/check_reject_conflicts.py --self-test
 
       - name: Check shell script syntax
         run: sh -n mihomo/shellcrash/deploy.sh
-
-      - name: Test ShellCrash deployment transaction
-        run: python3 tests/test_deploy_shellcrash.py
 
       - name: Validate configs with ShellCrash Mihomo
         run: |

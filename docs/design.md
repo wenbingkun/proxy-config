@@ -29,14 +29,14 @@ GitHub 只存可以公开的配置逻辑，设备本地只保存私密的运行�
                        rules/*.yaml（共享规则源）
                               │
                     scripts/build_rules.py
-          ┌───────────────────┼────────────────────┐
-          ▼                   ▼                    ▼
- quantumultx/filter/   loon/rules/*.list    mihomo/rules/*.yaml
-   repo.snippet                               (rule-providers)
-          │                   │                    │
-          ▼                   ▼                    ▼
-    Quantumult X            Loon           Clash Verge / ShellCrash
-  （bootstrap 本地持有，各端只远程拉取规则与重写；订阅、MitM 留在设备）
+          ┌───────────┬───────┴───────┬───────────────────┐
+          ▼           ▼               ▼                   ▼
+ quantumultx/filter/ loon/rules/   surge/rules/       mihomo/rules/
+   repo.snippet       *.list          *.list             *.yaml
+          │           │               │                   │
+          ▼           ▼               ▼                   ▼
+    Quantumult X     Loon            Surge       Clash Verge / ShellCrash
+  （订阅、MitM 留在设备；Surge 公开配置通过本地 bootstrap include 加载）
 ```
 
 ## 四大设计原则
