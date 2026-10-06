@@ -145,6 +145,7 @@ SOURCES = (
     # Douban and General are no longer recommended (2026-10-05): kept generated, unchanged, until
     # every device has dropped them; General's only rule is also in blackmatrix7 SafeRedirect.
     {
+        "compat_only": True,
         "name": "ddgksf2013 Douban", "path": "surge/modules/converted/Douban.sgmodule",
         "file": "douban", "title": "豆瓣网页增强", "desc": "豆瓣网页增强",
         "arguments": {},
@@ -155,6 +156,7 @@ SOURCES = (
         "arguments": {},
     },
     {
+        "compat_only": True,
         "name": "ddgksf2013 General", "path": "surge/modules/converted/General.sgmodule",
         "file": "general", "title": "神机重定向", "desc": "神机重定向，如 google.cn 跳转到 google.com",
         "arguments": {},

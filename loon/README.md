@@ -31,7 +31,7 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 
 ## 插件
 
-试点阶段只启用 kokoryh 的哔哩哔哩插件（Sparkle，可莉插件库也分发同一作者的版本）。它要求 Loon 3.5.1 (992) 及以上，并需要在 Loon 的 MitM 设置里打开「MitM over HTTP/2」。
+哔哩哔哩使用 kokoryh 的插件（Sparkle，可莉插件库也分发同一作者的版本）。它要求 Loon 3.5.1 (992) 及以上，并需要在 Loon 的 MitM 设置里打开「MitM over HTTP/2」。
 
 - **为什么换插件**：之前用的 Biliverse ADBlock v0.6.27 在新版详情页的播放器下方留下了一个广告卡片。我们怀疑它来自 `viewunite.v1.View/AIRelateAsync`：Biliverse 不处理这个接口，而这个插件会处理。2026-09-30 真机确认：换用这个插件后广告卡片消失，页面速度没有变慢。插件还会精简底栏和「我的」页。
 - **跟随上游**：插件及其脚本跟随上游 master 更新，没有固定版本；试点测试时的版本是提交 `1bc5b545a544`。远程资源巡检只检查插件入口地址能否访问，插件内部加载的脚本和 jq 文件是否正常，要看 Loon 的日志。
@@ -43,40 +43,24 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 
 插件图标只用小 PNG（对应 App 的 App Store 图标，几 KB），不用 GIF：上游的 560 KB 动图图标曾让插件页一直转圈，换图标后真机确认恢复。仓库托管插件的图标由 `scripts/build_loon_plugins.py` 统一设置，测试拒绝非 PNG。
 
-其他插件按来源分为以下几类。本次新增的插件都默认关闭，逐个开启、在对应 App 上验证后，再改为默认开启：
+当前其他插件以 `bootstrap.example.conf` 的入口和默认值为准；设备已验收的启用状态独立保留。
 
-| QX 中的来源 | Loon 中的做法 |
+| 内容 | 当前实现 |
 |---|---|
-| 墨鱼：小红书 | 2026-10-05 起不再用可莉 RedPaper，改用仓库托管的 fmz200 插件 `loon/plugins/Xiaohongshu.plugin`：脚本全部指向仓库的 `quantumultx/scripts/xiaohongshu.js`（与 QX、Surge 同一份，首页推荐去视频笔记、去「视频」频道），另加一条频道列表规则；验收前默认关闭 |
-| 墨鱼：YouTube、高德、知乎、微信外链解锁 | 可莉（kelee.one）的原生插件。kelee.one 只响应完整的 iOS Loon UA，远程资源巡检因此使用 `Loon/3.5.2 (996) CFNetwork/3826 Darwin/25.0.0` |
-| 墨鱼：微博、闲鱼、Safari 超级搜索 | 2026-10-06 起改为 `loon/plugins/Weibo.plugin`、`XianYu.plugin`（fmz200 冻结副本，脚本固定到提交）与 `QSearch.plugin`（仓库自写精简版），说明见 QX README；旧的 WeiboAds、GoofishAds、Q-Search 插件兼容期内保留 |
-| 2026-10-05 新增：fmz200 按 App 拆分的微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动，以及替换墨鱼版的小宇宙（`XiaoYuZhouAds.plugin` 兼容期内保留不改） | fmz200 的 Loon 原生插件，没有脚本，来自固定提交 `5d5f63f`。上游图标是一张 560 KB 的 GIF，Loon 加载时一直转圈，所以由 `scripts/build_loon_plugins.py` 生成托管副本 `loon/plugins/fmz200-<App>.plugin`，把 `#!icon` 换成该 App 的 App Store 图标（100×100 PNG，几 KB）；小宇宙另按用户决定保留 AI 总结、正常搜索、分类与推荐，其余 App 的规则一字不动，`--check` 在 CI 中比对。默认关闭（`tests/test_loon_config.py` 锁定来源提交、无脚本和关闭状态）。去广告规则与 bm7 合集可能重叠，但返回内容（reject、reject-img、reject-dict 等）和最终命中哪条仍要真机验收。美团外卖开屏所在的 `wmapi.meituan.com` 只在 bm7 合集里解密；豆瓣的横幅和图片广告两条规则所在主机没有解密，不在覆盖范围 |
-| 网易邮箱大师、大麦、航旅纵横、微信读书精简 | 网易邮箱与大麦使用仓库自写 `NeteaseMail.plugin`、`DaMai.plugin`；航旅纵横使用原生 `Umetrip.plugin` 与共享可读脚本 `quantumultx/scripts/umetrip.js`，保留 `binary-body-mode=true`，模板默认关闭、需真机验收。微信读书仍为固定提交的 Maasea 模块转换版。旧转换文件保留兼容与回滚 |
-| 墨鱼：开屏、微信小程序 | 不单独移植。依赖默认开启的 blackmatrix7 去广告合集（它覆盖了墨鱼开屏 437 个解密域名中的 373 个、小程序 35 个中的 34 个）。这是条件覆盖，发现漏网再补 |
-| 墨鱼：专属 VIP（ForOwnUse）、豆瓣网页、神机重定向 | 2026-10-05 起三端都不再使用：前两项按用户决定删除；神机重定向唯一的 `google.cn` → `google.com` 跳转与 blackmatrix7 安全重定向相同。`loon/plugins/` 中的豆瓣、神机旧插件在兼容期内保留不改，设备迁移完成后再删 |
-| KOP-XIAO 三个定时任务 | 可莉「节点检测工具」提供手动诊断：在节点上长按，可查询入口/落地、地理位置、流媒体解锁；**不再有定时通知** |
+| 高德、YouTube、知乎、微信外链 | 可莉原生插件；保留 Loon 自身更合适的实现，不与额外高德页面净化并用 |
+| 微博、闲鱼、小红书 | 仓库冻结的 fmz200 来源；小红书共享仓库脚本，首页去视频笔记与视频频道 |
+| 网易邮箱、大麦、航旅、Safari | `NeteaseMail.plugin`、`DaMai.plugin`、`Umetrip.plugin`、`QSearch.plugin`；航旅共享可读二进制脚本，Safari 要求 DuckDuckGo |
+| 小宇宙及其他 fmz200 按 App 补充 | 托管原生插件，小 PNG 图标；小宇宙保留 AI 总结、正常搜索、分类和推荐 |
+| 阿里系 amdc | `AlibabaAmdc.plugin` 独立处理；闲鱼、大麦不再附带重复 amdc |
+| 开屏补充 | `StartupSupplement.plugin`：神州、滴滴、一嗨、1688、拼多多、淘宝、得物；航旅 startup/discardrp 由航旅插件处理 |
+| 微信读书、节点检测 | 固定来源的读书精简；可莉节点检测保留手动诊断，不提供旧定时通知 |
 
-需要注意的跨 App 影响：
-- **闲鱼插件的 AMDC 脚本**：不只作用于闲鱼。它按 UA 匹配高德、菜鸟、天猫、飞猪、盒马等阿里系 App，改写它们通过明文 HTTP 发出的 `/amdc/mobileDispatch` 调度请求（QX 中墨鱼的闲鱼和高德规则也有同样的处理）。开启后要一并检查这些 App。2026-10-06 起由仓库自写的「阿里系 amdc」插件（`loon/plugins/AlibabaAmdc.plugin`，脚本 `quantumultx/scripts/amdc.js`，同一 UA 清单）统一处理；批次 3b 替换闲鱼、大麦插件前，Loon 会执行所有匹配脚本，不能假定旧新结果等效；受控试验必须用仅删除旧 amdc 行的本地副本，避免叠加。
-- **Safari 超级搜索**：作用在 DuckDuckGo 的搜索地址上，需要把 Safari 的默认搜索引擎设为 DuckDuckGo。
-- **与合集规则重叠**：专用插件排在 blackmatrix7 合集之前，两者匹配同一个请求时，先执行专用插件的脚本。少数接口两边都有拦截规则，但拦截方式可能不同（直接断开，或返回空内容 / `{}` / `[]`），以真机上的实际命中和页面表现为准。
+每个 App 只启用一个专用入口。专用插件与 blackmatrix7 合集可能重叠；Loon 同一阶段的匹配规则可全部执行，以真机日志核对效果。可莉资源巡检使用完整 iOS Loon UA，短 UA 曾返回 403。
+
+旧转换插件、高德页面净化、豆瓣网页和神机重定向保留路径供兼容回滚，当前模板不加载；神机重定向的 Google 跳转已有安全重定向覆盖。不要把旧新插件同时开启。
 
 ## 后续更新
 
 `[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/rules/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
 
-2026-10-06 剩余替换项三端真机验收已完成，效果差异和已知限制见 [QX README](../quantumultx/README.md)。网易邮箱、大麦现使用仓库自写的 `NeteaseMail.plugin`、`DaMai.plugin`；上表中旧转换文件只作为兼容与回滚保留。
-
-## 2026-10-06 页面净化与开屏补充
-
-高德页面净化独立保留个人页明确推广卡片、首页「关注 / 推荐 / 附近」社交栏目和帖子、打车推广列表清理；保留地图、定位、搜索、路线与未知组件。首页顶部商业卡片尚未覆盖。微博发现页的空「热门视频」区块及排序入口已合入原微博规则，保留原广告 banner 过滤和正常发现内容。
-
-开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 开屏补充仍需分别验收。Loon 高德保留可莉原生插件，不启用额外页面净化项；各端优先采用适合该客户端的实现，不要求规则完全一致。
-
-高德继续使用可莉原生插件，仅保留一个“高德地图去广告”条目。`plugins/AmapPageCleanup.plugin` 保留已发布路径但不加载；开屏补充 `plugins/StartupSupplement.plugin` 独立保留。
-
-QX/Surge 补充使用的高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
-
-## 效果优先的客户端差异
-
-Loon 高德继续使用已验证的可莉原生插件，仅一个入口；本轮 QX/Surge 的高德合并不改变 Loon 插件。仅去开屏规则后续合入共用补充，阿里系 amdc 独立；不为统一来源替换更好的原生实现。
+已知效果差异、微信小程序开屏残留及一嗨素材限制见 [QX 说明](../quantumultx/README.md#兼容与已知限制)。模板默认关闭的补充项须按设备验收启用，不能把通用去广告的域名覆盖等同于实际开屏去除。

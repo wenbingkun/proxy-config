@@ -47,7 +47,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、Safari 超级搜索（2026-10-06 起） | 微博、闲鱼为 fmz200 Surge 模块的冻结副本（`surge/modules/converted/Weibo.sgmodule`、`XianYu.sgmodule`，脚本固定到提交，微博的重复脚本名已编号）；Safari 超级搜索为仓库自写精简版 `QSearch.sgmodule`。微博模块解密 `*.weibo.cn`、`*.weibo.com`，范围比墨鱼版宽 |
 | 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本自 2026-10-05 起改指仓库托管的 `quantumultx/scripts/xiaohongshu.js`（三端同一份：首页推荐去视频笔记、去「视频」频道），并为频道列表接口加了 `xiaohongshu_11` |
-| 高德地图（效果优先批次） | 仓库合并源：墨鱼固定规则与可读响应脚本、已验证页面清理，以及既有 fmz200 开屏/拒绝规则；amdc 独立，新组合待真机验收 |
+| 高德地图（效果优先批次） | 仓库合并源：墨鱼固定规则与可读响应脚本、已验证页面清理，以及既有 fmz200 开屏/拒绝规则；amdc 独立，Surge 高德组合已真机验收 |
 | 阿里系 amdc（2026-10-06 新增） | 仓库自写的 `quantumultx/scripts/amdc.js`（与墨鱼 `amdc.js` 同一 UA 清单），只有一条 http-response 脚本、不需要 MitM；三端各一项 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
 | 网易邮箱大师、大麦（2026-10-06 起） | 仓库自写规则 `NeteaseMail.sgmodule`、`DaMai.sgmodule`（与 QX 同一份规则）；大麦不再带 amdc |
@@ -100,7 +100,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 | 小宇宙去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/xiaoyuzhou.sgmodule` | 按需启用 |
 | 大麦去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/damai.sgmodule` | 按需启用 |
 | 航旅纵横去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/umetrip.sgmodule` | 按需启用 |
-| 开屏补充 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/startup-supplement.sgmodule` | 按需启用；补充通用去广告（神州、滴滴、一嗨） |
+| 开屏补充 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/startup-supplement.sgmodule` | 按需启用；补充通用去广告（神州、滴滴、一嗨、1688、拼多多、淘宝、得物） |
 | 微信读书精简 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/weread.sgmodule` | 按需启用 |
 | 微信公众号去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/wechat-mp.sgmodule` | 按需启用 |
 | 美团去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/meituan.sgmodule` | 按需启用 |
@@ -111,7 +111,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 | 豆瓣 App 去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/douban-app.sgmodule` | 按需启用 |
 | 中国移动去广告 | `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/surge/modules/rewrite/chinamobile.sgmodule` | 按需启用 |
 
-除两个家庭模块外，上表的模块都需要 MitM。前 15 个对应 Loon 中已验收、默认启用的插件；2026-10-05 新增的 5 个（网易邮箱大师到微信读书精简）在 QX、Loon 中默认关闭，之后的 8 个（微信公众号到中国移动）只有 Surge 和 Loon，Loon 中默认关闭；真机逐个验收前都不要当作已验证。12306 和中国电信的模块在 2026-10-05 真机验收后移除：`ad.12306.cn` 已被三端的 AdRules 拒绝（Surge 在家庭模块里预匹配拒绝），12306 的脚本从未运行；fmz200「中国电信」处理的是天翼云盘等其他电信 App 的主机，中国电信 App 实际访问的 `appgo*.189.cn` 一条都不匹配。不用的 App 可以不装，或在模块列表里关掉。
+家庭模块与阿里系 amdc 不需要 MitM；其余模块按文件中的 hostname 配置解密。默认值以各端模板为准，Surge 启用状态由设备保存；不要按表格位置推断验收或默认开启状态。八个 fmz200 补充在 QX、Loon、Surge 都有对应资源，按需逐项验收。12306 和中国电信的模块在 2026-10-05 真机验收后移除：`ad.12306.cn` 已被三端的 AdRules 拒绝（Surge 在家庭模块里预匹配拒绝），12306 的脚本从未运行；fmz200「中国电信」处理的是天翼云盘等其他电信 App 的主机，中国电信 App 实际访问的 `appgo*.189.cn` 一条都不匹配。不用的 App 可以不装，或在模块列表里关掉。
 
 **模块顺序**：「在家直连 + 拦截」要排在所有含 REJECT 规则的模块**之后**，目前是哔哩哔哩增强、小红书去广告、高德地图去广告（2026-10-06 起）、知乎去广告、微博去广告、闲鱼去广告，以及 2026-10-05 新增的虎扑、米家、豆瓣 App、中国移动（它们的模块说明里都写了这一点）。启用新模块、调整顺序或重载配置后都要复核；无法排到家庭模块之前时，关闭这个新模块，保持家庭切换与拦截不变。UDP 没有预匹配阶段，只按主规则顺序匹配；如果家庭模块排在前面，家里发往 B 站 P2P 端口的 UDP 会先命中 SUBNET 而直连。在家播放 B 站视频，到请求记录里筛选目标端口 4480 / 4483 / 8082 / 9102，应全部为 REJECT；出现 DIRECT 就调整模块顺序。也可以用 `python3 scripts/netdiag.py get surge /v1/rules` 查看实际生效的规则顺序：上述模块的规则应排在 `SUBNET,SSID:` 之前。
 
@@ -143,7 +143,7 @@ Loon 上高德、知乎、微信外链用的是 Kelee 的插件（小红书 2026
 
 ## 合并前试验
 
-合并前 `main` 上还没有 `surge/` 下的文件，按 URL 安装会失败。试验时用固定到分支提交的本地副本，**去掉托管行**，模块也用本地文件：
+新路径合并前可能尚未出现在 `main`，不要用 main 验证未发布资源。试验时用固定到分支提交的本地副本，**去掉托管行**，模块也用本地文件：
 
 ```sh
 set -e
@@ -159,26 +159,20 @@ if grep -n 'wenbingkun/proxy-config/main/' "$T"/*; then echo "unpinned repo URL"
 find "$T" -type f -exec chmod 600 {} +
 ```
 
-把三个文件复制到 iCloud Drive/Surge，`surge/modules/rewrite/` 下要用的模块也原样复制过去作为本地模块（它们不含本仓库的 main 链接，不用固定）；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和模块（两个家庭模块与要用的拆分模块），把 include 改回，并删除本地副本。
+把三个文件复制到 iCloud Drive/Surge，`surge/modules/rewrite/` 下要用的模块也原样复制过去作为本地模块（需检查其仓库链接；新增或修改的资源同样固定到已推送的完整提交 SHA）；`.sgmodule` 放在配置目录里，就会作为本地模块出现。试验副本存为 `proxy-config.dconf`（分离配置段文件，不会出现在配置列表里），`bootstrap.conf` 的 4 处 `#!include proxy-config.conf` 改为 `proxy-config.dconf`。合并后改回按 URL 安装 `proxy-config.conf` 和模块（两个家庭模块与要用的拆分模块），把 include 改回，并删除本地副本。
 
 ## 回滚
 
 关闭 Surge VPN，打开 Loon 或 QX，它们的配置不受影响。Surge 的本地文件都是新增的，不会覆盖其他客户端的文件。
 
-2026-10-06 剩余替换项三端真机验收已完成，效果差异和已知限制见 [QX README](../quantumultx/README.md)。App Store 地区跳转不会自动修改账号地区。
-
-## 2026-10-06 页面净化与开屏补充
-
-高德页面净化独立保留个人页明确推广卡片、首页「关注 / 推荐 / 附近」社交栏目和帖子、打车推广列表清理；保留地图、定位、搜索、路线与未知组件。首页顶部商业卡片尚未覆盖。微博发现页的空「热门视频」区块及排序入口已合入原微博规则，保留原广告 banner 过滤和正常发现内容。
-
-开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 仅完成对应规则及模拟检查，新增项模板默认关闭，需逐项验收。
-
-按需添加 `modules/rewrite/amap-page-cleanup.sgmodule` 和 `modules/rewrite/startup-supplement.sgmodule`；与原高德、通用去广告并用。共享高德主机上的原模块只拦其他路径；神州通用规则匹配旧 `carrctapi/home/marketing`，补充匹配 `cardes/toufang/marketing/v1`，互不依赖执行顺序。
-
-高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
-
 ## 效果优先：高德单入口
 
 `amap.sgmodule` 由仓库维护的 `converted/Amap.sgmodule` 生成，合并墨鱼高德与已验证页面清理。个人页、打车两个重叠接口只运行一个响应脚本，首页 ContentCenter 使用同一脚本的独立匹配；保留原 fmz200 的开屏/域名拒绝，amdc 仍独立。请启用一个高德模块并关闭旧「高德页面净化」，家庭拦截模块继续排在含拒绝规则的高德模块之后。
 
-旧 `amap-page-cleanup.sgmodule` 保留原字节，仅作兼容；生成器将其标为 compat_only，活跃模块冲突检查不把它算作新配置的第二个高德入口，测试仍固定校验其原内容。新组合须完成真机 A/B 后再发布，模拟通过不证明顶部商业卡片已消失。
+旧 `amap-page-cleanup.sgmodule` 保留原字节，仅作兼容；生成器将其标为 compat_only，活跃模块冲突检查不把它算作新配置的第二个高德入口，测试仍固定校验其原内容。Surge 高德组合已完成真机功能验收；后续版本仍需独立验证，模拟检查不证明页面效果。
+
+## 开屏补充与兼容
+
+`startup-supplement.sgmodule` 统一处理神州、滴滴、一嗨、1688、拼多多、淘宝、得物，仅航旅 startup/discardrp 归 `umetrip.sgmodule`。阿里系 amdc 独立保留一项，其余同 App 专用模块不重复启用。
+
+旧豆瓣网页、神机重定向及高德页面净化仅供兼容回滚，不是推荐安装项。微信小程序开屏、一嗨新素材等限制见 [QX 说明](../quantumultx/README.md#兼容与已知限制)。本地模块不自动更新，修改仓库后需同步本地副本并重载，核对实际脚本路径和启用状态。
