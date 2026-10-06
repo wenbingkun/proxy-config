@@ -1,0 +1,70 @@
+#!name=闲鱼
+#!desc=某些APP要清除缓存或者重新安装拦截广告才会生效！
+#!author=奶思
+#!homepage=https://github.com/fmz200/wool_scripts
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a7/7d/97/a77d970b-9da7-9154-56ab-46f114ea7736/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/100x100bb.png
+#!raw-url=https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/partX/XianYu.snippet
+#!tg-group=https://t.me/QuantumultXCommunity
+#!date=undefined
+# Frozen copy of fmz200's QX split snippet for Xianyu; do not edit by hand.
+# Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/partX/XianYu.snippet
+# Source SHA-256: c721f2595aebf527521a52740010064c457c148d9d23722999c9a35ec6574301
+# Changes (2026-10-06):
+#   - removed 1 line(s) matching amdc\\/mobileDispatch
+#   - pinned 7x https://raw.githubusercontent.com/ishowshu/qx/refs/heads/main/ -> d38e228
+#   - pinned 1x https://github.com/fmz200/wool_scripts/raw/main/ -> 5d5f63f
+#   - pinned 1x https://raw.githubusercontent.com/fmz200/wool_scripts/main/ -> 5d5f63f
+#   - the amdc dispatch reject (the standalone 阿里系 amdc item handles it for every client)
+#   - added idle.ad.expose (splash ads, from the ddgksf2013 version)
+# To refresh, fetch the source at a new commit, redo these changes and send it through a PR.
+#############################################
+
+
+# 拦截广告下发
+# 搜索页多余推荐列表
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.item\.search\.activate\/2\.0 url reject-dict
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\.discover\/1\.0 url reject-dict
+# 这些宝贝超好卖
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.resell\.recommendorhotcate\/1\.0 url reject-dict
+# 用闲鱼币买更便宜
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.idle\.coin\.nextfresh\/1\.0 url reject-dict
+# 闲鱼我的页面底部商品推荐
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.buy\.feeds url reject-dict
+# 消息页感兴趣推荐
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.playboy\.recommend\/1\.0 url reject
+# 开屏广告
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlecommerce\.splash\.ads url reject-dict
+# 搜索栏填充词
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\.shade\/ url jsonjq-response-body 'del(.data)'
+# 首页闲鱼币入口、底部发布球
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.user\.strategy\.list\/ url jsonjq-response-body 'del(.data)'
+# 关注的人页面圈子横幅
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.group\.myself\.banner\/ url jsonjq-response-body '.data.bannerList = []'
+# 主页关注的人感兴趣推荐
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.playboy\.recommend\/2\.0 url jsonjq-response-body '.data.recommends = [] | .data.items = [] | .data.next = false'
+# 商品详情页底部推荐
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.recommend\.list\/ url jsonjq-response-body '.data.cardList = []'
+# 首页关注频道常访问的圈子
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.fun\.follow\.often\.visit url jsonjq-response-body '.data.sections = []'
+# 主页关注页面圈子新横幅
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.circle\.myself\.banner\/1\.0 url jsonjq-response-body '.data.bannerList = []'
+# 主页关注页面圈子常访问
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.circle\.visited\/1\.0 url jsonjq-response-body '.data.visitedCircleList = []'
+# 商品信息流广告
+^https:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.nextfresh\/ url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+# 定位地区页面的信息流广告
+^https:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.home\/ url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+# 个人主页
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.idle\.user\.page\.my\.adapter\/ url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+# 首页顶部频道菜单
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.circle\.list\/1\.0 url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+# 商品详情页周边推荐
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.nearby\.itemdetail\.enter\/1\.0 url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+# 搜索结果信息流广告
+^https:\/\/g-acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\/ url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+# 同城页横幅广告
+^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.flow\.plat\.section url script-response-body https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js
+
+^https?:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.idle\.ad\.expose url reject-200
+
+hostname = acs.m.goofish.com, g-acs.m.goofish.com

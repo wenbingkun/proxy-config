@@ -212,7 +212,7 @@ def check_hosted_rewrites(failures: list[str]) -> None:
         if found != scripts:
             failures.append(f"quantumultx/rewrite/{name}: scripts must be exactly {sorted(scripts)}, got {sorted(found)}")
         for section, wanted in (("rewrite_remote", True), ("filter_remote", as_filter)):
-            lines = [l for l in sec.get(section, []) if l.split(",")[0].strip() == REPO_REWRITE + name]
+            lines = [l for l in sec.get(section, []) if l.split(",")[0].strip().split("#", 1)[0] == REPO_REWRITE + name]
             if len(lines) != (1 if wanted else 0):
                 failures.append(f"QX [{section}]: {name} must be loaded {'once' if wanted else 'not at all'}")
             for line in lines:
@@ -265,6 +265,24 @@ def check_xiaoyuzhou_features(failures: list[str]) -> None:
             failures.append(f"{path.relative_to(ROOT)}: discovery must keep all items except DISCOVERY_BANNER")
 
 
+PINNED_URL = re.compile(r"^https://raw\.githubusercontent\.com/[^/]+/[^/]+/[0-9a-f]{40}/")
+OWN_SCRIPTS = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/"
+
+
+def check_no_ddgksf2013(failures: list[str]) -> None:
+    """2026-10-06: every ddgksf2013 resource is replaced; hosted rewrites only load pinned or own scripts."""
+    for line in QX_CONFIG.read_text(encoding="utf-8").splitlines():
+        if not line.lstrip().startswith(("#", ";")) and "ddgksf2013" in line.split(",")[0]:
+            failures.append(f"QX: ddgksf2013 resources were replaced and must not come back: {line.split(',')[0]}")
+    for path in sorted((ROOT / "quantumultx" / "rewrite").glob("*")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.lstrip().startswith(("#", ";")):
+                continue
+            for url in re.findall(r"\b(?:script-[a-z-]+|echo-response \S+ echo-response) (https?://\S+)", line):
+                if not PINNED_URL.match(url) and not url.startswith(OWN_SCRIPTS):
+                    failures.append(f"quantumultx/rewrite/{path.name}: loads an unpinned resource {url}")
+
+
 def check_generator(failures: list[str]) -> None:
     for policy in ("DIRECT", "REJECT", AD_GROUP, "🌏 全球加速"):
         if build_rules.home_auto(policy) != policy:
@@ -282,6 +300,7 @@ def main() -> int:
     check_dns(failures)
     check_fmz200(failures)
     check_hosted_rewrites(failures)
+    check_no_ddgksf2013(failures)
     check_xiaoyuzhou_features(failures)
     check_generator(failures)
     if failures:

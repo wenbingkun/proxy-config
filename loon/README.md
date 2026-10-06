@@ -49,7 +49,7 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 |---|---|
 | 墨鱼：小红书 | 2026-10-05 起不再用可莉 RedPaper，改用仓库托管的 fmz200 插件 `loon/plugins/Xiaohongshu.plugin`：脚本全部指向仓库的 `quantumultx/scripts/xiaohongshu.js`（与 QX、Surge 同一份，首页推荐去视频笔记、去「视频」频道），另加一条频道列表规则；验收前默认关闭 |
 | 墨鱼：YouTube、高德、知乎、微信外链解锁 | 可莉（kelee.one）的原生插件。kelee.one 只响应完整的 iOS Loon UA，远程资源巡检因此使用 `Loon/3.5.2 (996) CFNetwork/3826 Darwin/25.0.0` |
-| 墨鱼：微博、闲鱼、Safari 超级搜索 | 闲鱼、Safari 超级搜索没有 Loon 版本；微博的可莉原生版真机效果不如 QX 干净（2026-10-01），也改用墨鱼原版转换。仓库在 `loon/plugins/` 托管冻结的转换结果（Script-Hub `6b4fb62` 转换），脚本地址固定到审核过的上游提交；文件头注释写明来源地址、原文件哈希和重新生成的方法 |
+| 墨鱼：微博、闲鱼、Safari 超级搜索 | 2026-10-06 起改为 `loon/plugins/Weibo.plugin`、`XianYu.plugin`（fmz200 冻结副本，脚本固定到提交）与 `QSearch.plugin`（仓库自写精简版），说明见 QX README；旧的 WeiboAds、GoofishAds、Q-Search 插件兼容期内保留 |
 | 2026-10-05 新增：fmz200 按 App 拆分的微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动，以及替换墨鱼版的小宇宙（`XiaoYuZhouAds.plugin` 兼容期内保留不改） | fmz200 的 Loon 原生插件，没有脚本，来自固定提交 `5d5f63f`。上游图标是一张 560 KB 的 GIF，Loon 加载时一直转圈，所以由 `scripts/build_loon_plugins.py` 生成托管副本 `loon/plugins/fmz200-<App>.plugin`，把 `#!icon` 换成该 App 的 App Store 图标（100×100 PNG，几 KB）；小宇宙另按用户决定保留 AI 总结、正常搜索、分类与推荐，其余 App 的规则一字不动，`--check` 在 CI 中比对。默认关闭（`tests/test_loon_config.py` 锁定来源提交、无脚本和关闭状态）。去广告规则与 bm7 合集可能重叠，但返回内容（reject、reject-img、reject-dict 等）和最终命中哪条仍要真机验收。美团外卖开屏所在的 `wmapi.meituan.com` 只在 bm7 合集里解密；豆瓣的横幅和图片广告两条规则所在主机没有解密，不在覆盖范围 |
 | 2026-10-05 新增：墨鱼的网易邮箱大师、大麦、航旅纵横，Maasea 的微信读书精简（Surge 模块） | 为三端用同一来源，统一用 Script-Hub `6b4fb62` 冻结转换，托管在 `loon/plugins/`，默认关闭；没有和可莉的版本比较。航旅纵横的脚本处理二进制响应体，已加 `binary-body-mode=true`；它和大麦的来源在 ddgksf2013.top 上，没有提交可固定，脚本副本托管在 `quantumultx/scripts/`，并修正了上游没有接上的 JSON 清理入口（`tests/test_umetrip_script.py`） |
 | 墨鱼：开屏、微信小程序 | 不单独移植。依赖默认开启的 blackmatrix7 去广告合集（它覆盖了墨鱼开屏 437 个解密域名中的 373 个、小程序 35 个中的 34 个）。这是条件覆盖，发现漏网再补 |
@@ -64,3 +64,5 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 ## 后续更新
 
 `[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/rules/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
+
+2026-10-06 剩余替换项三端真机验收已完成，效果差异和已知限制见 [QX README](../quantumultx/README.md)。网易邮箱、大麦现使用仓库自写的 `NeteaseMail.plugin`、`DaMai.plugin`；上表中旧转换文件只作为兼容与回滚保留。

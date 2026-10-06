@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import email.message
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -91,9 +92,8 @@ def main() -> int:
     assert all(not check.is_skipped_url(url) for url in urls)
     assert any(resource.kind == "shellcrash-template" for resource in resources)
     assert any(resource.source.startswith("quantumultx/") for resource in resources)
-    assert {
-        "https://ddgksf2013.top/rewrite/StartUpAds.conf",
-    } <= set(urls)
+    # No client loads ddgksf2013's own site any more (2026-10-06).
+    assert not any("ddgksf2013.top" in url for url in urls), [u for u in urls if "ddgksf2013.top" in u]
 
     # A URL used by both QX and Loon is checked once for each client, each with its own UA.
     shared = {r.url for r in resources if check.client_of(r.source) == "qx"} & {
@@ -110,17 +110,12 @@ def main() -> int:
     assert any(url.startswith("https://kelee.one/") for url in loon_sources)
     # Redirect targets inside hosted plugins (Q-Search, General) are not resources.
     plugin_urls = {url for url, source in loon_sources.items() if source.startswith("loon/plugins/")}
-    assert plugin_urls == {
-        "https://raw.githubusercontent.com/ddgksf2013/Scripts/819a88e0efbfeb5dfdb15e93c6d007a5e790a15f/amdc.js",
-        "https://raw.githubusercontent.com/ddgksf2013/Scripts/5bfa7fad4d262740131334169c222ca9ac2d353a/douban.js",
-        "https://raw.githubusercontent.com/ddgksf2013/Scripts/4ff1d89274c694454ac3a494ae1a2d4cfd1edf56/weibo_json.js",
-        "https://raw.githubusercontent.com/ddgksf2013/Scripts/08ad3524ab6924afd86ad6dc18ed48050a8abede/weibo_search_info.json",
-        "https://raw.githubusercontent.com/ddgksf2013/Scripts/9b35fd55063e995b1ccec2f022a1c56f29d76878/weibo_search_topic.json",
-        "https://raw.githubusercontent.com/Maasea/sgmodule/2c2c0adba8454f16c82c05fe5ed415badcbdd3d8/Script/WeRead/weread.js",
-        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.ads.js",
-        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
-        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js",
-    }, plugin_urls
+    # Every script a hosted plugin loads is pinned to a commit, or is this repo's own script.
+    pinned = re.compile(r"^https://raw\.githubusercontent\.com/[^/]+/[^/]+/[0-9a-f]{40}/")
+    own = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/"
+    loose = sorted(u for u in plugin_urls if not pinned.match(u) and not u.startswith(own))
+    assert not loose, loose
+    assert {own + "amdc.js", own + "xiaohongshu.js", own + "umetrip.ads.js"} <= plugin_urls, plugin_urls
     # The generated Surge rewrite modules are treated like hosted plugins: only their script-path URLs.
     rewrite_scripts = {
         url for path in check.SURGE_REWRITE_MODULES for line in path.read_text(encoding="utf-8").splitlines()
