@@ -217,6 +217,35 @@ def find_match(log: str, host: str) -> tuple[str, str] | None:
     return None
 
 
+# TEST-NET-3 literal outside every fixture provider: only the terminal MATCH covers it, without DNS.
+WARMUP_HOST = "203.0.113.254"
+
+
+def wait_for_tunnel(process: subprocess.Popen, socks: int, log_path: Path) -> None:
+    """Provider counts can be ready before the tunnel handles traffic.
+
+    Until then Mihomo still acknowledges SOCKS but drops the connection without a match log,
+    so retry a warm-up request until the core actually logs a rule decision.
+    """
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError("core exited before tunnel readiness")
+        try:
+            socks_request(socks, WARMUP_HOST)
+        except (OSError, RuntimeError):
+            pass
+        probe = time.monotonic() + 0.5
+        while time.monotonic() < probe:
+            match = find_match(log_path.read_text(encoding="utf-8"), WARMUP_HOST)
+            if match is not None:
+                if match[0] != "Match":
+                    raise RuntimeError(f"warm-up literal matched {match}, expected terminal Match")
+                return
+            time.sleep(0.02)
+    raise RuntimeError("core tunnel readiness timed out")
+
+
 def run_core(core: Path, mmdb: Path, source: dict, fixture: dict, cases: list[dict]) -> list[dict]:
     dns = CountingDNS(fixture["cases"])
     try:
@@ -252,6 +281,7 @@ def run_core(core: Path, mmdb: Path, source: dict, fixture: dict, cases: list[di
                         time.sleep(0.02)
                     else:
                         raise RuntimeError("core/provider readiness timed out")
+                    wait_for_tunnel(process, socks, log_path)
                     observations = []
                     for case in cases:
                         before, errors = dns.snapshot()

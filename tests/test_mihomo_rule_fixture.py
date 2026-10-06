@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import ipaddress
 import tempfile
 from pathlib import Path
 
@@ -17,6 +18,14 @@ def main() -> int:
     for case in cases:
         assert case["host"].endswith(".test") or case["host"] == "192.0.2.66"
         assert case["dns"] in {0, 1}
+    # The readiness probe must stay outside every case and fixture provider so it can only hit MATCH.
+    warmup = ipaddress.ip_address(regression.WARMUP_HOST)
+    assert regression.WARMUP_HOST not in {case["host"] for case in cases}
+    for provider in fixture["providers"].values():
+        for entry in provider["payload"]:
+            cidr = entry.split(",")[1] if "," in entry else entry
+            if "/" in cidr:
+                assert warmup not in ipaddress.ip_network(cidr, strict=False), (entry, warmup)
     with tempfile.TemporaryDirectory() as temp:
         directory = Path(temp)
         candidate, counts = regression.build_fixture(source, fixture, directory, 10001, 10002, 10003)
