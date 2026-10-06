@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import hashlib
+import ipaddress
+import os
 import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -83,6 +86,17 @@ class Result:
     content_type: str
     final_url: str
     bytes_read: int
+    message: str
+    # Retain full Mihomo responses for classification; do not download providers twice.
+    body: bytes = field(default=b"", repr=False)
+
+
+@dataclass(frozen=True)
+class ProviderComparison:
+    name: str
+    ip_rules: int | None
+    origin: str
+    sha256: str
     message: str
 
 
@@ -171,7 +185,7 @@ def extract_resources() -> list[Resource]:
                 url=url,
                 kind="clash-rule",
                 source=f"mihomo/verge/config.yaml:rule-providers.{name}",
-                expected_format=provider.get("format"),
+                expected_format=provider.get("format", "yaml"),
             )
 
     for path in QX_FILES + LOON_FILES + SURGE_FILES:
@@ -291,6 +305,8 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
                 status, content_type, body, final_url = read_response(resource.url, plain_headers, timeout, limit)
             if not 200 <= status < 300:
                 last_error = f"HTTP {status}"
+            elif full_rule_check and status != 200:
+                last_error = f"full rule check requires HTTP 200, got {status}"
             elif full_rule_check and len(body) > limit:
                 last_error = f"resource exceeds {FULL_LIMIT // (1024 * 1024)} MiB full-check limit"
             else:
@@ -304,6 +320,7 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
                     final_url=final_url,
                     bytes_read=len(body),
                     message=problem or "ok",
+                    body=body if full_rule_check and resource.kind == "clash-rule" else b"",
                 )
         except urllib.error.HTTPError as exc:
             last_error = f"HTTP {exc.code}"
@@ -323,6 +340,179 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
         bytes_read=0,
         message=last_error,
     )
+
+
+DESTINATION_IP_TYPES = {"IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP"}
+CLASSICAL_NON_IP_TYPES = {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-REGEX", "PROCESS-NAME"}
+
+
+def provider_ip_count(body: bytes, behavior: str, fmt: str) -> int:
+    """Classify supported provider entries, failing closed on unknown syntax.
+
+    This is a content/coverage check, not a replacement for the core's rule parser.
+    Numeric domain patterns remain domains; inner no-resolve does not remove IP rules.
+    """
+    if not isinstance(behavior, str) or behavior not in {"domain", "ipcidr", "classical"}:
+        raise ValueError(f"unsupported behavior {behavior!r}")
+    text = body.decode("utf-8-sig")
+    if fmt == "yaml":
+        document = yaml.safe_load(text)
+        if not isinstance(document, dict) or not isinstance(document.get("payload"), list):
+            raise ValueError("expected YAML payload list")
+        entries = document["payload"]
+    elif fmt == "text":
+        entries = [line.strip() for line in text.splitlines()
+                   if line.strip() and not line.lstrip().startswith(("#", "!"))]
+    else:
+        raise ValueError(f"unsupported format {fmt!r}")
+    count = 0
+    for index, entry in enumerate(entries, 1):
+        if not isinstance(entry, str) or not entry.strip():
+            raise ValueError(f"entry {index}: expected nonempty string")
+        entry = entry.strip()
+        if behavior == "domain":
+            if not re.fullmatch(r"[A-Za-z0-9_.*+\-]+", entry):
+                raise ValueError(f"entry {index}: unsupported domain pattern")
+            continue
+        if behavior == "ipcidr":
+            if "/" not in entry:
+                raise ValueError(f"entry {index}: expected CIDR")
+            ipaddress.ip_network(entry, strict=False)
+            count += 1
+            continue
+        parts = [part.strip() for part in entry.split(",")]
+        kind = parts[0]
+        if kind not in DESTINATION_IP_TYPES | CLASSICAL_NON_IP_TYPES:
+            raise ValueError(f"entry {index}: unsupported classical type {kind!r}")
+        if len(parts) not in {2, 3} or not parts[1]:
+            raise ValueError(f"entry {index}: unsupported classical fields")
+        if len(parts) == 3 and (kind not in DESTINATION_IP_TYPES or parts[2] != "no-resolve"):
+            raise ValueError(f"entry {index}: unsupported classical modifier")
+        if kind in {"IP-CIDR", "IP-CIDR6"}:
+            if "/" not in parts[1]:
+                raise ValueError(f"entry {index}: expected CIDR")
+            network = ipaddress.ip_network(parts[1], strict=False)
+            if network.version != (4 if kind == "IP-CIDR" else 6):
+                raise ValueError(f"entry {index}: CIDR address family mismatch")
+        elif kind == "IP-ASN":
+            if not re.fullmatch(r"[0-9]+", parts[1]) or int(parts[1]) > 0xFFFFFFFF:
+                raise ValueError(f"entry {index}: invalid ASN")
+        elif kind == "GEOIP" and not re.fullmatch(r"(?:[A-Za-z]{2}|LAN)", parts[1]):
+            raise ValueError(f"entry {index}: invalid GEOIP code")
+        count += kind in DESTINATION_IP_TYPES
+    return count
+
+
+def checkout_provider_path(url: str) -> Path | None:
+    """Only this repo's own mutable generated rules use the candidate checkout."""
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != "https" or parsed.query or parsed.fragment:
+        return None
+    prefix = "/gh/wenbingkun/proxy-config@main/mihomo/rules/"
+    if parsed.netloc != "cdn.jsdelivr.net" or not parsed.path.startswith(prefix):
+        return None
+    filename = parsed.path[len(prefix):]
+    if not re.fullmatch(r"[a-z0-9_]+\.yaml", filename):
+        raise ValueError("unsupported checkout provider path")
+    return ROOT / "mihomo" / "rules" / filename
+
+
+def mihomo_content_report(
+    results: list[Result], config: dict | None = None,
+) -> tuple[list[ProviderComparison], list[str], list[str]]:
+    """Compare each provider definition, including aliases sharing a download URL."""
+    if config is None:
+        config = yaml.safe_load(CLASH_CONFIG.read_text(encoding="utf-8"))
+    if not isinstance(config, dict) or not isinstance(config.get("rule-providers"), dict):
+        raise ValueError("expected rule-providers mapping")
+    providers = config["rule-providers"]
+    if not all(isinstance(name, str) and name for name in providers):
+        raise ValueError("expected nonempty provider names")
+    rules = config.get("rules")
+    if not isinstance(rules, list) or not all(isinstance(rule, str) for rule in rules):
+        raise ValueError("expected rules string list")
+    geoip = next((i for i, rule in enumerate(rules) if rule.startswith("GEOIP,CN,")), None)
+    if geoip is None:
+        raise ValueError("missing terminal GEOIP,CN rule")
+    stage = set()
+    for index, rule in enumerate(rules):
+        if not rule.startswith("RULE-SET,"):
+            continue
+        parts = [part.strip() for part in rule.split(",")]
+        if len(parts) not in {3, 4} or (len(parts) == 4 and parts[3] != "no-resolve"):
+            raise ValueError(f"rule {index + 1}: unsupported RULE-SET syntax")
+        if parts[1] not in providers:
+            raise ValueError(f"rule {index + 1}: undefined provider {parts[1]!r}")
+        if index < geoip and len(parts) == 3:
+            stage.add(parts[1])
+    downloads = {result.resource.url: result for result in results if result.resource.kind == "clash-rule"}
+    comparisons = []
+    for name, provider in providers.items():
+        origin = "unavailable"
+        digest = ""
+        try:
+            if not isinstance(name, str) or not isinstance(provider, dict):
+                raise ValueError("invalid provider definition")
+            if provider.get("type") != "http" or not isinstance(provider.get("url"), str):
+                raise ValueError("unsupported provider transport or missing URL")
+            url = provider["url"]
+            path = checkout_provider_path(url)
+            if path is not None:
+                origin = f"checkout:{path.relative_to(ROOT)}"
+                body = path.read_bytes()
+                if len(body) > FULL_LIMIT:
+                    raise ValueError("checkout provider exceeds full-check limit")
+            else:
+                origin = f"http:{redact_url(url)}"
+                result = downloads.get(url)
+                if result is None or not result.ok:
+                    raise ValueError("download unavailable" if result is None else f"download failed: {result.message}")
+                body = result.body
+                if not body:
+                    raise ValueError("full response body unavailable")
+            digest = hashlib.sha256(body).hexdigest()
+            count = provider_ip_count(body, provider.get("behavior"), provider.get("format", "yaml"))
+            comparisons.append(ProviderComparison(name, count, origin, digest, "compared"))
+        except (ValueError, UnicodeError, yaml.YAMLError, OSError) as exc:
+            comparisons.append(ProviderComparison(name, None, origin, digest, f"not compared: {exc}"))
+    missing = [r.name for r in comparisons if r.ip_rules and r.name not in stage]
+    stale = [r.name for r in comparisons if r.ip_rules == 0 and r.name in stage]
+    return comparisons, missing, stale
+
+
+def emit_mihomo_report(comparisons: list[ProviderComparison], missing: list[str], stale: list[str]) -> None:
+    unknown = sum(r.ip_rules is None for r in comparisons)
+    heading = (f"Mihomo IP coverage: compared {len(comparisons) - unknown}/{len(comparisons)}; "
+               f"not compared={unknown}; missing IP-stage references={len(missing)}; "
+               f"IP-stage providers without current IP rules={len(stale)}")
+    print(heading)
+    for result in comparisons:
+        status = "not compared" if result.ip_rules is None else f"IP rules={result.ip_rules}"
+        print(f"  [{status}] {result.name}: {result.origin}; sha256={result.sha256 or '-'}; {result.message}")
+    for name in missing:
+        print(f"  [fail] {name}: destination IP rules lack an IP-stage reference")
+    for name in stale:
+        print(f"  [warn] {name}: IP stage has no current destination IP rules; review, do not auto-remove")
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        def escape(value: str) -> str:
+            return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("|", "&#124;").replace("\n", " ").replace("\r", " ")
+
+        rows = ["## Mihomo provider IP coverage", "", heading, "",
+                "This compares current provider contents and configured IP coverage; it does not test runtime DNS/routing.", "",
+                "| Provider | Destination IP rules | Source | SHA-256 | Result |",
+                "|---|---:|---|---|---|"]
+        for result in comparisons:
+            verdict = result.message
+            if result.name in missing:
+                verdict = "FAIL: missing IP-stage reference"
+            elif result.name in stale:
+                verdict = "WARN: no current IP rules; keep until reviewed"
+            values = (result.name, "not compared" if result.ip_rules is None else str(result.ip_rules),
+                      result.origin, result.sha256 or "-", verdict)
+            rows.append("| " + " | ".join(escape(value) for value in values) + " |")
+        with Path(summary_path).open("a", encoding="utf-8") as summary:
+            summary.write("\n".join(rows) + "\n")
 
 
 def surge_reject_urls() -> list[str]:
@@ -402,7 +592,15 @@ def main() -> int:
 
     failures = sorted((result for result in results if not result.ok), key=lambda item: item.resource.url)
     overlap_failures: list[str] = []
+    content_failures: list[str] = []
     if args.mode == "full":
+        try:
+            comparisons, missing, stale = mihomo_content_report(results)
+            emit_mihomo_report(comparisons, missing, stale)
+            content_failures = [f"{r.name}: {r.message}" for r in comparisons if r.ip_rules is None]
+            content_failures += [f"{name}: destination IP rules lack an IP-stage reference" for name in missing]
+        except (ValueError, UnicodeError, yaml.YAMLError, OSError) as exc:
+            content_failures = [f"not compared: {exc}"]
         overlap_failures, overlap_warnings = reject_overlap_report(args.timeout)
         if overlap_warnings:
             excluded = sum("[excluded by reject_allow.list]" in w for w in overlap_warnings)
@@ -415,7 +613,7 @@ def main() -> int:
     for result in results:
         counts[result.resource.kind] = counts.get(result.resource.kind, 0) + 1
 
-    if failures or overlap_failures:
+    if failures or overlap_failures or content_failures:
         print("Remote resource check failed:")
         for result in failures:
             print(
@@ -424,7 +622,10 @@ def main() -> int:
             )
         for message in overlap_failures:
             print(f"  [fail] surge-reject-overlap {message}")
-        print(f"Failed {len(failures)} of {len(results)} resources; {len(overlap_failures)} REJECT list errors.")
+        for message in content_failures:
+            print(f"  [fail] mihomo-content {message}")
+        print(f"Failed {len(failures)} of {len(results)} resources; {len(overlap_failures)} REJECT list errors; "
+              f"{len(content_failures)} Mihomo content/coverage errors.")
         return 1
 
     summary = ", ".join(f"{kind}={count}" for kind, count in sorted(counts.items()))

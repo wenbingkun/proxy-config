@@ -57,6 +57,8 @@ Clash 主配置只定义代理分组和规则引用结构，具体规则内容�
 
 `rules/` 目录是仓库自维护共享规则的唯一编辑入口。`build_rules.py` 负责将其转换为各客户端所需的格式，确保这部分规则在 QX、Loon、Windows 和路由器之间一致；第三方规则仍由各客户端配置显式引用，并由远程资源巡检持续检查。离线依赖检查 `python3 scripts/check_upstreams.py` 按字段检查规则、PNG 图标和执行引用；`rules/upstreams.yaml` 只登记有限来源模式与精确可变例外，版本仍以配置和生成器为准。`--json` 报告全部引用位置、固定/受控/例外状态及未展开的传递依赖；固定外层容器不代表内部脚本也固定。
 
+`remote-resources.yml` 周巡检运行 full，手动仍可选择 light/full（默认 light），时限 15 分钟。full 根据 Mihomo provider 的 behavior/format 分类实际目的 IP 条目，比较 GEOIP,CN 前不带 no-resolve 的 RULE-SET 兜底引用；缺口报错，当前无 IP 的旧兜底只提示复核，不自动删除。外部 provider 复用本次完整下载，仓库自维护的 @main 规则按当前 checkout 比较，远程可用性仍单独检查。下载、编码、解析或不支持的语法显示“not compared”并失败，不能当作无漂移。stdout 与 job summary 记录来源、SHA-256 和比较结果；不保存发布快照，也不验证实际 DNS/路由行为。
+
 ## 更新流程
 
 ```
