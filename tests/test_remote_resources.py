@@ -137,7 +137,8 @@ def main() -> int:
     own = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/"
     loose = sorted(u for u in plugin_urls if not pinned.match(u) and not u.startswith(own))
     assert not loose, loose
-    assert {own + "amdc.js", own + "xiaohongshu.js", own + "umetrip.js"} <= plugin_urls, plugin_urls
+    assert {own + "amdc.js", own + "xiaohongshu.js",
+            "https://raw.githubusercontent.com/wenbingkun/proxy-config/442b4ef2a10564bbbecbdcdd392abc806e7d222e/quantumultx/scripts/umetrip.js"} <= plugin_urls, plugin_urls
     # The generated Surge rewrite modules are treated like hosted plugins: only their script-path URLs.
     rewrite_scripts = {
         url for path in check.SURGE_REWRITE_MODULES for line in path.read_text(encoding="utf-8").splitlines()

@@ -28,18 +28,30 @@ for (const c of cases) {
   if (c.body !== undefined) response.body = c.body;
   if (c.bytes !== undefined) response.bodyBytes = Uint8Array.from(c.bytes).buffer;
   if (c.jsonBytes !== undefined) response.bodyBytes = Uint8Array.from(Buffer.from(c.jsonBytes)).buffer;
+  if (c.client && c.client !== 'qx' && response.bodyBytes !== undefined) {
+    const bytes = new Uint8Array(response.bodyBytes);
+    const padded = new Uint8Array(bytes.length + 4); padded.set(bytes, 2);
+    response.body = padded.subarray(2, 2 + bytes.length); delete response.bodyBytes;
+  }
   const ctx = {$request: {url: 'https://home.umetrip.com/gateway/api/umetrip/native', headers: c.headers || {}},
-    $response: response, $done: v => calls.push(v), console: {log() {}}, Uint8Array};
+    $response: response, $done: v => calls.push(v), console: {log() {}}, Uint8Array, ArrayBuffer};
+  if (c.client === 'qx') ctx.$task = {};
+  if (c.client === 'surge') ctx.$httpClient = {};
+  if (c.client === 'loon') {ctx.$httpClient = {}; ctx.$loon = {};}
   if (!c.noDecoder) ctx.TextDecoder = TextDecoder;
   vm.createContext(ctx);
   vm.runInContext(source, ctx);
   const r = {name: c.name, calls: calls.length, kind: 'pass'};
   const v = calls[0];
   if (v && v.bodyBytes !== undefined) {
+    if (!(v.bodyBytes instanceof ArrayBuffer)) throw Error('QX requires ArrayBuffer output');
     const b = new Uint8Array(v.bodyBytes);
     r.kind = 'bytes'; r.bytes = Array.from(b); r.text = Buffer.from(b).toString('utf8');
   } else if (v && v.body !== undefined) {
-    r.kind = 'body'; r.text = v.body;
+    if (c.client && c.client !== 'qx' && typeof v.body !== 'string') {
+      if (!(v.body instanceof Uint8Array)) throw Error('wrong binary output type');
+      r.kind = 'bytes'; r.bytes = Array.from(v.body); r.text = Buffer.from(v.body).toString('utf8');
+    } else {r.kind = 'body'; r.text = v.body;}
   }
   out.push(r);
 }
@@ -128,6 +140,10 @@ def check_extended(node: str, failures: list[str]) -> None:
         name = "JSON complete" + (" no decoder" if decoder else "")
         cases.append({"name": name, "jsonBytes": json.dumps(document, ensure_ascii=False), "noDecoder": decoder})
         expected[name] = "json"
+    cases = [{**c, "client": client, "name": client + ": " + c["name"]}
+             for client in ("qx", "surge", "loon") for c in cases]
+    expected = {client + ": " + name: value for client in ("qx", "surge", "loon")
+                for name, value in expected.items()}
     run = subprocess.run([node, "-e", HARNESS, str(SCRIPT), json.dumps(cases)], capture_output=True, text=True, timeout=60)
     if run.returncode:
         failures.append(run.stderr)
@@ -137,6 +153,8 @@ def check_extended(node: str, failures: list[str]) -> None:
         if result["calls"] != 1:
             failures.append(f"{name}: completion count {result['calls']}")
         wanted = expected[name]
+        if wanted is not None and result["kind"] != "bytes":
+            failures.append(f"{name}: binary response must return the client binary field/type")
         if wanted is None:
             if result["kind"] != "pass": failures.append(f"{name}: business/malformed input must pass unchanged")
         elif wanted == "json":
@@ -189,7 +207,7 @@ def main() -> int:
             failures.append(f"{name}: must pass through unchanged, got {got[name]}")
 
     pattern = r"^https:\/\/(?:sns|appmsg|home|umehome|opactivity|activity|umerp|flightstatus|umeflightstatus|startup|umestartup|user|umeuser|event)\.umetrip\.com\/gateway\/api\/umetrip\/native(?:\?.*)?$"
-    script_url = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip.js"
+    script_url = "https://raw.githubusercontent.com/wenbingkun/proxy-config/442b4ef2a10564bbbecbdcdd392abc806e7d222e/quantumultx/scripts/umetrip.js"
     for path, mode in (
         ("quantumultx/rewrite/Umetrip.conf", None),
         ("loon/plugins/Umetrip.plugin", "binary-body-mode=true"),

@@ -32,10 +32,10 @@ sources = [h/'quantumultx/rewrite/StartupSupplement.conf', h/'loon/plugins/Start
 patterns=[]
 for path in sources:
  rules=[line.split(' ',1)[0] for line in path.read_text().splitlines() if line.startswith('^https')]
- assert len(rules)==3, path
+ assert len(rules)==10, path
  patterns.append(rules)
-assert patterns[0]==patterns[1]==patterns[2]
-sh,ehi,didi=map(re.compile,patterns[0])
+assert set(patterns[0])==set(patterns[1])==set(patterns[2])
+sh,ehi,didi=[re.compile(next(p for p in patterns[0] if key in p)) for key in ['apiproxy', 'externalimage', 'img-ys011']]
 assert sh.search('https://apiproxy.zuche.com/resource/cardes/toufang/marketing/v1?test=1')
 for path in ['v11', 'v1/extra', 'v2']:
  assert not sh.search('https://apiproxy.zuche.com/resource/cardes/toufang/marketing/'+path)
@@ -72,4 +72,86 @@ loon_template=(h/"loon/bootstrap.example.conf").read_text()
 assert "https://kelee.one/Tool/Loon/Lpx/Amap_remove_ads.lpx," in loon_template
 assert "loon/plugins/AmapPageCleanup.plugin," not in loon_template
 
+# Restored promotions use one native jq rule per endpoint in each client.
+for app, count in [('DaMai', 6), ('NeteaseMail', 1)]:
+ paths=[h/f'quantumultx/rewrite/{app}.conf', h/f'loon/plugins/{app}.plugin', h/f'surge/modules/converted/{app}.sgmodule']
+ rules=[]
+ for path in paths:
+  rows={}
+  for line in path.read_text().splitlines():
+   if "'" in line and ('jsonjq-response-body' in line or 'response-body-json-jq' in line or 'http-response-jq' in line):
+    pattern=line.split()[1] if line.startswith('http-response-jq') else line.split()[0]
+    assert pattern not in rows, (path,pattern)
+    rows[pattern]=line.split("'",2)[1]
+  assert len(rows)==count, (path,len(rows))
+  rules.append(rows)
+ assert rules[0]==rules[1]==rules[2], app
+ for pattern, expr in rules[0].items():
+  fixture={'data':{'orderList':[{'id':'order'}], 'ticketList':[1], 'balance':12,
+                   'mailboxList':[{'id':'mail'}], 'quotaData':{'used':10},
+                   'data':{'top':{'keywords':['ad'],'other':'business'}},
+                   'dynamicMenu':{'itemList':[{'title':'订单'},{'title':'周边商城'}]},
+                   'masterOperatorList':[1]}, 'status':0}
+  out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
+  if 'home\\.float' not in pattern:
+   for key in ['orderList','ticketList','balance','mailboxList','quotaData']:
+    assert out['data'][key]==fixture['data'][key], (app,pattern,key)
+  assert out['status']==0
+  if 'page' in pattern and app=='NeteaseMail':
+   assert 'masterOperatorList' not in out['data']
+   for empty in [{}, {'data':None}, {'data':[]}]:
+    got=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(empty),text=True,capture_output=True,check=True).stdout)
+    assert got==empty
+# Startup extraction must not reintroduce a dedicated App handler or the shared dispatcher.
+for path in sources:
+ text=path.read_text()
+ assert 'amdc' not in '\n'.join(l for l in text.splitlines() if not l.startswith('#'))
+ assert 'umetrip' not in text and 'damai' not in text and 'mailmaster' not in text
+ assert 'script-path=' not in text and 'url script-' not in text
+ for normal in ['https://api.m.jd.com/client.action?functionId=orderList',
+                'https://api.yangkeduo.com/api/order/list',
+                'https://acs.m.taobao.com/gw/mtop.alibaba.order.list/',
+                'https://guide-acs.m.taobao.com/gw/mtop.taobao.order.list/',
+                'https://app.dewu.com/api/v1/app/order/list',
+                'https://yunbusiness.ccb.com/clp_service/txCtrl?txcode=ORDER']:
+  assert not any(re.search(pattern,normal) for pattern in patterns[0]), normal
+assert 'StartUpGaps.conf,' not in (h/'quantumultx/bootstrap.example.conf').read_text()
+print('Restored native jq parity/business preservation and startup extraction negatives passed.')
+
+for url in ['https://acs.m.taobao.com/gw/mtop.alibaba.advertisementservice.getadv/1.0/',
+            'https://acs.m.taobao.com/gw/mtop.alibaba.cbu.app.homepage.startup/1.0/',
+            'https://api.yangkeduo.com/api/cappuccino/splash',
+            'https://guide-acs.m.taobao.com/gw/mtop.taobao.wireless.home.splash.awesome.get/1.0/',
+            'https://app.dewu.com/api/v1/app/advertisement/start',
+            'https://res.xiaojukeji.com/resapi/activity/mget',
+            'https://res.xiaojukeji.com/resapi/activity/getPreload']:
+ assert any(re.search(p,url) for p in patterns[0]), url
+for path in ['quantumultx/rewrite/Umetrip.conf','loon/plugins/Umetrip.plugin','surge/modules/converted/Umetrip.sgmodule']:
+ text=(h/path).read_text()
+ assert 'discardrp|startup' in text and 'discardrp.umetrip.com' in text
+print('Seven extracted startup patterns and dedicated Umetrip startup ownership passed.')
+
+# No decrypt expansion for invalid JD rules or financial services.
+for path in sources:
+ text=path.read_text()
+ hostline=next(line for line in text.splitlines() if line.startswith('hostname ='))
+ for host in ['api.m.jd.com','bdsp-x.jd.com','dsp-x.jd.com','yunbusiness.ccb.com']:
+  assert host not in hostline, (path,host)
+ assert 'yunbusiness' not in text and 'jingdong[invalid]' not in text
+for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/'surge/modules/converted/DaMai.sgmodule']:
+ line=next(line for line in path.read_text().splitlines() if 'aristotle' in line)
+ expr=line.split("'",2)[1]
+ fixture={'data':{'data':{'top':{'keywords':['concert','artist']}},'nodes':[]}}
+ out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
+ assert out['data']['data']['top']['keywords']==['concert','artist']
+print('JD/bank MitM exclusions and Damai search-hint preservation passed.')
+
+for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/'surge/modules/converted/DaMai.sgmodule']:
+ line=next(line for line in path.read_text().splitlines() if 'appglobalconfig' in line)
+ expr=line.split("'",2)[1]
+ fixture={'data':{'searchTip':{'text':'artist'},'searchTips':['concert'],'pop':{'ad':1},'business':'normal'}}
+ out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
+ assert out['data']['searchTip']==fixture['data']['searchTip'] and out['data']['searchTips']==['concert']
+ assert out['data']['pop']=={} and out['data']['business']=='normal'
+print('Damai global search-tip fields preserved across clients.')
 assert "quantumultx/rewrite/AmapPageCleanup.conf," not in (h/"quantumultx/bootstrap.example.conf").read_text()
