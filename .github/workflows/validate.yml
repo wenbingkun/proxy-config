@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -51,6 +52,11 @@ jobs:
               "loon/plugins/Q-Search.plugin",
               "loon/plugins/General.plugin",
               "rules/local_rules.yaml",
+              "rules/upstreams.yaml",
+              "scripts/check_upstreams.py",
+              "tests/test_upstreams.py",
+              "tests/test_resource_parser.py",
+              "tests/fixtures/resource_parser_cases.js",
               "scripts/build_rules.py",
               "scripts/build_router_config.py",
               "scripts/check_acceptance.py",
@@ -151,6 +157,7 @@ jobs:
       - name: Check repository hygiene and acceptance
         run: |
           python3 scripts/check_hygiene.py
+          python3 scripts/check_upstreams.py
           python3 scripts/check_acceptance.py
           for t in tests/test_*.py; do
             [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"

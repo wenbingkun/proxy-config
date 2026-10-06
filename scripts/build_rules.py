@@ -15,6 +15,8 @@ QX_FILTER_PATH = ROOT / "quantumultx" / "filter" / "repo.snippet"
 LOON_RULES_DIR = ROOT / "loon" / "rules"
 SURGE_RULES_DIR = ROOT / "surge" / "rules"
 LOCAL_RULES_MANIFEST = RULES_DIR / "local_rules.yaml"
+# Configuration manifests live beside rule payloads but must not be parsed as rules.
+RULE_METADATA_FILES = {"local_rules.yaml", "upstreams.yaml"}
 
 RULE_TYPES = (
     ("domain_suffix", "DOMAIN-SUFFIX", "host-suffix"),

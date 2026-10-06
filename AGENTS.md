@@ -31,6 +31,7 @@ python3 scripts/build_router_config.py --check
 python3 scripts/build_surge_modules.py --check
 python3 scripts/build_loon_plugins.py --check
 python3 scripts/check_hygiene.py
+python3 scripts/check_upstreams.py
 python3 scripts/check_acceptance.py
 for t in tests/test_*.py; do [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"; done
 sh -n mihomo/shellcrash/deploy.sh

@@ -1,0 +1,150 @@
+# Offline resource classification. Versions remain in configs/build sources.
+# Regexes are full matches and only apply in rule/icon fields, never script fields.
+version: 1
+rules:
+  - 'https://cdn\.jsdelivr\.net/gh/blackmatrix7/ios_rule_script@master/rule/(QuantumultX|Loon|Surge)/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+\.list(#[^\s]*)?'
+  - 'https://cdn\.jsdelivr\.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+\.yaml'
+  - 'https://raw\.githubusercontent\.com/Cats-Team/AdRules/main/(qx\.conf|adrules\.list|adrules-surge\.conf)'
+  - 'https://cdn\.jsdelivr\.net/gh/Loyalsoldier/clash-rules@release/(direct|lancidr|private|proxy)\.txt'
+  - 'https://cdn\.jsdelivr\.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/[a-z0-9-]+\.yaml'
+  - 'https://raw\.githubusercontent\.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/[a-z0-9-]+\.yaml'
+  - 'https://malware-filter\.gitlab\.io/malware-filter/urlhaus-filter-domains\.txt'
+icons:
+  - 'https://cdn\.jsdelivr\.net/gh/Koolson/Qure@master/IconSet/Color/[A-Za-z0-9_-]+\.png'
+  - 'https://is1-ssl\.mzstatic\.com/image/thumb/[^\s?#]+\.png/100x100bb\.png'
+  - 'https://raw\.githubusercontent\.com/fmz200/wool_scripts/[0-9a-f]{40}/icons/apps/[A-Za-z0-9_-]+\.png'
+  - 'https://raw\.githubusercontent\.com/deezertidal/private/main/icons/biliad\.png'
+exceptions:
+- client: loon
+  field: plugin
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/Loon/Advertising/Advertising.plugin
+  reason: Existing native rewrite container retained; nested dependencies remain unexpanded.
+- client: loon
+  field: plugin
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/Loon/SafeRedirect/SafeRedirect.plugin
+  reason: Existing native rewrite container retained; nested dependencies remain unexpanded.
+- client: loon
+  field: plugin
+  url: https://github.com/NSRingo/Siri/releases/latest/download/iRingo.Siri.plugin
+  reason: Existing Siri release reference; latest/tag is not an immutable commit.
+- client: loon
+  field: plugin
+  url: https://kelee.one/Tool/Loon/Lpx/Amap_remove_ads.lpx
+  reason: Retain the existing native Loon implementation; no cross-client mirroring.
+- client: loon
+  field: plugin
+  url: https://kelee.one/Tool/Loon/Lpx/Node_detection_tool.lpx
+  reason: Retain the existing native Loon implementation; no cross-client mirroring.
+- client: loon
+  field: plugin
+  url: https://kelee.one/Tool/Loon/Lpx/Weixin_external_links_unlock.lpx
+  reason: Retain the existing native Loon implementation; no cross-client mirroring.
+- client: loon
+  field: plugin
+  url: https://kelee.one/Tool/Loon/Lpx/YouTube_remove_ads.lpx
+  reason: Retain the existing native Loon implementation; no cross-client mirroring.
+- client: loon
+  field: plugin
+  url: https://kelee.one/Tool/Loon/Lpx/Zhihu_remove_ads.lpx
+  reason: Retain the existing native Loon implementation; no cross-client mirroring.
+- client: loon
+  field: plugin
+  url: https://raw.githubusercontent.com/app2smile/rules/master/plugin/spotify.plugin
+  reason: User chose to retain Spotify references; no new mirrors or script pinning.
+- client: loon
+  field: plugin
+  url: https://raw.githubusercontent.com/chavyleung/scripts/master/box/rewrite/boxjs.rewrite.loon.plugin
+  reason: Existing default-disabled BoxJS container retained; nested dependencies
+    remain unexpanded.
+- client: loon
+  field: plugin
+  url: https://raw.githubusercontent.com/kokoryh/Sparkle/master/release/loon/plugin/bilibili.lpx
+  reason: User accepts upstream updates for this exact Bilibili enhancement path.
+- client: qx
+  field: geo_location_checker
+  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/IP_API.js
+  reason: Existing helper/task script retained; only resource_parser_url is in B1
+    scope.
+- client: qx
+  field: rewrite_remote
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/QuantumultX/Advertising/Advertising.conf
+  reason: Existing native rewrite container retained; nested dependencies remain unexpanded.
+- client: qx
+  field: rewrite_remote
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/QuantumultX/SafeRedirect/SafeRedirect.conf
+  reason: Existing native rewrite container retained; nested dependencies remain unexpanded.
+- client: qx
+  field: rewrite_remote
+  url: https://cdn.jsdelivr.net/gh/chavyleung/scripts@master/box/rewrite/boxjs.rewrite.quanx.conf
+  reason: Existing default-disabled BoxJS container retained; nested dependencies
+    remain unexpanded.
+- client: qx
+  field: rewrite_remote
+  url: https://github.com/NSRingo/Siri/releases/latest/download/iRingo.Siri.snippet
+  reason: Existing Siri release reference; latest/tag is not an immutable commit.
+- client: qx
+  field: rewrite_remote
+  url: https://raw.githubusercontent.com/app2smile/rules/master/module/spotify.conf
+  reason: User chose to retain Spotify references; no new mirrors or script pinning.
+- client: qx
+  field: task_local
+  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/geo_location.js
+  reason: Existing helper/task script retained; only resource_parser_url is in B1
+    scope.
+- client: qx
+  field: task_local
+  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/server-info-plus.js
+  reason: Existing helper/task script retained; only resource_parser_url is in B1
+    scope.
+- client: qx
+  field: task_local
+  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/streaming-ui-check.js
+  reason: Existing helper/task script retained; only resource_parser_url is in B1
+    scope.
+- client: surge
+  field: build-source
+  url: https://github.com/NSRingo/Siri/releases/download/v4.2.7/iRingo.Siri.sgmodule
+  reason: Existing Siri release reference; latest/tag is not an immutable commit.
+- client: surge
+  field: script-path
+  url: https://github.com/NSRingo/Siri/releases/download/v4.2.7/request.bundle.js
+  reason: Existing Siri release reference; latest/tag is not an immutable commit.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/Maasea/sgmodule/master/Script/Youtube/youtube.request.js
+  reason: Existing Surge YouTube nested script; pinning additional scripts is outside
+    B1 scope.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/Maasea/sgmodule/master/Script/Youtube/youtube.response.js
+  reason: Existing Surge YouTube nested script; pinning additional scripts is outside
+    B1 scope.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-json.js
+  reason: User chose to retain Spotify references; no new mirrors or script pinning.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-proto.js
+  reason: User chose to retain Spotify references; no new mirrors or script pinning.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/kokoryh/Script/master/js/bili-suit-diy.js
+  reason: Existing Bilibili skin script is an independent mutable dependency, outside
+    Sparkle scope.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.json.js
+  reason: User accepts upstream updates for this exact Bilibili enhancement path.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.request.js
+  reason: User accepts upstream updates for this exact Bilibili enhancement path.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.response.js
+  reason: User accepts upstream updates for this exact Bilibili enhancement path.
+- client: surge
+  field: script-path
+  url: https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/webpage.bilibili.js
+  reason: User accepts upstream updates for this exact Bilibili enhancement path.

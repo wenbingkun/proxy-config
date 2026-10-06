@@ -37,9 +37,10 @@ from pathlib import Path
 
 import yaml
 
+from build_rules import RULE_METADATA_FILES
+
 ROOT = Path(__file__).resolve().parent.parent
 RULES_DIR = ROOT / "rules"
-MANIFEST_NAME = "local_rules.yaml"
 
 # Rule-set line grammar, from the Surge manual (rules/overview, rules/ruleset, rules/logical,
 # rules/source-and-port). The current manual says Surge skips an invalid line with a warning; the
@@ -226,7 +227,7 @@ def load_reject(path: Path):
 
 def load_repo(rules_dir: Path = RULES_DIR) -> dict[str, list[tuple[str, object]]]:
     repo: dict[str, list[tuple[str, object]]] = {}
-    files = sorted(f for f in rules_dir.glob("*.yaml") if f.name != MANIFEST_NAME)
+    files = sorted(f for f in rules_dir.glob("*.yaml") if f.name not in RULE_METADATA_FILES)
     if not files:
         raise InputError(f"no rule sources in {rules_dir}")
     for f in files:
