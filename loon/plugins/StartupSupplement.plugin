@@ -14,22 +14,16 @@
 ^https?:\/\/acs\.m\.taobao\.com\/gw\/mtop\.alibaba\.advertisementservice\.getadv\/ - reject-200
 # alibaba
 ^https?:\/\/acs\.m\.taobao\.com\/gw\/mtop\.alibaba\.cbu\.app\.homepage\.startup - reject-200
-# jingdong[invalid]
-^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(start|queryMaterialAdverts) - reject-200
-# jingdong[invalid]
-^https?:\/\/(bdsp-x|dsp-x)\.jd\.com\/adx\/ - reject-200
 # pinduoduo
 ^https?:\/\/api\.(pinduoduo|yangkeduo)\.com\/api\/cappuccino\/splash - reject-200
 # taobao
 ^https?:\/\/guide-acs\.m\.taobao\.com\/gw\/mtop\.taobao\.wireless\.home\.splash\.awesome\.get - reject-200
 # dewu
 ^https:\/\/app\.dewu\.com\/api\/v1\/app\/advertisement\/ - reject-200
-# jianhanglife
-^https?:\/\/yunbusiness\.ccb\.com\/clp_service\/txCtrl\?txcode=A3341A00(2|9) - reject-200
 # didichuxing
 ^https?://res\.xiaojukeji\.com\/resapi\/activity\/mget - reject-200
 # didichuxing
 ^https?:\/\/res\.xiaojukeji\.com\/resapi\/activity\/get(Ruled|Preload|PasMultiNotices) - reject-200
 
 [MITM]
-hostname = apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn, acs.m.taobao.com, api.m.jd.com, bdsp-x.jd.com, dsp-x.jd.com, api.pinduoduo.com, api.yangkeduo.com, guide-acs.m.taobao.com, app.dewu.com, yunbusiness.ccb.com, res.xiaojukeji.com
+hostname = apiproxy.zuche.com, img-ys011.didistatic.com, externalimage.1hai.cn, acs.m.taobao.com, api.pinduoduo.com, api.yangkeduo.com, guide-acs.m.taobao.com, app.dewu.com, res.xiaojukeji.com

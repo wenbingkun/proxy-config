@@ -32,7 +32,7 @@ sources = [h/'quantumultx/rewrite/StartupSupplement.conf', h/'loon/plugins/Start
 patterns=[]
 for path in sources:
  rules=[line.split(' ',1)[0] for line in path.read_text().splitlines() if line.startswith('^https')]
- assert len(rules)==13, path
+ assert len(rules)==10, path
  patterns.append(rules)
 assert set(patterns[0])==set(patterns[1])==set(patterns[2])
 sh,ehi,didi=[re.compile(next(p for p in patterns[0] if key in p)) for key in ['apiproxy', 'externalimage', 'img-ys011']]
@@ -120,16 +120,37 @@ print('Restored native jq parity/business preservation and startup extraction ne
 
 for url in ['https://acs.m.taobao.com/gw/mtop.alibaba.advertisementservice.getadv/1.0/',
             'https://acs.m.taobao.com/gw/mtop.alibaba.cbu.app.homepage.startup/1.0/',
-            'https://api.m.jd.com/client.action?functionId=start',
-            'https://bdsp-x.jd.com/adx/start',
             'https://api.yangkeduo.com/api/cappuccino/splash',
             'https://guide-acs.m.taobao.com/gw/mtop.taobao.wireless.home.splash.awesome.get/1.0/',
             'https://app.dewu.com/api/v1/app/advertisement/start',
-            'https://yunbusiness.ccb.com/clp_service/txCtrl?txcode=A3341A002',
             'https://res.xiaojukeji.com/resapi/activity/mget',
             'https://res.xiaojukeji.com/resapi/activity/getPreload']:
  assert any(re.search(p,url) for p in patterns[0]), url
 for path in ['quantumultx/rewrite/Umetrip.conf','loon/plugins/Umetrip.plugin','surge/modules/converted/Umetrip.sgmodule']:
  text=(h/path).read_text()
  assert 'discardrp|startup' in text and 'discardrp.umetrip.com' in text
-print('Ten extracted startup patterns and dedicated Umetrip startup ownership passed.')
+print('Seven extracted startup patterns and dedicated Umetrip startup ownership passed.')
+
+# No decrypt expansion for invalid JD rules or financial services.
+for path in sources:
+ text=path.read_text()
+ hostline=next(line for line in text.splitlines() if line.startswith('hostname ='))
+ for host in ['api.m.jd.com','bdsp-x.jd.com','dsp-x.jd.com','yunbusiness.ccb.com']:
+  assert host not in hostline, (path,host)
+ assert 'yunbusiness' not in text and 'jingdong[invalid]' not in text
+for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/'surge/modules/converted/DaMai.sgmodule']:
+ line=next(line for line in path.read_text().splitlines() if 'aristotle' in line)
+ expr=line.split("'",2)[1]
+ fixture={'data':{'data':{'top':{'keywords':['concert','artist']}},'nodes':[]}}
+ out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
+ assert out['data']['data']['top']['keywords']==['concert','artist']
+print('JD/bank MitM exclusions and Damai search-hint preservation passed.')
+
+for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/'surge/modules/converted/DaMai.sgmodule']:
+ line=next(line for line in path.read_text().splitlines() if 'appglobalconfig' in line)
+ expr=line.split("'",2)[1]
+ fixture={'data':{'searchTip':{'text':'artist'},'searchTips':['concert'],'pop':{'ad':1},'business':'normal'}}
+ out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
+ assert out['data']['searchTip']==fixture['data']['searchTip'] and out['data']['searchTips']==['concert']
+ assert out['data']['pop']=={} and out['data']['business']=='normal'
+print('Damai global search-tip fields preserved across clients.')

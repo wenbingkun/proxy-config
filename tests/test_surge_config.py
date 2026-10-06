@@ -78,7 +78,7 @@ SHARED_MITM = {
     ("advertising", "wechat-mp"): {"mp.weixin.qq.com"},
     ("advertising", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
     ("amap", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
-    ("advertising", "startup-supplement"): {"apiproxy.zuche.com", "acs.m.taobao.com", "api.m.jd.com", "bdsp-x.jd.com", "dsp-x.jd.com", "api.pinduoduo.com", "api.yangkeduo.com", "app.dewu.com", "yunbusiness.ccb.com", "res.xiaojukeji.com"},
+    ("advertising", "startup-supplement"): {"apiproxy.zuche.com", "acs.m.taobao.com", "api.pinduoduo.com", "api.yangkeduo.com", "app.dewu.com", "res.xiaojukeji.com"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
     ("advertising", "general"): {"*.google.cn", "www.google.cn"},
