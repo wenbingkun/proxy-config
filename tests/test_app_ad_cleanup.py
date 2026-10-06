@@ -117,3 +117,19 @@ for path in sources:
   assert not any(re.search(pattern,normal) for pattern in patterns[0]), normal
 assert 'StartUpGaps.conf,' not in (h/'quantumultx/bootstrap.example.conf').read_text()
 print('Restored native jq parity/business preservation and startup extraction negatives passed.')
+
+for url in ['https://acs.m.taobao.com/gw/mtop.alibaba.advertisementservice.getadv/1.0/',
+            'https://acs.m.taobao.com/gw/mtop.alibaba.cbu.app.homepage.startup/1.0/',
+            'https://api.m.jd.com/client.action?functionId=start',
+            'https://bdsp-x.jd.com/adx/start',
+            'https://api.yangkeduo.com/api/cappuccino/splash',
+            'https://guide-acs.m.taobao.com/gw/mtop.taobao.wireless.home.splash.awesome.get/1.0/',
+            'https://app.dewu.com/api/v1/app/advertisement/start',
+            'https://yunbusiness.ccb.com/clp_service/txCtrl?txcode=A3341A002',
+            'https://res.xiaojukeji.com/resapi/activity/mget',
+            'https://res.xiaojukeji.com/resapi/activity/getPreload']:
+ assert any(re.search(p,url) for p in patterns[0]), url
+for path in ['quantumultx/rewrite/Umetrip.conf','loon/plugins/Umetrip.plugin','surge/modules/converted/Umetrip.sgmodule']:
+ text=(h/path).read_text()
+ assert 'discardrp|startup' in text and 'discardrp.umetrip.com' in text
+print('Ten extracted startup patterns and dedicated Umetrip startup ownership passed.')
