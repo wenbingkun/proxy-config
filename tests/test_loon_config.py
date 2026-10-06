@@ -11,6 +11,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 import build_rules  # noqa: E402
+import check_remote_resources  # noqa: E402
 
 
 LOON_CONFIG = ROOT / "loon" / "bootstrap.example.conf"
@@ -256,7 +257,8 @@ def check_rules(loon: dict, failures: list[str]) -> None:
         # rules from the same apps' plugins ([Rule]), so they have no [Remote Rule] counterpart. The
         # same holds for the hosted fmz200 copies (quantumultx/rewrite/fmz200-*.snippet).
         url = line.split(",")[0]
-        if "fmz200/wool_scripts" in url or url.startswith(REPO_RAW + "quantumultx/rewrite/fmz200-"):
+        if ("fmz200/wool_scripts" in url or url.startswith(REPO_RAW + "quantumultx/rewrite/fmz200-")
+                or url == REPO_RAW + "quantumultx/rewrite/Amap.snippet"):
             continue
         if "force-policy" in opts:
             qx_remote.append((opts["tag"], wrapped(loon, opts["force-policy"]), opts.get("enabled")))
@@ -363,8 +365,10 @@ def check_fmz200_plugins(failures: list[str]) -> None:
     if set(re.findall(r"script-path=([^,\s]+)", amdc_text)) != {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}:
         failures.append("AlibabaAmdc.plugin: must load only the repo's amdc.js")
     for l in plugin:
-        if "ddgksf2013" in l.split(",")[0]:
-            failures.append(f"loon: ddgksf2013 resources were replaced and must not come back: {l.split(',')[0]}")
+        url = l.split(",", 1)[0].strip()
+        problem = check_remote_resources.source_policy_error(url)
+        if problem:
+            failures.append(f"loon: {problem}: {url}")
     if any("RedPaper" in l for l in plugin):
         failures.append("loon: Kelee's RedPaper was replaced by loon/plugins/Xiaohongshu.plugin")
     xhs_text = (ROOT / "loon" / "plugins" / "Xiaohongshu.plugin").read_text(encoding="utf-8")

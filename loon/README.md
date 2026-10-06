@@ -76,3 +76,7 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 高德继续使用可莉原生插件，仅保留一个“高德地图去广告”条目。`plugins/AmapPageCleanup.plugin` 保留已发布路径但不加载；开屏补充 `plugins/StartupSupplement.plugin` 独立保留。
 
 QX/Surge 补充使用的高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
+
+## 效果优先的客户端差异
+
+Loon 高德继续使用已验证的可莉原生插件，仅一个入口；本轮 QX/Surge 的高德合并不改变 Loon 插件。仅去开屏规则后续合入共用补充，阿里系 amdc 独立；不为统一来源替换更好的原生实现。

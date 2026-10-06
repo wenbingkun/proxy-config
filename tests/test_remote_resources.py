@@ -92,8 +92,30 @@ def main() -> int:
     assert all(not check.is_skipped_url(url) for url in urls)
     assert any(resource.kind == "shellcrash-template" for resource in resources)
     assert any(resource.source.startswith("quantumultx/") for resource in resources)
-    # No client loads ddgksf2013's own site any more (2026-10-06).
-    assert not any("ddgksf2013.top" in url for url in urls), [u for u in urls if "ddgksf2013.top" in u]
+    # Check execution resources from every client, including nested scripts in hosted containers.
+    loose_moyu = [(url, check.source_policy_error(url)) for url in urls if check.source_policy_error(url)]
+    assert not loose_moyu, loose_moyu
+    sha = "314f61060a4c72c8a8b9f6b2ff457c8d35abbdac"
+    for url in (
+        f"https://raw.githubusercontent.com/ddgksf2013/Scripts/{sha}/amap.js",
+        f"https://cdn.jsdelivr.net/gh/ddgksf2013/Scripts@{sha}/amap.js",
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amap.js",
+        "https://kelee.one/Tool/Loon/Lpx/Amap_remove_ads.lpx",
+    ):
+        assert check.source_policy_error(url) is None, url
+    for url in (
+        "https://raw.githubusercontent.com/ddgksf2013/Scripts/master/amap.js",
+        "https://raw.githubusercontent.com/ddgksf2013/Rewrite/refs/heads/master/AdBlock/AmapAds.conf",
+        "https://cdn.jsdelivr.net/gh/ddgksf2013/Scripts@main/amap.js",
+        "https://cdn.jsdelivr.net/gh/ddgksf2013/Scripts@314f610/amap.js",
+        "https://github.com/ddgksf2013/Scripts/raw/master/amap.js",
+        "https://ddgksf2013.top/scripts/amap.js",
+        "https://cdn.ddgksf2013.top/scripts/amap.js",
+    ):
+        assert check.source_policy_error(url), url
+        # Exercise the checker entry point: forbidden sources fail without fetching.
+        result = check.fetch(check.Resource(url, "script", "test"), "light", timeout=1, retries=0)
+        assert not result.ok and result.bytes_read == 0 and result.status is None, result
 
     # A URL used by both QX and Loon is checked once for each client, each with its own UA.
     shared = {r.url for r in resources if check.client_of(r.source) == "qx"} & {

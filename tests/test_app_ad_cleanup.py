@@ -58,7 +58,7 @@ for obj in [{'data':{'banner':[1],'native_content':[1],'order':['hot','native_co
  if isinstance(expected['data'].get('order'),list):expected['data']['order']=[x for x in expected['data']['order'] if x!='native_content']
  assert out==expected
 assert '$persistentStore' not in (h/'quantumultx/scripts/amap-page-cleanup.js').read_text()
-for path,names in [('quantumultx/bootstrap.example.conf',['AmapPageCleanup.conf','StartupSupplement.conf']),('loon/bootstrap.example.conf',['StartupSupplement.plugin'])]:
+for path,names in [('quantumultx/bootstrap.example.conf',['Amap.snippet','StartupSupplement.conf']),('loon/bootstrap.example.conf',['StartupSupplement.plugin'])]:
  for name in names:
   line=next(l for l in (h/path).read_text().splitlines() if name in l)
   assert line.endswith('enabled=false')
@@ -154,3 +154,4 @@ for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/
  assert out['data']['searchTip']==fixture['data']['searchTip'] and out['data']['searchTips']==['concert']
  assert out['data']['pop']=={} and out['data']['business']=='normal'
 print('Damai global search-tip fields preserved across clients.')
+assert "quantumultx/rewrite/AmapPageCleanup.conf," not in (h/"quantumultx/bootstrap.example.conf").read_text()

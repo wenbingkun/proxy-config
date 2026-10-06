@@ -12,6 +12,7 @@ these checks pin down (see docs/design.md):
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import itertools
 import re
 import sys
@@ -49,9 +50,10 @@ SPLIT = [build_surge_modules.MODULE_DIR / f"{s['file']}.sgmodule" for s in build
 # fmz200 split modules reviewed on 2026-10-05: pinned to this commit and without scripts. Written out here
 # rather than read from build_surge_modules, so changing SOURCES cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou", "amap"}
+FMZ200_FILES = {"wechat-mp", "meituan", "hupu", "mijia", "maoyan", "leke", "douban-app", "chinamobile", "xiaoyuzhou"}
 # Modules whose scripts point at this repo's hosted copy (2026-10-05): exactly these scripts.
 REPO_SCRIPTED = {
+    "amap": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js"},
     "amap-page-cleanup": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8/quantumultx/scripts/amap-page-cleanup.js"},
     "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/442b4ef2a10564bbbecbdcdd392abc806e7d222e/quantumultx/scripts/umetrip.js"},
     "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
@@ -76,8 +78,6 @@ SHARED_MITM = {
     ("advertising", "meituan"): {"img.meituan.net", "s3plus.meituan.net", "flowplus.meituan.net"},
     ("advertising", "mijia"): {"home.mi.com"},
     ("advertising", "wechat-mp"): {"mp.weixin.qq.com"},
-    ("advertising", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
-    ("amap", "amap-page-cleanup"): {"m*.amap.com", "m5.amap.com", "m5-zb.amap.com"},
     ("advertising", "startup-supplement"): {"apiproxy.zuche.com", "acs.m.taobao.com", "api.pinduoduo.com", "api.yangkeduo.com", "app.dewu.com", "res.xiaojukeji.com"},
     ("advertising", "amap"): {"amap-aos-info-nogw.amap.com", "m*.amap.com", "optimus-ads.amap.com"},
     ("advertising", "damai"): {"acs.m.taobao.com"},
@@ -420,6 +420,7 @@ def check_rewrite_module(failures: list[str]) -> None:
             converted = (ROOT / path).read_text(encoding="utf-8")
             if path in {"surge/modules/converted/Umetrip.sgmodule",
                         "surge/modules/converted/AmapPageCleanup.sgmodule",
+                        "surge/modules/converted/Amap.sgmodule",
                         "surge/modules/converted/StartupSupplement.sgmodule"}:
                 if "# Native Surge source maintained by proxy-config; endpoint and image rules match" not in converted:
                     failures.append(f"{path}: missing the maintained native-source header")
@@ -470,7 +471,13 @@ def check_rewrite_module(failures: list[str]) -> None:
         failures.append("rewrite/bilibili.sgmodule: the sponsor-block lookup (空降助手) must be off")
 
     shared = {}
-    for a, b in itertools.combinations(sorted(split), 2):
+    compat = {s["file"] for s in sources if s.get("compat_only")}
+    if compat != {"amap-page-cleanup"}:
+        failures.append(f"unexpected compatibility-only sources: {compat}")
+    legacy = ROOT / "surge/modules/rewrite/amap-page-cleanup.sgmodule"
+    if hashlib.sha256(legacy.read_bytes()).hexdigest() != "c8f7a3dfe0b668d6d9c2661f4384ad9dc3e1e8af5ddeee049b91e4400bcdd523":
+        failures.append("compatibility AMap page-cleanup module must retain its published bytes")
+    for a, b in itertools.combinations(sorted(set(split) - compat), 2):
         ha, hb = mitm_hosts(split[a]), mitm_hosts(split[b])
         common = {x for x in ha for y in hb if fnmatch.fnmatchcase(x, y) or fnmatch.fnmatchcase(y, x)}
         common |= {y for x in ha for y in hb if fnmatch.fnmatchcase(x, y) or fnmatch.fnmatchcase(y, x)}
