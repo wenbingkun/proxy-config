@@ -59,6 +59,8 @@ Clash 主配置只定义代理分组和规则引用结构，具体规则内容�
 
 `remote-resources.yml` 周巡检运行 full，手动仍可选择 light/full（默认 light），时限 15 分钟。full 根据 Mihomo provider 的 behavior/format 分类实际目的 IP 条目，比较 GEOIP,CN 前不带 no-resolve 的 RULE-SET 兜底引用；缺口报错，当前无 IP 的旧兜底只提示复核，不自动删除。外部 provider 复用本次完整下载，仓库自维护的 @main 规则按当前 checkout 比较，远程可用性仍单独检查。下载、编码、解析或不支持的语法显示“not compared”并失败，不能当作无漂移。stdout 与 job summary 记录来源、SHA-256 和比较结果；不保存发布快照，也不验证实际 DNS/路由行为。
 
+`tests/integration_mihomo_rules.py --core <核心> --mmdb <Country.mmdb>` 在现有 validate 两个固定核心 job 中实际启动核心、通过 SOCKS5 请求本地 fixture，断言真实命中日志与 DNS 桩计数。它读取生产 rules 顺序，provider 全部改为本地文件；没有专用 fixture 的合法集合为空文件。运行参数独立使用 redir-host、关闭 sniffer/TUN，策略映射到标记原名的 REJECT 组，以隔离出站与建连解析。10 个手写正例和删除兜底、提前解析、交换优先级三个变异检查共同验证规则语义；`test_rule_provider_scope.py` 仍守结构，full 巡检守生产内容。该回归不覆盖生产 provider 数据、Verge fake-ip、ShellCrash DNS、IPv6、sniffHost 或真实外网；每个变体新进程/空缓存，IPv4 域名查询只到本地桩。
+
 ## 更新流程
 
 ```
