@@ -184,8 +184,8 @@ def check_fmz200(failures: list[str]) -> None:
 REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/"
 REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
-    "Amap.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/b3a8f1453491d6d65eac084879fffba4e3168339/quantumultx/scripts/amap.js"}, True),
-    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/442b4ef2a10564bbbecbdcdd392abc806e7d222e/quantumultx/scripts/umetrip.js"}, False),
+    "Amap.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/a0e3343ea4f86da12b9864caf0df1c1f7479c4a6/quantumultx/scripts/amap.js"}, True),
+    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/9f2bd622348198b7eaa84ccbfe2c57bc010e7bfd/quantumultx/scripts/umetrip.js"}, False),
     "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
     "AlibabaAmdc.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}, False),
     "fmz200-XiaoYuZhou.snippet": (set(), False),
