@@ -93,8 +93,14 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filte
 
 开屏补充处理神州精确营销接口、滴滴 `static/ad_oss/` 素材，以及一嗨四张已核验广告图片。**一嗨更新素材后需要维护**，不拦截共享图片目录。微信小程序开屏仍未解决。Surge 已真机验收；QX/Loon 仅完成对应规则及模拟检查，新增项模板默认关闭，需逐项验收。
 
-新增 `rewrite/AmapPageCleanup.conf`、`rewrite/StartupSupplement.conf`，放在通用去广告和既有高德规则之前。旧 `StartUpGaps.conf` 保留航旅与神州覆盖；新神州精确路径先返回空字典，两条结果一致。
+历史版本新增的 `rewrite/AmapPageCleanup.conf` 已退出模板，保留公开兼容路径；`rewrite/StartupSupplement.conf` 继续提供开屏补充。旧 `StartUpGaps.conf` 保留航旅与神州覆盖；新神州精确路径先返回空字典，两条结果一致。
 
 高德净化脚本固定到仓库提交 `ced3ace1d4dfa6e6b1301dfb465cb6c5c4056bd8`，避免未合并试验读取不存在的 main 文件。以后更新脚本时先提交源码，再更新三端容器的脚本 SHA 并重新生成 Surge 模块。
 
 闲鱼 `fmz200-XianYu.snippet` 移除 amdc 后只含重写，不作为分流资源导入；加载到 `[filter_remote]` 会得到空分流并报错。
+
+## 效果优先：高德单入口
+
+高德改为本仓库 `rewrite/Amap.snippet`：墨鱼固定版本规则、可读合并脚本与已验证页面清理放在一个资源里；保留此前 fmz200 的 14 条域名分流和开屏请求拦截，去掉墨鱼的 optimus DIRECT 例外及内置 amdc。混合资源分别在重写、分流加载一次，都用解析器，逻辑上是一个入口。模板默认关闭，需新一轮真机验收；旧 AutoNavi、AmapPageCleanup 不并行启用。
+
+脚本保留现有个人页业务/未知卡片和打车 banner 元数据，不照搬旧版仅留两种个人页卡片的广泛清空。其余旧版首页、热词、附近与消息清理按固定来源回取。顶部商业卡片效果仍待验证，不能以模拟测试断言已经解决。阿里系 amdc 继续独立处理。
