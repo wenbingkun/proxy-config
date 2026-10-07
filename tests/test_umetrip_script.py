@@ -214,7 +214,7 @@ def main() -> int:
             failures.append(f"{name}: must pass through unchanged, got {got[name]}")
 
     pattern = r"^https:\/\/(?:sns|appmsg|home|umehome|opactivity|activity|umerp|flightstatus|umeflightstatus|startup|umestartup|user|umeuser|event)\.umetrip\.com\/gateway\/api\/umetrip\/native(?:\?.*)?$"
-    script_url = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip-safe.js"
+    script_url = "https://raw.githubusercontent.com/wenbingkun/proxy-config/cf80e249924723800a4efd98bfc42dfbf724547b/quantumultx/scripts/umetrip-safe.js"
     for path, mode in (
         ("quantumultx/rewrite/Umetrip.conf", None),
         ("loon/plugins/Umetrip.plugin", "binary-body-mode=true"),

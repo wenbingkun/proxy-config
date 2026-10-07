@@ -185,7 +185,7 @@ REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/q
 REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
     "Amap.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/a0e3343ea4f86da12b9864caf0df1c1f7479c4a6/quantumultx/scripts/amap.js"}, True),
-    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip-safe.js"}, False),
+    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/cf80e249924723800a4efd98bfc42dfbf724547b/quantumultx/scripts/umetrip-safe.js"}, False),
     "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
     "AlibabaAmdc.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}, False),
     "fmz200-XiaoYuZhou.snippet": (set(), False),
