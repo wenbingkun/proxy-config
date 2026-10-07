@@ -3,8 +3,8 @@
 #!category=proxy-config · 家庭与本地
 
 # scripts/netdiag.py reads /v1/requests/recent and friends from this API (see
-# docs/netdiag.md). Replace the key with a long random string and put the same key in
+# docs/netdiag.md). Replace the key with a random string of at least 24 characters and put the same key in
 # ~/.config/ios-netdiag/env as SURGE_KEY. The API listens on every interface, so on a foreign
 # Wi-Fi anyone who learns the key could control Surge; turn the module off there if that matters.
 [General]
-http-api = examplekey@0.0.0.0:6171
+http-api = REPLACE_WITH_RANDOM_KEY@0.0.0.0:6171

@@ -49,3 +49,8 @@ python3 scripts/netdiag.py get router /proxies
 报告的 Sources 段标有 `INCOMPLETE` 时，表示有实时数据没拿到，报告只覆盖已记录的部分；`ids skipped` 表示 2 秒轮询可能漏掉了请求，计数只是下限。
 
 用户说“分析刚才的网络行为”时：先 `status`，再按用户描述的时间 `collect --since <窗口>`，读报告和会话目录里的原始 JSON 定位问题，必要时用 `get` 查询当前策略选择或 DNS。要对比各端时，请用户依次在 QX、Loon、Surge 中复现，每次复现后分别采集。报告和原始数据含浏览记录，只在回复中引用必要部分，不提交、不上传。报告只自动隐去家庭 SSID：Surge notes 的原始 JSON 里还有代理节点的域名和 IP、机场相关域名（订阅、面板、DoH），回复、`.local` 以外的文件、提交说明和 PR 中都不能出现这些内容。
+
+
+诊断 API 请求直接连接 LAN/USB 地址，不使用环境 HTTP 代理。Surge 的 `SURGE_KEY` 和配置了鉴权的路由器 `ROUTER_SECRET` 必须是至少 24 字符的随机 key，拒绝占位值及明显弱值；可用 `python3 -c 'import secrets; print(secrets.token_urlsafe(32))'` 在本机生成，然后在设备和本机配置中同步，勿提交或粘贴到公开报告。
+
+`get` 会递归遮蔽 JSON 字符串中的 SSID 和本机配置的 API key；这不是通用隐私清洗。请求记录、节点名、IP、浏览域名及采集报告仍属于私密材料，只放本机，不上传。采集线程退出会使服务失败，由 systemd 重启；普通网络断连仍由采集线程重试。
