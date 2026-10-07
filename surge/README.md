@@ -51,7 +51,7 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 | 阿里系 amdc（2026-10-06 新增） | 仓库自写的 `quantumultx/scripts/amdc.js`（与墨鱼 `amdc.js` 同一 UA 清单），只有一条 http-response 脚本、不需要 MitM；三端各一项 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
 | 网易邮箱大师、大麦（2026-10-06 起） | 仓库自写规则 `NeteaseMail.sgmodule`、`DaMai.sgmodule`（与 QX 同一份规则）；大麦不再带 amdc |
-| 航旅纵横 | 仓库维护的原生 `surge/modules/converted/Umetrip.sgmodule`，生成到原正式模块路径；三端共享可读 JSON / Protobuf 脚本 `quantumultx/scripts/umetrip.js`，保持二进制响应模式；2026-10-06 Surge 本地试验真机验收通过 |
+| 航旅纵横 | 仓库维护的原生 `surge/modules/converted/Umetrip.sgmodule`，生成到原正式模块路径；三端共享可读 JSON / Protobuf 脚本 `quantumultx/scripts/umetrip-safe.js`，保持二进制响应模式；2026-10-06 的验收针对旧版，新安全修正版待验收 |
 | 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，模块和脚本都固定到提交（脚本由 `SOURCES` 的 `pins` 在生成时替换）；作用是去除小红点、小圈子提示和评论数等，不是去广告 |
 | 微信公众号、美团外卖、虎扑、米家、猫眼、乐刻、豆瓣 App、中国移动（2026-10-05 新增），小宇宙（同日替换墨鱼版） | fmz200/wool_scripts 按 App 拆分的原生模块，固定到提交 `5d5f63f`，都没有脚本（测试锁定提交和无脚本）。QX 用 fmz200 的 QX 版（含分流的重写与分流各加一次，开解析器），Loon 用托管副本（换小 PNG 图标）；小宇宙三端另保留 AI 总结、正常搜索、分类与推荐，只拦截开屏及已知搜索/分类推广提示接口，首页只去掉 `DISCOVERY_BANNER`。没有采用 fmz200「美团」（整段拒绝 `d.meituan.net` 等后缀）|
 
@@ -176,3 +176,5 @@ find "$T" -type f -exec chmod 600 {} +
 `startup-supplement.sgmodule` 统一处理神州、滴滴、一嗨、1688、拼多多、淘宝、得物，仅航旅 startup/discardrp 归 `umetrip.sgmodule`。阿里系 amdc 独立保留一项，其余同 App 专用模块不重复启用。
 
 旧豆瓣网页、神机重定向及高德页面净化仅供兼容回滚，不是推荐安装项。微信小程序开屏、一嗨新素材等限制见 [QX 说明](../quantumultx/README.md#兼容与已知限制)。本地模块不自动更新，修改仓库后需同步本地副本并重载，核对实际脚本路径和启用状态。
+
+2026-10-07 安全修正版：知乎外链由请求脚本保留原 HTTP(S) 协议，非法目标返回 400；搜索推荐按 JSON 结构处理。航旅无改动时透传，有清理需求但含不安全整数时也透传并记录原因，可能保留广告。新脚本与生成模块待真机验收；旧脚本路径保持可用。

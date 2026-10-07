@@ -6,12 +6,13 @@
 #!raw-url=https://github.com/fmz200/wool_scripts/raw/main/QuantumultX/rewrite/split/partZ/Zhihu.snippet
 #!tg-group=https://t.me/QuantumultXCommunity
 #!date=undefined
-# Frozen copy of fmz200's QX split snippet for Zhihu; do not edit by hand.
+# Reviewed frozen baseline of fmz200's QX split snippet for Zhihu with repository security corrections.
 # Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/partZ/Zhihu.snippet
 # Source SHA-256: 893b3c82b6ea7073acb25532c2febd2ea923d2ebdda561ac124b7e5de169aa88
-# Changes: the 11 script URLs fmz200/wool_scripts/main/Scripts/zhihu/zhihu.js point at 5d5f63f
+# Changes: the upstream script URLs fmz200/wool_scripts/main/Scripts/zhihu/zhihu.js point at 5d5f63f
 # (the same commit as the snippet); #!icon is the app's App Store icon (upstream: a 560 KB GIF).
 # Mixed snippet (domain rules + rewrites): load it as a rewrite and as a filter, both opt-parser=true.
+# Security corrections (2026-10-07): retain target scheme/encoding; replace recommendations structurally.
 # To refresh, fetch the source at the new commit, redo the two changes and send it through a PR.
 #############################################
 
@@ -44,7 +45,7 @@ IP6-CIDR,2402:4e00:1200:ed00:0:9089:6dac:96b6/128, reject
 ^https:\/\/api\.zhihu\.com\/unlimited\/go\/my_card url reject
 # 搜索页 关键词,猜你想搜
 ^https:\/\/api\.zhihu\.com\/search\/preset_words url reject-dict
-^https:\/\/api\.zhihu\.com\/search\/recommend_query\/v2\? url response-body "recommend_queries":\{.+\} response-body "recommend_queries":{}
+^https:\/\/api\.zhihu\.com\/search\/recommend_query\/v2\? url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/zhihu-recommend.js
 ^https:\/\/www\.zhihu\.com\/api\/v4\/search\/related_queries\/(article|answer)\/\d+ url reject-dict
 # 回答详情页,评论区顶部,下一个回答
 ^https:\/\/api\.zhihu\.com\/comment_v5\/(articles|answers)\/\d+\/list-headers url reject-dict
@@ -58,7 +59,7 @@ IP6-CIDR,2402:4e00:1200:ed00:0:9089:6dac:96b6/128, reject
 ^https:\/\/api\.zhihu\.com\/ad-style-service\/request url reject-dict
 ^https:\/\/appcloud2\.zhihu\.com\/v3\/config url script-response-body https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js
 ^https:\/\/appcloud2\.zhihu\.com\/v3\/resource\?group_name=mp url reject-dict
-^https:\/\/link\.zhihu\.com\/\?target=(https?)?(%3A|:)?(\/\/|%2F%2F)?(.*?)(&source.*)?$ url 302 http://$4
+^https:\/\/link\.zhihu\.com\/\?target= url script-echo-response https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/zhihu-redirect.js
 ^https:\/\/m-cloud\.zhihu\.com\/api\/cloud\/config\/all\? url script-response-body https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js
 # 网页版去广告
 ^https:\/\/api\.zhihu\.com\/distribute\/rhea\/qa_ad_card\/h5\/recommendation\? url reject-dict

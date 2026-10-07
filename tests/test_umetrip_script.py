@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the readable quantumultx/scripts/umetrip.js in a Node VM, as QX, Loon and Surge would.
+"""Run the readable quantumultx/scripts/umetrip-safe.js in a Node VM, as QX, Loon and Surge would.
 
 Checks JSON and Protobuf promotion removal, untouched business fields, malformed-input pass-through,
 legacy fixture equivalence, and exactly one completion. Needs node on PATH.
@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "quantumultx" / "scripts" / "umetrip.js"
+SCRIPT = ROOT / "quantumultx" / "scripts" / "umetrip-safe.js"
 LEGACY = ROOT / "quantumultx" / "scripts" / "umetrip.ads.js"
 
 HARNESS = r"""
@@ -170,8 +170,15 @@ def check_extended(node: str, failures: list[str]) -> None:
             failures.append(f"{name}: unexpected protobuf bytes {result}")
     legacy = subprocess.run([node, "-e", HARNESS, str(LEGACY), json.dumps(CASES)], capture_output=True, text=True, timeout=60)
     current = subprocess.run([node, "-e", HARNESS, str(SCRIPT), json.dumps(CASES)], capture_output=True, text=True, timeout=60)
-    if legacy.returncode or current.returncode or json.loads(legacy.stdout) != json.loads(current.stdout):
-        failures.append("the original 13 cases must remain equivalent to the frozen script")
+    if legacy.returncode or current.returncode:
+        failures.append("legacy/current fixture execution failed")
+    else:
+        old_results, new_results = json.loads(legacy.stdout), json.loads(current.stdout)
+        for old, new in zip(old_results, new_results):
+            if new["name"] == "plain json text":
+                if new["kind"] != "pass": failures.append("no-op JSON must pass through without serialization")
+            elif old != new:
+                failures.append("legacy business cleanup changed: " + new["name"])
     print(f"Umetrip extended checks: {len(cases)} protocol/business cases.")
 
 
@@ -207,7 +214,7 @@ def main() -> int:
             failures.append(f"{name}: must pass through unchanged, got {got[name]}")
 
     pattern = r"^https:\/\/(?:sns|appmsg|home|umehome|opactivity|activity|umerp|flightstatus|umeflightstatus|startup|umestartup|user|umeuser|event)\.umetrip\.com\/gateway\/api\/umetrip\/native(?:\?.*)?$"
-    script_url = "https://raw.githubusercontent.com/wenbingkun/proxy-config/9f2bd622348198b7eaa84ccbfe2c57bc010e7bfd/quantumultx/scripts/umetrip.js"
+    script_url = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip-safe.js"
     for path, mode in (
         ("quantumultx/rewrite/Umetrip.conf", None),
         ("loon/plugins/Umetrip.plugin", "binary-body-mode=true"),
