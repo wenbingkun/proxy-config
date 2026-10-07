@@ -9,7 +9,7 @@
 
 [Script]
 # > 开屏/动作弹窗/AdvertisementApi、首页运营位、瀑布流、会员营销与行程扩容推广
-umetrip = type=http-response, pattern=^https:\/\/(?:sns|appmsg|home|umehome|opactivity|activity|umerp|flightstatus|umeflightstatus|startup|umestartup|user|umeuser|event)\.umetrip\.com\/gateway\/api\/umetrip\/native(?:\?.*)?$, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip-safe.js, requires-body=true, binary-body-mode=1, max-size=-1, timeout=60
+umetrip = type=http-response, pattern=^https:\/\/(?:sns|appmsg|home|umehome|opactivity|activity|umerp|flightstatus|umeflightstatus|startup|umestartup|user|umeuser|event)\.umetrip\.com\/gateway\/api\/umetrip\/native(?:\?.*)?$, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/cf80e249924723800a4efd98bfc42dfbf724547b/quantumultx/scripts/umetrip-safe.js, requires-body=true, binary-body-mode=1, max-size=-1, timeout=60
 
 [MITM]
 hostname = %APPEND% discardrp.umetrip.com, sns.umetrip.com, appmsg.umetrip.com, home.umetrip.com, umehome.umetrip.com, opactivity.umetrip.com, activity.umetrip.com, umerp.umetrip.com, flightstatus.umetrip.com, umeflightstatus.umetrip.com, startup.umetrip.com, umestartup.umetrip.com, user.umetrip.com, umeuser.umetrip.com, event.umetrip.com, oss.umetrip.com
