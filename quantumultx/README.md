@@ -26,8 +26,8 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/boots
 # https://your-subscription-url.com/api/v1/client/subscribe?token=your-token, tag=主机场, update-interval=86400, opt-parser=true, enabled=true
 
 [mitm]
-passphrase = 你的MitM密码短语
-p12 =        你的p12证书（base64）
+passphrase = # 在设备本地填写 MitM 密码短语
+p12 = # 在设备本地填写 p12 证书（base64）
 hostname =   需要解密的域名列表（如 *.example.com）
 ```
 
