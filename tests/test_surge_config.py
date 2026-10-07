@@ -462,6 +462,16 @@ def check_rewrite_module(failures: list[str]) -> None:
             if old in text or f"script-path={new}" not in text:
                 failures.append(f"{path.name}: script must be pinned to {new}")
 
+    # Independent reviewed YouTube contract: one response, two requests, same outer commit.
+    youtube = (build_surge_modules.MODULE_DIR / "youtube.sgmodule").read_text(encoding="utf-8")
+    prefix = "https://raw.githubusercontent.com/Maasea/sgmodule/65075cdb388fc5e3094afd7e7314c67b243f3525/Script/Youtube/"
+    scripts = re.findall(r"script-path=([^,\s]+)", youtube)
+    if scripts != [prefix + "youtube.response.js", prefix + "youtube.request.js", prefix + "youtube.request.js"]:
+        failures.append("youtube.sgmodule: the reviewed response/request/request script pins or order changed")
+    if ('argument="{\"captionLang\":\"off\",\"blockUpload\":true,\"blockImmersive\":true,\"blockShorts\":false,\"debug\":false}"' not in youtube
+            or 'argument="{\"captionLang\":\"off\"}"' not in youtube):
+        failures.append("youtube.sgmodule: reviewed YouTube defaults changed")
+
     bilibili = build_surge_modules.MODULE_DIR / "bilibili.sgmodule"
     text = "\n".join(line for lines in split.get("bilibili", {}).values() for line in lines)
     if ('"sponsorBlock":"#"' not in text or "grpc.biliapi.net" not in text

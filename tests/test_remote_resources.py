@@ -216,6 +216,7 @@ def test_content_main_exit_and_modes() -> None:
     ip_result = fixture_result(b'payload: ["IP-CIDR,192.0.2.0/24"]')
     original_report = check.mihomo_content_report
     with patch.object(check, "extract_resources", return_value=[ip_result.resource]), \
+         patch.object(check, "script_update_targets", return_value=[]), \
          patch.object(check, "fetch", return_value=ip_result), \
          patch.object(check, "reject_overlap_report", return_value=([], [])), \
          patch.object(check, "mihomo_content_report", side_effect=lambda results: original_report(results, config)) as report, \
