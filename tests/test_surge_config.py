@@ -96,9 +96,10 @@ SHARED_MITM = {
                                  "umeflightstatus.umetrip.com", "umehome.umetrip.com", "umerp.umetrip.com",
                                  "umestartup.umetrip.com", "umeuser.umetrip.com", "user.umetrip.com"},
     ("advertising", "wechat"): {"security.wechat.com", "weixin110.qq.com"},
-    # fmz200 Weibo (2026-10-06) decrypts *.weibo.cn and *.weibo.com: wider than ddgksf2013's list.
-    ("advertising", "weibo"): {"*.uve.weibo.com", "*.weibo.cn", "*.weibo.com", "api.weibo.cn", "mapi.weibo.com",
-                               "new.vip.weibo.cn", "tqt.weibo.cn", "weibointl.api.weibo.cn"},
+    # Exact Weibo hosts still overlap Advertising's uve wildcard and API hosts.
+    ("advertising", "weibo"): {"*.uve.weibo.com", "api.weibo.cn", "mapi.weibo.com",
+                               "new.vip.weibo.cn", "weibointl.api.weibo.cn", "bootpreload.uve.weibo.com",
+                               "bootrealtime.uve.weibo.com", "sdkapp.uve.weibo.com", "wbapp.uve.weibo.com"},
     ("advertising", "xiaohongshu"): {"edith.xiaohongshu.com", "www.xiaohongshu.com"},
 }
 README = ROOT / "surge" / "README.md"

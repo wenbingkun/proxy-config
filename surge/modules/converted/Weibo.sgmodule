@@ -13,6 +13,7 @@
 # Frozen copy of fmz200's Surge module for Weibo; do not edit by hand.
 # Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Surge/module/weibo.module
 # Source SHA-256: cbb427d9bbf7fbe1c3b7a383693f2291eeb97cdf3107e13f9e902f7ca5a266fd
+# Local change (2026-10-07): limit MitM to the finite host set covered by active URL rules.
 # Changes (2026-10-06):
 #   - removed 1 line(s) matching appicon
 #   - pinned 1x https://github.com/fmz200/wool_scripts/raw/main/ -> 5d5f63f
@@ -121,4 +122,4 @@ http-response-jq ^https?:\/\/weibointl\.api\.weibo\.cn\/portal\.php\?a=trends& '
 非会员设置tab皮肤 = type=http-response, pattern=^https?:\/\/new\.vip\.weibo\.c(n|om)\/littleskin\/preview, script-path=https://raw.githubusercontent.com/zmqcherish/proxy-script/1d9f51bc9a0077d81998bb503ee6158ca83faa73/weibo_main.js, requires-body=true, timeout=60
 
 [MITM]
-hostname = %APPEND% *.weibo.cn, *.weibo.com, weibo.com
+hostname = %APPEND% api-cloudim.api.weibo.com, api.weibo.cn, api.weibo.com, bootpreload.uve.weibo.com, bootrealtime.uve.weibo.com, card.weibo.com, mapi.weibo.cn, mapi.weibo.com, new.vip.weibo.cn, new.vip.weibo.com, sdkapp.uve.weibo.com, wbapp.uve.weibo.com, weibo.com, weibointl.api.weibo.cn, weibointl.api.weibo.com

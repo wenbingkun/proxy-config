@@ -15,6 +15,7 @@
 # Frozen copy of fmz200's QX snippet for Weibo; do not edit by hand.
 # Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/weibo.snippet
 # Source SHA-256: c8b47d5f2e990f065d98cac2d70d5866c97443d23d96a8393607b13a464e9b29
+# Local change (2026-10-07): limit MitM to the finite host set covered by active URL rules.
 # Changes (2026-10-06):
 #   - removed 1 line(s) matching appicon
 #   - pinned 1x https://github.com/fmz200/wool_scripts/raw/main/ -> 5d5f63f
@@ -157,4 +158,4 @@ host, bootpreload.uve.weibo.com, reject
 
 host-suffix, api.touch-moblie.com, reject
 
-hostname = *.weibo.cn, *.weibo.com, weibo.com
+hostname = api.weibo.cn, api.weibo.com, bootpreload.uve.weibo.com, bootrealtime.uve.weibo.com, mapi.weibo.cn, mapi.weibo.com, new.vip.weibo.cn, new.vip.weibo.com, sdkapp.uve.weibo.com, wbapp.uve.weibo.com, weibointl.api.weibo.cn
