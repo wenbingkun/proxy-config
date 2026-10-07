@@ -63,7 +63,7 @@ REPO_SCRIPTED = {
     "umetrip": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/cf80e249924723800a4efd98bfc42dfbf724547b/quantumultx/scripts/umetrip-safe.js"},
     "alibaba-amdc": {"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"},
     "xiaohongshu": {
-        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js",
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js",
         "https://raw.githubusercontent.com/Script-Hub-Org/Script-Hub/6b4fb62240629d2fc66b08bc271f8c1f83a5dcd1/scripts/replace-body.js",
     },
 }

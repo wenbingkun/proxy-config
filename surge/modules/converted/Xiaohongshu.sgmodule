@@ -9,7 +9,7 @@
 #   - Script-Hub turns the QX response-body rule into its replace-body.js script (1); kept as converted, renamed xiaohongshu_replaceBody so names stay unique across modules
 #   - the 9 scripts Script-Hub named xiaohongshu are numbered xiaohongshu_01..09 (Surge script names must be unique)
 #   - 2026-10-05: every xiaohongshu.js script path (12 rules, 1 commented-out line) points at this repo's
-#     hosted copy quantumultx/scripts/xiaohongshu.js (home feed video notes and the 视频 channel removed,
+#     hosted copy quantumultx/scripts/xiaohongshu-channels.js (home feed video notes and the 视频 channel removed,
 #     non-JSON bodies passed through), and xiaohongshu_11 runs it on /v6/homefeed/categories (channel list)
 # Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
 # the new source the same way, redo the edits above and send the result through a PR.
@@ -48,34 +48,34 @@ DOMAIN,t-ads.xiaohongshu.com,REJECT
 
 [Script]
 # 搜索页
-xiaohongshu_01 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/search\/(banner_list|hot_list), script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_01 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/search\/(banner_list|hot_list), script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-xiaohongshu_02 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/search\/(hint|trending)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_02 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/search\/(hint|trending)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-xiaohongshu_03 = type=http-response, pattern=^https?:\/\/(so|edith)\.xiaohongshu\.com\/api\/sns\/v\d+\/search\/notes\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_03 = type=http-response, pattern=^https?:\/\/(so|edith)\.xiaohongshu\.com\/api\/sns\/v\d+\/search\/notes\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
 # 开屏广告
-xiaohongshu_04 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/system_service\/config\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_04 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/system_service\/config\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-xiaohongshu_05 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/system_service\/splash_config, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_05 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/system_service\/splash_config, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
 # 详情页,小部件
-xiaohongshu_06 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/note\/widgets, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_06 = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/note\/widgets, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-#xiaohongshu = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/user\/followings\/followfeed, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+#xiaohongshu = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/user\/followings\/followfeed, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-#^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/user\/followings\/followfeed url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js
-#xiaohongshu = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/recommend\/user\/follow_recommend\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+#^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/user\/followings\/followfeed url script-response-body https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js
+#xiaohongshu = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d+\/recommend\/user\/follow_recommend\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
 # 图片水印,视频水印
-xiaohongshu_07 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/v\d+\/note\/(imagefeed|live_photo\/save), script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_07 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/v\d+\/note\/(imagefeed|live_photo\/save), script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-xiaohongshu_08 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/v\d+\/(followfeed|homefeed)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
-xiaohongshu_11 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/v\d+\/homefeed\/categories\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_08 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/v\d+\/(followfeed|homefeed)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_11 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/v\d+\/homefeed\/categories\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-xiaohongshu_09 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/(v2\/note\/feed|v3\/note\/videofeed)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_09 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/(v2\/note\/feed|v3\/note\/videofeed)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
-xiaohongshu_10 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/(v4\/note\/videofeed|v10\/note\/video\/save)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js, requires-body=true, max-size=-1, timeout=60
+xiaohongshu_10 = type=http-response, pattern=^https?:\/\/(edith|rec|www)\.xiaohongshu\.com\/api\/sns\/(v4\/note\/videofeed|v10\/note\/video\/save)\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, max-size=-1, timeout=60
 
 # 评论区用户id置空 (实验功能可能无效)
 xiaohongshu_replaceBody = type=http-response, pattern=^https?:\/\/edith\.xiaohongshu\.com\/api\/sns\/v\d\/note\/comment\/list, script-path=https://raw.githubusercontent.com/Script-Hub-Org/Script-Hub/6b4fb62240629d2fc66b08bc271f8c1f83a5dcd1/scripts/replace-body.js, requires-body=true, max-size=-1, timeout=30, argument=red_id-%3Efmz200
