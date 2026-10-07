@@ -347,7 +347,15 @@ def assert_two_stage_rules(path: Path) -> None:
     front, tail = rules[:split], rules[split:-2]
     for rule in front:
         kind = rule.split(",")[0]
-        assert kind in ("RULE-SET", "PROCESS-NAME"), f"{where}: unexpected rule type in the domain stage: {rule}"
+        assert kind in ("RULE-SET", "PROCESS-NAME", "DOMAIN-SUFFIX"), f"{where}: unexpected rule type in the domain stage: {rule}"
+        if kind == "DOMAIN-SUFFIX":
+            assert rule in {
+                "DOMAIN-SUFFIX,pancakeswap.finance,💰 加密货币",
+                "DOMAIN-SUFFIX,marketplace.visualstudio.com,👨‍💻 开发服务",
+                "DOMAIN-SUFFIX,vscode.dev,👨‍💻 开发服务",
+                "DOMAIN-SUFFIX,vsassets.io,👨‍💻 开发服务",
+                "DOMAIN-SUFFIX,fast.com,📡 网络测速",
+            }, f"{where}: unreviewed domain exception: {rule}"
         if kind == "RULE-SET":
             assert rule.endswith(",no-resolve"), f"{where}: domain-stage rule set needs no-resolve: {rule}"
     stage = [strip_no_resolve(r) for r in front if r.startswith("RULE-SET,")]

@@ -844,6 +844,7 @@ rules:
 - RULE-SET,DownloadExtra,DIRECT,no-resolve
 - RULE-SET,HkBanks,DIRECT,no-resolve
 - RULE-SET,IntlBrokers,🇭🇰 香港节点,no-resolve
+- DOMAIN-SUFFIX,pancakeswap.finance,💰 加密货币
 - RULE-SET,AdGuard,🛡️ 安全防护,no-resolve
 - RULE-SET,PrivateDomain,DIRECT,no-resolve
 - RULE-SET,Hijacking,🛡️ 安全防护,no-resolve
@@ -873,6 +874,7 @@ rules:
 - RULE-SET,LinkedIn,🌐 社交平台,no-resolve
 - RULE-SET,Pinterest,🌐 社交平台,no-resolve
 - RULE-SET,SocialMedia,🌐 社交平台,no-resolve
+- DOMAIN-SUFFIX,fast.com,📡 网络测速
 - RULE-SET,Netflix,🎬 流媒体,no-resolve
 - RULE-SET,Disney,🎬 流媒体,no-resolve
 - RULE-SET,Spotify,🎬 流媒体,no-resolve
@@ -886,6 +888,9 @@ rules:
 - RULE-SET,Apple,🍎 苹果服务,no-resolve
 - RULE-SET,AppleExtra,🍎 苹果服务,no-resolve
 - RULE-SET,Google,🌌 谷歌服务,no-resolve
+- DOMAIN-SUFFIX,marketplace.visualstudio.com,👨‍💻 开发服务
+- DOMAIN-SUFFIX,vscode.dev,👨‍💻 开发服务
+- DOMAIN-SUFFIX,vsassets.io,👨‍💻 开发服务
 - RULE-SET,Microsoft,Ⓜ️ 微软服务,no-resolve
 - RULE-SET,MicrosoftExtra,Ⓜ️ 微软服务,no-resolve
 - RULE-SET,GitHub,👨‍💻 开发服务,no-resolve
