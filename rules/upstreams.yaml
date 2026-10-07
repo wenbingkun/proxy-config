@@ -61,11 +61,6 @@ exceptions:
   url: https://raw.githubusercontent.com/kokoryh/Sparkle/master/release/loon/plugin/bilibili.lpx
   reason: User accepts upstream updates for this exact Bilibili enhancement path.
 - client: qx
-  field: geo_location_checker
-  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/IP_API.js
-  reason: Existing helper/task script retained; only resource_parser_url is in B1
-    scope.
-- client: qx
   field: rewrite_remote
   url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/QuantumultX/Advertising/Advertising.conf
   reason: Existing native rewrite container retained; nested dependencies remain unexpanded.
@@ -86,21 +81,6 @@ exceptions:
   field: rewrite_remote
   url: https://raw.githubusercontent.com/app2smile/rules/master/module/spotify.conf
   reason: User chose to retain Spotify references; no new mirrors or script pinning.
-- client: qx
-  field: task_local
-  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/geo_location.js
-  reason: Existing helper/task script retained; only resource_parser_url is in B1
-    scope.
-- client: qx
-  field: task_local
-  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/server-info-plus.js
-  reason: Existing helper/task script retained; only resource_parser_url is in B1
-    scope.
-- client: qx
-  field: task_local
-  url: https://cdn.jsdelivr.net/gh/KOP-XIAO/QuantumultX@master/Scripts/streaming-ui-check.js
-  reason: Existing helper/task script retained; only resource_parser_url is in B1
-    scope.
 - client: surge
   field: build-source
   url: https://github.com/NSRingo/Siri/releases/download/v4.2.7/iRingo.Siri.sgmodule
