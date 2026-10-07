@@ -101,6 +101,8 @@ def check_security(failures: list[str]) -> None:
             capture_output=True,
             text=True,
         )
+        if result.returncode != 0:
+            fail(f"git ls-files failed for {local_bootstrap}", failures)
         if result.stdout.strip():
             fail(
                 f"{local_bootstrap} is tracked by git — "
@@ -109,15 +111,19 @@ def check_security(failures: list[str]) -> None:
             )
 
     # Scan tracked files and untracked candidates that are not gitignored.
-    candidates = subprocess.run(
+    candidate_result = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
         cwd=ROOT,
         capture_output=True,
         text=True,
-    ).stdout.splitlines()
+    )
+    if candidate_result.returncode != 0:
+        fail("git ls-files failed; credential scan incomplete", failures)
+        return
+    candidates = candidate_result.stdout.splitlines()
 
     # Scan executable/config formats where machine-local secrets are most likely.
-    SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt", ".py", ".sh", ".dconf", ".sgmodule"}
+    SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt", ".py", ".sh", ".dconf", ".sgmodule", ".md", ".js", ".json", ".snippet", ".plugin", ".list"}
 
     for rel_path in candidates:
         path = ROOT / rel_path
@@ -127,8 +133,9 @@ def check_security(failures: list[str]) -> None:
         if path.suffix.lower() not in SCAN_SUFFIXES and not is_env_example:
             continue
         try:
-            text = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            fail(f"{rel_path}: unable to read credential scan input", failures)
             continue
 
         # passphrase (QX) / ca-passphrase (Loon, Surge) with a real value — use [^\S\n]* to avoid

@@ -83,6 +83,17 @@ def main():
     managed = check.scan_text(f'#!MANAGED-CONFIG {dynamic} interval=86400', 'fixture', 'surge')
     assert managed and validate(managed)[1]
     assert validate([check.Reference(pinned.replace(sha, sha[:7]), 'qx', 'script', 'fixture', 'executable')])[1]
+    # Paths are validated before pins, owned paths or exact exceptions can authorize them.
+    for tail in ('../master/test.js', './test.js', '%2e%2e/test.js', '%2Ftest.js',
+                 '%5ctest.js', '%252e%252e/test.js', r'..\test.js'):
+        bad = pinned.rsplit('/', 1)[0] + '/' + tail
+        assert validate([check.Reference(bad, 'qx', 'script', 'fixture', 'executable')])[1], bad
+    assert check.github_revision(pinned)[1] == sha
+    assert validate(check.scan_text('[rewrite_remote]\n' + dynamic.replace('https:', 'HTTPS:'), 'fixture', 'qx'))[1]
+    backend = check.scan_text('[http_backend]\n' + dynamic + ', tag=fixture', 'fixture', 'qx')
+    assert backend and backend[0].kind == 'executable' and validate(backend)[1]
+    domains = check.scan_text('DOMAIN-SET,' + dynamic + ',DIRECT', 'fixture', 'surge')
+    assert domains and domains[0].field == 'domain-set' and validate(domains)[1]
     # Validate schema rather than silently interpreting wildcards as exact exceptions.
     with tempfile.TemporaryDirectory() as d:
         directory = Path(d)

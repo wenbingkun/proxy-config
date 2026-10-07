@@ -20,13 +20,13 @@ import yaml
 from check_remote_resources import ROOT, SHELL_TEMPLATE_RE, source_policy_error
 
 URL = r'https?://[^\s,"\']+'
-URL_RE = re.compile(URL)
+URL_RE = re.compile(URL, re.I)
 SCRIPT_RE = re.compile(r'script-path\s*=\s*(' + URL + r')', re.I)
 ICON_RE = re.compile(r'(?:img-url|profile_img_url|#!icon)\s*=\s*(' + URL + r')')
 # QX loads a remote body for `url` and `url-and-header` scripts and for echo-response with a URL.
 QX_SCRIPT_RE = re.compile(
     r'\burl(?:-and-header)?\s+(?:script-\S+|echo-response\s+\S+\s+echo-response)\s+(' + URL + r')', re.I)
-RULE_RE = re.compile(r'RULE-SET,\s*(' + URL + r')', re.I)
+RULE_RE = re.compile(r'(RULE-SET|DOMAIN-SET),\s*(' + URL + r')', re.I)
 OWN_PREFIXES = ('quantumultx/', 'loon/', 'surge/', 'mihomo/')
 
 
@@ -64,7 +64,7 @@ def scan_text(text: str, source: str, client: str) -> list[Reference]:
         if client == 'qx':
             for match in QX_SCRIPT_RE.finditer(line):
                 refs.append(Reference(match[1], client, 'script', where, 'executable'))
-            if section in ('filter_remote', 'rewrite_remote') and line.startswith(('https://', 'http://')):
+            if section in ('filter_remote', 'rewrite_remote') and line.lower().startswith(('https://', 'http://')):
                 url = line.split(',', 1)[0]
                 mixed = urlsplit(url).path.endswith('.snippet') and '/rewrite/' in urlsplit(url).path
                 kind = 'executable' if section == 'rewrite_remote' or mixed else 'rule'
@@ -78,6 +78,9 @@ def scan_text(text: str, source: str, client: str) -> list[Reference]:
                     if i == 0 and urlsplit(url).hostname == 'ip-api.com':
                         continue
                     refs.append(Reference(url, client, 'geo_location_checker', where, 'executable'))
+            elif section == 'http_backend':
+                for url in URL_RE.findall(line):
+                    refs.append(Reference(url, client, 'http_backend', where, 'executable'))
             elif section == 'task_local':
                 match = URL_RE.search(line)
                 if match:
@@ -87,12 +90,12 @@ def scan_text(text: str, source: str, client: str) -> list[Reference]:
                 if key not in ('server_check_url', 'network_check_url', 'profile_img_url'):
                     for url in URL_RE.findall(line):
                         refs.append(Reference(url, client, key, where, 'unknown'))
-        elif client == 'loon' and section in ('remote rule', 'plugin') and line.startswith(('https://', 'http://')):
+        elif client == 'loon' and section in ('remote rule', 'plugin') and line.lower().startswith(('https://', 'http://')):
             refs.append(Reference(line.split(',', 1)[0], client, section, where,
                                   'rule' if section == 'remote rule' else 'executable', section == 'plugin'))
         if client == 'surge':
             for match in RULE_RE.finditer(line):
-                refs.append(Reference(match[1].rstrip(')'), client, 'rule-set', where, 'rule'))
+                refs.append(Reference(match[2].rstrip(')'), client, match[1].lower(), where, 'rule'))
     return refs
 
 
@@ -130,10 +133,24 @@ def collect(root: Path = ROOT) -> list[Reference]:
     return refs
 
 
+def unsafe_path(url: str) -> bool:
+    path = urlsplit(url).path
+    if '\\' in url:
+        return True
+    # Reject ambiguous separators/dot escapes even when percent-encoded twice.
+    while True:
+        if bool(re.search(r'%2[ef]|%5c', path, re.I)) or any(part in ('.', '..') for part in path.split('/')):
+            return True
+        decoded = unquote(path)
+        if decoded == path:
+            return False
+        path = decoded
+
+
 def github_revision(url: str) -> tuple[str, str, str] | None:
     parsed = urlsplit(url)
     path = unquote(parsed.path)
-    if parsed.scheme != 'https' or parsed.username or parsed.password:
+    if unsafe_path(url) or parsed.scheme != 'https' or parsed.username or parsed.password:
         return None
     if parsed.hostname == 'raw.githubusercontent.com':
         match = re.fullmatch(r'/([^/]+/[^/]+)/([^/]+)/(.*)', path)
@@ -197,7 +214,7 @@ def audit(refs: list[Reference], policy: dict, root: Path = ROOT) -> tuple[list[
     results, errors = [], []
     for ref in refs:
         reason = ''
-        error = source_policy_error(ref.url)
+        error = 'ambiguous URL path' if unsafe_path(ref.url) else source_policy_error(ref.url)
         revision = github_revision(ref.url)
         if error:
             status = 'rejected'
