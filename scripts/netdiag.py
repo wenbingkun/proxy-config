@@ -106,7 +106,7 @@ def http_get(url: str, headers: dict[str, str], timeout: float = 8):
 
 def validate_key(key: str, name: str) -> str:
     if (len(key) < 24 or len(set(key)) < 8 or
-            re.search(r'example|placeholder|replace.?me|set.your.secret|your.?key', key, re.I)):
+            re.search(r'example|placeholder|replace|set.your.secret|your.?key', key, re.I)):
         raise ValueError(f"{name} must be a random key of at least 24 characters; placeholder/weak keys are refused")
     return key
 

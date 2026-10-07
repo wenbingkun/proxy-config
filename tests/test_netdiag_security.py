@@ -17,7 +17,7 @@ KEY = 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4'
 
 
 def main():
-    for key in ('', 'examplekey', 'set-your-secret', 'a' * 40, 'REPLACE_WITH_RANDOM_KEY'):
+    for key in ('', 'examplekey', 'set-your-secret', 'a' * 40, 'REPLACE_WITH_RANDOM_KEY', 'REPLACE_WITH_RANDOM_KEY_0123456789'):
         try: n.surge_headers({'SURGE_KEY': key})
         except ValueError: pass
         else: raise AssertionError('weak key accepted')
