@@ -182,7 +182,7 @@ def check_fmz200(failures: list[str]) -> None:
 # reviewed commits (or this repo's hosted script), whether QX also loads the file as a filter (mixed
 # snippet), and the template default: off until checked on the device, on once accepted (2026-10-05).
 REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/"
-REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
+REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js"
 HOSTED_REWRITES = {
     "Amap.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/a0e3343ea4f86da12b9864caf0df1c1f7479c4a6/quantumultx/scripts/amap.js"}, True),
     "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/cf80e249924723800a4efd98bfc42dfbf724547b/quantumultx/scripts/umetrip-safe.js"}, False),

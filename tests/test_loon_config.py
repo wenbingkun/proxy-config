@@ -339,7 +339,7 @@ MIRROR_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loo
 # Xiaohongshu (2026-10-05): fmz200's plugin, hosted with every script pointed at the repo's copy of
 # xiaohongshu.js (home feed video notes and the 视频 channel removed); it replaces Kelee's RedPaper.
 XHS_PLUGIN = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/Xiaohongshu.plugin"
-XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
+XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js"
 
 
 def check_fmz200_plugins(failures: list[str]) -> None:

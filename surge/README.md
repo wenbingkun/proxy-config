@@ -46,10 +46,14 @@ Surge 没有像 Loon `[Plugin]` 那样在配置里列出模块的段落，模块
 |---|---|
 | 哔哩哔哩（空降助手已关闭）、YouTube、blackmatrix7 去广告与安全重定向、Siri（iRingo）、Spotify | 各作者的 Surge 原生模块，固定到提交或发布标签 |
 | 微博、闲鱼、Safari 超级搜索（2026-10-06 起） | 微博、闲鱼为 fmz200 Surge 模块的冻结副本（`surge/modules/converted/Weibo.sgmodule`、`XianYu.sgmodule`，脚本固定到提交，微博的重复脚本名已编号）；Safari 超级搜索为仓库自写精简版 `QSearch.sgmodule`。微博模块解密 `*.weibo.cn`、`*.weibo.com`，范围比墨鱼版宽 |
-| 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本自 2026-10-05 起改指仓库托管的 `quantumultx/scripts/xiaohongshu.js`（三端同一份：首页推荐去视频笔记、去「视频」频道），并为频道列表接口加了 `xiaohongshu_11` |
+| 小红书、知乎 | fmz200 的公开 QX 规则（Kelee 小红书插件的合著者），同样冻结转换，脚本固定到提交。小红书的脚本于 2026-10-07 更新为仓库托管的 `quantumultx/scripts/xiaohongshu-channels.js`（三端同一份：首页推荐去视频笔记、去「视频」「直播」「短剧」频道），并为频道列表接口加了 `xiaohongshu_11` |
 | 高德地图（效果优先批次） | 仓库合并源：墨鱼固定规则与可读响应脚本、已验证页面清理，以及既有 fmz200 开屏/拒绝规则；amdc 独立，Surge 高德组合已真机验收 |
 | 阿里系 amdc（2026-10-06 新增） | 仓库自写的 `quantumultx/scripts/amdc.js`（与墨鱼 `amdc.js` 同一 UA 清单），只有一条 http-response 脚本、不需要 MitM；三端各一项 |
 | 微信外链（2026-10-05 起） | fmz200 的 Surge 原生模块（`5d5f63f`），其中加载的 zZPiglet 原版脚本由 `SOURCES` 的 `pins` 固定到 `0a70fbe`（原先用的墨鱼版是这个脚本的重新打包） |
+
+小红书本次脚本路径：`quantumultx/scripts/xiaohongshu.js` → `quantumultx/scripts/xiaohongshu-channels.js`。旧脚本保留原内容。引用源为 QX 的 `quantumultx/rewrite/fmz200-Xiaohongshu.snippet`、Loon 的 `loon/plugins/Xiaohongshu.plugin`、Surge 的 `surge/modules/converted/Xiaohongshu.sgmodule`；Surge 发布模块由生成器输出到 `surge/modules/rewrite/xiaohongshu.sgmodule`。
+
+发布后，QX/Loon 更新对应远程资源，Surge 本地模块需备份后更新并重载；三端分别验收直播、短剧频道消失及其他频道正常。合并前新脚本只用完整提交 SHA 地址核验，不请求新路径的 `@main` CDN 地址。回滚时恢复原资源或模块备份，确认脚本地址重新指向保留的 `xiaohongshu.js`；设备迁移与效果验收尚待发布后进行。
 | 网易邮箱大师、大麦（2026-10-06 起） | 仓库自写规则 `NeteaseMail.sgmodule`、`DaMai.sgmodule`（与 QX 同一份规则）；大麦不再带 amdc |
 | 航旅纵横 | 仓库维护的原生 `surge/modules/converted/Umetrip.sgmodule`，生成到原正式模块路径；三端共享可读 JSON / Protobuf 脚本 `quantumultx/scripts/umetrip-safe.js`，保持二进制响应模式；2026-10-06 的验收针对旧版，新安全修正版待验收 |
 | 微信读书精简（2026-10-05 新增） | Maasea 的 Surge 原生模块，模块和脚本都固定到提交（脚本由 `SOURCES` 的 `pins` 在生成时替换）；作用是去除小红点、小圈子提示和评论数等，不是去广告 |

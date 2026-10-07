@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run the hosted quantumultx/scripts/xiaohongshu.js in a Node VM, as QX, Loon and Surge would.
+"""Run the hosted quantumultx/scripts/xiaohongshu-channels.js in a Node VM, as QX, Loon and Surge would.
 
-The hosted copy of fmz200's script adds two filters (home feed video notes, the 视频 home channel)
+The hosted copy of fmz200's script adds two filters (home feed video notes, the 视频/直播/短剧 home channels)
 and a guard so that empty or non-JSON bodies pass through. Each case checks the result and that
 $done runs exactly once. Fixtures mirror the field names seen on the device (2026-10-05 sample:
 home feed items are model_type "note" with type "video" or "normal"; channels carry an oid).
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT = ROOT / "quantumultx" / "scripts" / "xiaohongshu.js"
+SCRIPT = ROOT / "quantumultx" / "scripts" / "xiaohongshu-channels.js"
 API = "https://edith.xiaohongshu.com/api/sns/"
 
 HARNESS = r"""
@@ -56,8 +56,8 @@ FEED = [
 ]
 CHANNELS = {
     "categories": [{"name": "视频", "oid": "homefeed.video_v3"}, {"name": "直播", "oid": "homefeed.live"},
-                   {"name": "音乐", "oid": "homefeed.music_v3"}],
-    "rec_categories": [{"name": "美食", "oid": "homefeed.food_v3"}, {"name": "视频2", "oid": "homefeed.video_v9"}],
+                   {"name": "短剧", "oid": "homefeed.sketch"}, {"name": "直播技巧", "oid": "homefeed.other_live"}, {"name": "音乐", "oid": "homefeed.music_v3"}],
+    "rec_categories": [{"name": "美食", "oid": "homefeed.food_v3"}, {"name": "视频2", "oid": "homefeed.video_v9"}, {"name": "直播", "oid": "homefeed.live"}, {"name": "短剧", "oid": "homefeed.sketch"}],
     "default_show": 1,
 }
 CASES = [
@@ -102,9 +102,9 @@ def main() -> int:
     expect("home feed all video", got["home feed all video"]["body"]["data"] == [], "an all-video page becomes empty")
     expect("home feed data not a list", got["home feed data not a list"]["body"] == {"data": {"k": 1}}, "unchanged")
     ch = got["channels"]["body"]["data"]
-    expect("channels", [c["oid"] for c in ch["categories"]] == ["homefeed.live", "homefeed.music_v3"]
+    expect("channels", [c["oid"] for c in ch["categories"]] == ["homefeed.other_live", "homefeed.music_v3"]
            and [c["oid"] for c in ch["rec_categories"]] == ["homefeed.food_v3"] and ch["default_show"] == 1,
-           f"视频 channels removed, the rest kept, got {ch}")
+           f"视频/直播/短剧 channels removed, the rest kept, got {ch}")
     expect("follow feed keeps videos", ids(got["follow feed keeps videos"]["body"]["data"]["items"]) == ["v1", "n1"],
            "follow feed is not filtered")
     expect("search keeps videos", ids(got["search keeps videos"]["body"]["data"]["items"]) == ["v1", "n1"],
@@ -112,11 +112,11 @@ def main() -> int:
     for name in ("empty body", "no body", "not json", "json scalar"):
         expect(name, got[name]["pass"], "must pass the response through unchanged")
     if failures:
-        print("xiaohongshu.js checks failed:", file=sys.stderr)
+        print("xiaohongshu-channels.js checks failed:", file=sys.stderr)
         for f in failures:
             print(f"  - {f}", file=sys.stderr)
         return 1
-    print(f"xiaohongshu.js checks passed: {len(CASES)} cases, $done once each.")
+    print(f"xiaohongshu-channels.js checks passed: {len(CASES)} cases, $done once each.")
     return 0
 
 
