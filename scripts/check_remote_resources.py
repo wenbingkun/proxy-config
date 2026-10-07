@@ -20,6 +20,7 @@ from pathlib import Path
 import yaml
 
 import build_rules
+import build_surge_modules
 import check_reject_conflicts
 
 
@@ -88,7 +89,7 @@ class Result:
     final_url: str
     bytes_read: int
     message: str
-    # Retain full Mihomo responses for classification; do not download providers twice.
+    # Retain full provider/selected script responses for comparisons without another download.
     body: bytes = field(default=b"", repr=False)
 
 
@@ -98,6 +99,23 @@ class ProviderComparison:
     ip_rules: int | None
     origin: str
     sha256: str
+    message: str
+
+
+@dataclass(frozen=True)
+class ScriptTarget:
+    name: str
+    pinned: str
+    candidate: str
+    source: str
+
+
+@dataclass(frozen=True)
+class ScriptComparison:
+    target: ScriptTarget
+    state: str
+    pinned_sha256: str
+    candidate_sha256: str
     message: str
 
 
@@ -290,14 +308,15 @@ def read_response(url: str, headers: dict[str, str], timeout: float, limit: int)
         )
 
 
-def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result:
+def fetch(resource: Resource, mode: str, timeout: float, retries: int, complete: bool = False) -> Result:
     problem = source_policy_error(resource.url)
     if problem:
         return Result(resource, False, None, "", resource.url, 0, problem)
     full_rule_check = mode == "full" and resource.kind in FULL_CHECK_KINDS
-    limit = FULL_LIMIT if full_rule_check else LIGHT_BYTES
+    full_check = full_rule_check or complete
+    limit = FULL_LIMIT if full_check else LIGHT_BYTES
     headers = {"User-Agent": user_agent_for(resource), "Accept": "*/*"}
-    if not full_rule_check:
+    if not full_check:
         headers["Range"] = f"bytes=0-{LIGHT_BYTES - 1}"
     last_error = "unknown error"
 
@@ -312,13 +331,20 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
                 status, content_type, body, final_url = read_response(resource.url, plain_headers, timeout, limit)
             if not 200 <= status < 300:
                 last_error = f"HTTP {status}"
-            elif full_rule_check and status != 200:
-                last_error = f"full rule check requires HTTP 200, got {status}"
-            elif full_rule_check and len(body) > limit:
+            elif full_check and status != 200:
+                last_error = f"full check requires HTTP 200, got {status}"
+            elif full_check and len(body) > limit:
                 last_error = f"resource exceeds {FULL_LIMIT // (1024 * 1024)} MiB full-check limit"
             else:
                 body = body[:limit]
                 problem = source_policy_error(final_url) or validate_body(resource, content_type, body, mode)
+                if complete:
+                    if final_url != resource.url:
+                        problem = "script comparison URL redirected to a different version or source"
+                    try:
+                        body.decode("utf-8-sig")
+                    except UnicodeError:
+                        problem = "script comparison returned invalid UTF-8"
                 return Result(
                     resource=resource,
                     ok=problem is None,
@@ -327,7 +353,7 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
                     final_url=final_url,
                     bytes_read=len(body),
                     message=problem or "ok",
-                    body=body if full_rule_check and resource.kind == "clash-rule" else b"",
+                    body=body if complete or (full_rule_check and resource.kind == "clash-rule") else b"",
                 )
         except urllib.error.HTTPError as exc:
             last_error = f"HTTP {exc.code}"
@@ -347,6 +373,84 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int) -> Result
         bytes_read=0,
         message=last_error,
     )
+
+
+def script_update_targets() -> list[ScriptTarget]:
+    """Only the parser and YouTube pair; version URLs stay in their configuration sources."""
+    text = QX_FILES[0].read_text(encoding="utf-8")
+    urls = re.findall(r"^resource_parser_url\s*=\s*(\S+)\s*$", text, re.M)
+    if len(urls) != 1:
+        raise ValueError("expected one QX resource_parser_url")
+    parser = re.fullmatch(r"(https://cdn\.jsdelivr\.net/gh/[^/@]+/[^/@]+)@([0-9a-f]{40})(/[^?#]+\.js)", urls[0])
+    if parser is None:
+        raise ValueError("QX parser comparison needs an original CDN full-commit URL")
+    targets = [ScriptTarget("KOP parser", urls[0], f"{parser[1]}@master{parser[3]}", "quantumultx/bootstrap.example.conf")]
+    sources = [source for source in build_surge_modules.SOURCES if source["file"] == "youtube"]
+    if len(sources) != 1:
+        raise ValueError("expected one YouTube source")
+    pins = sources[0].get("pins", {})
+    if len(pins) != 2:
+        raise ValueError("YouTube comparison needs two script pins")
+    for candidate, pinned in sorted(pins.items()):
+        match = re.fullmatch(r"(https://raw\.githubusercontent\.com/[^/]+/[^/]+)/([0-9a-f]{40})(/[^?#]+\.js)", pinned)
+        if match is None or candidate != f"{match[1]}/master{match[3]}":
+            raise ValueError("YouTube comparison needs full-commit pins with same-path master candidates")
+        targets.append(ScriptTarget(f"Maasea {match[3].rsplit('/', 1)[-1]}", pinned, candidate,
+                                    "surge/modules/rewrite/youtube.sgmodule"))
+    return targets
+
+
+def script_update_report(results: list[Result], targets: list[ScriptTarget], timeout: float,
+                         retries: int, workers: int) -> list[ScriptComparison]:
+    """A candidate is just a byte-change notice; never execute it or upgrade configurations."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [executor.submit(fetch, Resource(t.candidate, "script", t.source), "full", timeout,
+                                   retries, complete=True) for t in targets]
+        candidates = [future.result() for future in futures]
+    comparisons = []
+    for target, candidate in zip(targets, candidates):
+        pinned = next((r for r in results if r.resource.url == target.pinned
+                       and client_of(r.resource.source) == client_of(target.source)), None)
+        pinned_sha = hashlib.sha256(pinned.body).hexdigest() if pinned and pinned.ok and pinned.body else ""
+        candidate_sha = hashlib.sha256(candidate.body).hexdigest() if candidate.ok and candidate.body else ""
+        if not pinned_sha or not candidate_sha:
+            error = ("pinned resource missing or incomplete" if pinned is None else
+                     f"pinned: {pinned.message if not pinned.ok else 'complete body unavailable'}" if not pinned_sha else
+                     f"candidate: {candidate.message if not candidate.ok else 'complete body unavailable'}")
+            comparisons.append(ScriptComparison(target, "not compared", pinned_sha, candidate_sha, error))
+            continue
+        assert pinned is not None
+        message = f"bytes {len(pinned.body)} -> {len(candidate.body)}"
+        state = "unchanged" if pinned.body == candidate.body else "changed"
+        if state == "changed":
+            offset = next((i for i, (a, b) in enumerate(zip(pinned.body, candidate.body)) if a != b),
+                          min(len(pinned.body), len(candidate.body)))
+            message += f"; first differing byte {offset}; review candidate manually, no automatic upgrade"
+        comparisons.append(ScriptComparison(target, state, pinned_sha, candidate_sha, message))
+    return comparisons
+
+
+def emit_script_report(comparisons: list[ScriptComparison], errors: list[str]) -> None:
+    print("Pinned script content updates (byte comparison; changes do not prove an App failure):")
+    rows = ["", "## Pinned script content updates", "",
+            "Only actual file bytes are compared; candidates require manual review and device regression.", "",
+            "| Script | Result | Pinned SHA-256 | Candidate SHA-256 | Detail |",
+            "| --- | --- | --- | --- | --- |"]
+    for result in comparisons:
+        print(f"  [{result.state}] {result.target.name}: {result.message}; "
+              f"pinned sha256={result.pinned_sha256 or '-'}; candidate sha256={result.candidate_sha256 or '-'}")
+        print(f"    pinned: {result.target.pinned}\n    candidate: {result.target.candidate}")
+        rows.append(f"| {result.target.name} | {result.state} | {result.pinned_sha256 or '-'} | "
+                    f"{result.candidate_sha256 or '-'} | {result.message.replace('|', '&#124;').replace(chr(10), ' ')} |")
+    for result in comparisons:
+        rows.append(f"\n{result.target.name} pinned: {result.target.pinned}\n\nCandidate: {result.target.candidate}\n")
+    for error in errors:
+        print(f"  [not compared] {error}")
+        rows.append(f"\nNot compared: {error.replace('|', '&#124;').replace(chr(10), ' ')}\n")
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with Path(summary_path).open("a", encoding="utf-8") as summary:
+            summary.write("\n".join(rows) + "\n")
 
 
 DESTINATION_IP_TYPES = {"IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP"}
@@ -590,9 +694,18 @@ def main() -> int:
         print(f"Listed {len(resources)} unique remote resources.")
         return 0
 
+    targets: list[ScriptTarget] = []
+    script_failures: list[str] = []
+    if args.mode == "full":
+        try:
+            targets = script_update_targets()
+        except (ValueError, OSError) as exc:
+            script_failures = [f"not compared: {exc}"]
+    pinned_urls = {target.pinned for target in targets}
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {
-            executor.submit(fetch, resource, args.mode, args.timeout, args.retries): resource
+            executor.submit(fetch, resource, args.mode, args.timeout, args.retries,
+                            complete=resource.url in pinned_urls): resource
             for resource in resources
         }
         results = [future.result() for future in concurrent.futures.as_completed(futures)]
@@ -601,6 +714,10 @@ def main() -> int:
     overlap_failures: list[str] = []
     content_failures: list[str] = []
     if args.mode == "full":
+        script_comparisons = script_update_report(results, targets, args.timeout, args.retries, args.workers)
+        emit_script_report(script_comparisons, script_failures)
+        script_failures += [f"{r.target.name}: not compared: {r.message}" for r in script_comparisons
+                            if r.state == "not compared"]
         try:
             comparisons, missing, stale = mihomo_content_report(results)
             emit_mihomo_report(comparisons, missing, stale)
@@ -620,7 +737,7 @@ def main() -> int:
     for result in results:
         counts[result.resource.kind] = counts.get(result.resource.kind, 0) + 1
 
-    if failures or overlap_failures or content_failures:
+    if failures or overlap_failures or content_failures or script_failures:
         print("Remote resource check failed:")
         for result in failures:
             print(
@@ -631,8 +748,10 @@ def main() -> int:
             print(f"  [fail] surge-reject-overlap {message}")
         for message in content_failures:
             print(f"  [fail] mihomo-content {message}")
+        for message in script_failures:
+            print(f"  [fail] script-update {message}")
         print(f"Failed {len(failures)} of {len(results)} resources; {len(overlap_failures)} REJECT list errors; "
-              f"{len(content_failures)} Mihomo content/coverage errors.")
+              f"{len(content_failures)} Mihomo content/coverage errors; {len(script_failures)} script comparison errors.")
         return 1
 
     summary = ", ".join(f"{kind}={count}" for kind, count in sorted(counts.items()))

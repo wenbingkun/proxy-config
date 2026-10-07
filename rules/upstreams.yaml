@@ -111,16 +111,6 @@ exceptions:
   reason: Existing Siri release reference; latest/tag is not an immutable commit.
 - client: surge
   field: script-path
-  url: https://raw.githubusercontent.com/Maasea/sgmodule/master/Script/Youtube/youtube.request.js
-  reason: Existing Surge YouTube nested script; pinning additional scripts is outside
-    B1 scope.
-- client: surge
-  field: script-path
-  url: https://raw.githubusercontent.com/Maasea/sgmodule/master/Script/Youtube/youtube.response.js
-  reason: Existing Surge YouTube nested script; pinning additional scripts is outside
-    B1 scope.
-- client: surge
-  field: script-path
   url: https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-json.js
   reason: User chose to retain Spotify references; no new mirrors or script pinning.
 - client: surge
