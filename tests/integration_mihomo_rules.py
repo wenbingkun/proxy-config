@@ -70,7 +70,7 @@ def build_fixture(source: dict, fixture: dict, directory: Path, socks: int, cont
         if kind == "RULE-SET":
             if len(parts) not in {3, 4} or parts[1] not in providers or (len(parts) == 4 and parts[3] != "no-resolve"):
                 raise ValueError(f"undefined provider or unsupported RULE-SET: {rule}")
-        elif kind in {"PROCESS-NAME", "GEOIP"}:
+        elif kind in {"PROCESS-NAME", "GEOIP", "DOMAIN-SUFFIX"}:
             if len(parts) != 3:
                 raise ValueError(f"unsupported fixture rule: {rule}")
         elif kind != "MATCH" or len(parts) != 2:
