@@ -15,7 +15,7 @@ Usage:
   netdiag.py install-service        install and start the systemd user service
   netdiag.py status                 recorder, source and device reachability
   netdiag.py collect [--since 15m]  write a session directory and print a Markdown report
-  netdiag.py get surge|router PATH  raw GET against an API (read-only)
+  netdiag.py get surge|router PATH  GET against an API (SSID/key redacted, read-only)
 
 Config: ~/.config/ios-netdiag/env (KEY=VALUE, mode 600): ROUTER_API, ROUTER_SECRET,
 SURGE_API, SURGE_KEY, DEVICE_IPS (comma separated); optional PYMOBILEDEVICE3 (path to the
@@ -92,17 +92,47 @@ def now() -> datetime:
     return datetime.now().astimezone()
 
 
+def api_open(request, timeout):
+    # Both finite GETs and the router log stream must bypass environment proxies.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    return opener.open(request, timeout=timeout)
+
+
 def http_get(url: str, headers: dict[str, str], timeout: float = 8):
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with api_open(req, timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def validate_key(key: str, name: str) -> str:
+    if (len(key) < 24 or len(set(key)) < 8 or
+            re.search(r'example|placeholder|replace.?me|set.your.secret|your.?key', key, re.I)):
+        raise ValueError(f"{name} must be a random key of at least 24 characters; placeholder/weak keys are refused")
+    return key
+
+
+def redact_json(value, secrets=()):
+    if isinstance(value, str):
+        text = mask(value)
+        for secret in secrets:
+            if secret:
+                text = text.replace(secret, '<key>')
+        return text
+    if isinstance(value, list):
+        return [redact_json(item, secrets) for item in value]
+    if isinstance(value, dict):
+        return {redact_json(key, secrets): redact_json(item, secrets) for key, item in value.items()}
+    return value
+
+
 def router_headers(cfg):
+    if cfg.get("ROUTER_SECRET"):
+        validate_key(cfg["ROUTER_SECRET"], "ROUTER_SECRET")
     return {"Authorization": f"Bearer {cfg['ROUTER_SECRET']}"} if cfg.get("ROUTER_SECRET") else {}
 
 
 def surge_headers(cfg):
+    validate_key(cfg.get("SURGE_KEY", ""), "SURGE_KEY")
     return {"X-Key": cfg["SURGE_KEY"]} if cfg.get("SURGE_KEY") else {}
 
 
@@ -115,11 +145,15 @@ def api_get(cfg, source: str, path: str, timeout: float = 8):
     bases = [cfg[k].rstrip("/") for k in ("SURGE_API", "SURGE_API_USB") if cfg.get(k)]
     bases.sort(key=lambda b: b not in _surge_last)  # the route that worked last time first
     error: Exception = RuntimeError("SURGE_API not configured")
+    headers = surge_headers(cfg)
     for base in bases:
         try:
-            data = http_get(base + path, surge_headers(cfg), timeout)
-        except urllib.error.HTTPError:
-            raise
+            data = http_get(base + path, headers, timeout)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (401, 403):
+                raise
+            error = exc
+            continue
         except Exception as exc:  # noqa: BLE001 - try the next route
             error = exc
             continue
@@ -158,7 +192,7 @@ def record_router(cfg, ips: list[str], out: Writer, status: Writer) -> None:
     while True:
         try:
             req = urllib.request.Request(url, headers=router_headers(cfg))
-            with urllib.request.urlopen(req, timeout=300) as resp:
+            with api_open(req, 300) as resp:
                 status.write({"source": "router", "state": "up"})
                 for raw in resp:
                     try:
@@ -249,6 +283,10 @@ def prune() -> None:
 
 def cmd_record(_args) -> int:
     cfg = load_config()
+    if cfg.get("SURGE_API") or cfg.get("SURGE_API_USB"):
+        surge_headers(cfg)
+    if cfg.get("ROUTER_API"):
+        router_headers(cfg)
     STATE.mkdir(parents=True, exist_ok=True)
     os.chmod(STATE, 0o700)
     status = Writer("recorder")
@@ -256,18 +294,25 @@ def cmd_record(_args) -> int:
     threads = []
     if cfg.get("ROUTER_API") and device_ips(cfg):
         threads.append(threading.Thread(
-            target=record_router, args=(cfg, device_ips(cfg), Writer("router"), status), daemon=True))
-    if cfg.get("SURGE_API"):
+            name="router", target=record_router, args=(cfg, device_ips(cfg), Writer("router"), status), daemon=True))
+    if cfg.get("SURGE_API") or cfg.get("SURGE_API_USB"):
         threads.append(threading.Thread(
-            target=record_surge, args=(cfg, Writer("surge"), status), daemon=True))
+            name="surge", target=record_surge, args=(cfg, Writer("surge"), status), daemon=True))
     if not threads:
         print(f"nothing to record; configure {CONFIG}", file=sys.stderr)
         return 1
     for t in threads:
         t.start()
+    next_prune = 0.0
     while True:
-        prune()
-        time.sleep(3600)
+        if time.monotonic() >= next_prune:
+            prune()
+            next_prune = time.monotonic() + 3600
+        for thread in threads:
+            thread.join(timeout=1)
+            if not thread.is_alive():
+                status.write({"source": "recorder", "state": "failed", "worker": thread.name})
+                raise RuntimeError(f"{thread.name} recorder worker exited; service must restart")
 
 
 def cmd_install_service(_args) -> int:
@@ -650,7 +695,8 @@ def cmd_get(args) -> int:
     if not args.path.startswith("/"):
         print("path must start with /", file=sys.stderr)
         return 2
-    print(json.dumps(api_get(cfg, args.source, args.path), ensure_ascii=False, indent=1))
+    secrets = [cfg.get(key, "") for key in ("ROUTER_SECRET", "SURGE_KEY")]
+    print(json.dumps(redact_json(api_get(cfg, args.source, args.path), secrets), ensure_ascii=False, indent=1))
     return 0
 
 
