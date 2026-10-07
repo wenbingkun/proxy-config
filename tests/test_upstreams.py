@@ -25,7 +25,7 @@ def main():
     results, errors = check.audit(refs, check.load_policy(ROOT / 'rules/upstreams.yaml'))
     assert not errors, errors
     assert any(r.source.startswith('quantumultx/rewrite/bilibili_ad.conf:') and
-               r.url.endswith('/quantumultx/scripts/bilibili_json.js') for r in refs)
+               r.url.endswith('/quantumultx/scripts/bilibili_json-safe.js') for r in refs)
     assert any(r.source.startswith('surge/modules/converted/') for r in refs)
     assert any(r.field == 'build-source' for r in refs)
     assert any(r.field == 'build-pin' for r in refs)

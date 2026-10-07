@@ -5,8 +5,8 @@
 # Source SHA-256: 893b3c82b6ea7073acb25532c2febd2ea923d2ebdda561ac124b7e5de169aa88
 # Converted with Script-Hub 6b4fb62 (service.js on 127.0.0.1, type=qx-rewrite&target=surge-module) on 2026-10-02.
 # Edited after conversion:
-#   - 12 script paths pinned to commits: Script-Hub-Org/Script-Hub@6b4fb62, fmz200/wool_scripts@5d5f63f
-#   - Script-Hub turns the QX response-body rule into its replace-body.js script (1); kept as converted, renamed zhihu_replaceBody so names stay unique across modules
+#   - upstream business script paths pinned to fmz200/wool_scripts@5d5f63f; security scripts hosted by this repository
+#   - 2026-10-07: redirect and recommendation rules use reviewed repository scripts; preserve HTTPS and JSON siblings
 #   - the 10 scripts Script-Hub named zhihu are numbered zhihu_01..10 (Surge script names must be unique)
 #   - no-resolve added to 2 IP rule(s): module rules sit at the top of the rule list, where an IP rule without it resolves every request locally
 # Built into a module in surge/modules/rewrite/ by scripts/build_surge_modules.py. To refresh, reconvert
@@ -34,7 +34,7 @@ IP-CIDR6,2402:4e00:1200:ed00:0:9089:6dac:96b6/128,REJECT,no-resolve
 ^https:\/\/api\.zhihu\.com\/unlimited\/go\/my_card - reject
 # 其他,服务器推送配置
 ^https:\/\/api\.zhihu\.com\/ab\/api\/v1\/products\/zhihu\/platforms\/ios\/config - reject
-^https:\/\/link\.zhihu\.com\/\?target=(https?)?(%3A|:)?(\/\/|%2F%2F)?(.*?)(&source.*)?$ http://$4 302
+# External-link redirect is handled by zhihu_redirect in [Script].
 ^https:\/\/www\.zhihu\.com\/api\/v4\/hot_recommendation - reject
 ^https:\/\/www\.zhihu\.com\/api\/v4\/mcn\/v2\/linkcards\? - reject
 ^https:\/\/www\.zhihu\.com\/api\/v4/(answers|questions)\/\d+/related-readings - reject
@@ -77,6 +77,7 @@ IP-CIDR6,2402:4e00:1200:ed00:0:9089:6dac:96b6/128,REJECT,no-resolve
 ^https:\/\/api\.zhihu\.com\/distribute\/rhea\/qa_ad_card\/h5\/recommendation\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
+zhihu_redirect = type=http-request, pattern=^https:\/\/link\.zhihu\.com\/\?target=, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/zhihu-redirect.js, timeout=30
 # 首页 悬浮图标,顶部横幅,开屏广告,关注页推荐,推荐信息流,热榜信息流,热榜直播,回答底部卡片
 zhihu_01 = type=http-response, pattern=^https:\/\/api\.zhihu\.com\/(answers|articles)\/v2\/\d+, script-path=https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js, requires-body=true, max-size=-1, timeout=60
 
@@ -90,7 +91,7 @@ zhihu_05 = type=http-response, pattern=^https:\/\/api\.zhihu\.com\/v2\/topstory\
 
 zhihu_06 = type=http-response, pattern=^https:\/\/api\.zhihu\.com\/bazaar\/vip_tab\/header\?, script-path=https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js, requires-body=true, max-size=-1, timeout=60
 
-zhihu_replaceBody = type=http-response, pattern=^https:\/\/api\.zhihu\.com\/search\/recommend_query\/v2\?, script-path=https://raw.githubusercontent.com/Script-Hub-Org/Script-Hub/6b4fb62240629d2fc66b08bc271f8c1f83a5dcd1/scripts/replace-body.js, requires-body=true, max-size=-1, timeout=30, argument=%22recommend_queries%22%3A%5C%7B.%2B%5C%7D-%3E%22recommend_queries%22%3A%7B%7D
+zhihu_recommend = type=http-response, pattern=^https:\/\/api\.zhihu\.com\/search\/recommend_query\/v2\?, script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/zhihu-recommend.js, requires-body=true, timeout=30
 
 zhihu_07 = type=http-response, pattern=^https:\/\/api\.zhihu\.com\/next-(bff|data|render)\?, script-path=https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js, requires-body=true, max-size=-1, timeout=60
 

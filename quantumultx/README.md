@@ -63,9 +63,9 @@ KOP 资源解析器及四个辅助脚本（IP_API、地理位置、节点信息�
 
 Safari 超级搜索要求默认搜索引擎为 DuckDuckGo；App Store 地区页面跳转不改变 Apple 账号地区，跨区下载仍需切换账号或地区。
 
-哔哩哔哩：使用仓库内冻结的旧版规则 `quantumultx/rewrite/bilibili_ad.conf`（deezertidal 转载的墨鱼 `biliad.conf`，最后更新 2023-06-08），其失效的 `bilibili_json.js` 已替换为仓库内 `quantumultx/scripts/bilibili_json.js`（墨鱼 GitHub 删除前的最后一版，2025-03-31）。上游均已停更，此版本不会再更新；它解密 `app.bilibili.com` 等 B 站接口主机，有意不解密 `grpc.biliapi.net`；只要解密 `app.bilibili.com`，Quantumult X 下历史记录与评论区加载就可能偏慢。视频播放页的广告（播放器下方的推广卡等）来自 `grpc.biliapi.net` 上的 `bilibili.app.viewunite` 接口，冻结版处理不到，真机已确认；在 QX 上接受这一点：要去掉它，需要解密 `grpc.biliapi.net` 并另加处理该接口的规则，这会让加载再次变慢。不要与墨鱼自建站 `BiliBiliAds.conf` 或 Biliverse ADBlock 同时启用。
+哔哩哔哩：使用仓库内冻结的旧版规则 `quantumultx/rewrite/bilibili_ad.conf`（deezertidal 转载的墨鱼 `biliad.conf`，最后更新 2023-06-08），其失效的 `bilibili_json.js` 已替换为仓库内 `quantumultx/scripts/bilibili_json-safe.js`（以墨鱼 GitHub 删除前的最后一版为基线，2026-10-07 修正单次完成；旧脚本保留回滚）。上游均已停更，仓库仅做明确的安全与健壮性修正；它解密 `app.bilibili.com` 等 B 站接口主机，有意不解密 `grpc.biliapi.net`；只要解密 `app.bilibili.com`，Quantumult X 下历史记录与评论区加载就可能偏慢。视频播放页的广告（播放器下方的推广卡等）来自 `grpc.biliapi.net` 上的 `bilibili.app.viewunite` 接口，冻结版处理不到，真机已确认；在 QX 上接受这一点：要去掉它，需要解密 `grpc.biliapi.net` 并另加处理该接口的规则，这会让加载再次变慢。不要与墨鱼自建站 `BiliBiliAds.conf` 或 Biliverse ADBlock 同时启用。
 
-冻结版的规则、`bilibili_json.js` 和两个外部脚本（app2smile `bilibili-proto.js`、yjqiang `bilibili_dynamic.js`，链接固定到 2026-09-30 的提交）都不会随上游变化。它自带 hostname，使用 `opt-parser=true` 与原版一致，不需要 `#outhn=*`，也不依赖「仓库自定义重写」。脚本会把「我的」页会员字段改成大会员样式，这只影响客户端显示，不会获得服务端会员权益。冻结版中动态相关的两条规则原文都含 `DynAll`，其中 app2smile 那条的正则还包含 `app.bilibili.com` 上的旧接口 `view.v1.View/View`（如上，当前视频页广告不经过它），若要排除它们，把 bootstrap 中的链接写成 `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/bilibili_ad.conf#out=DynAll`（链接原本没有 `#` 参数，首个参数用 `#`，之后的参数才用 `&` 连接），这会把 app2smile 那条整行去掉；此做法未经真机验证。
+冻结版的规则、`bilibili_json-safe.js` 和两个外部脚本（app2smile `bilibili-proto.js`、yjqiang `bilibili_dynamic.js`，链接固定到 2026-09-30 的提交）都不会随上游变化。它自带 hostname，使用 `opt-parser=true` 与原版一致，不需要 `#outhn=*`，也不依赖「仓库自定义重写」。脚本会把「我的」页会员字段改成大会员样式，这只影响客户端显示，不会获得服务端会员权益。冻结版中动态相关的两条规则原文都含 `DynAll`，其中 app2smile 那条的正则还包含 `app.bilibili.com` 上的旧接口 `view.v1.View/View`（如上，当前视频页广告不经过它），若要排除它们，把 bootstrap 中的链接写成 `https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/rewrite/bilibili_ad.conf#out=DynAll`（链接原本没有 `#` 参数，首个参数用 `#`，之后的参数才用 `&` 连接），这会把 app2smile 那条整行去掉；此做法未经真机验证。
 
 ## 家庭 / 外出自动切换
 
@@ -98,3 +98,5 @@ https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/filte
 旧 `AmapPageCleanup.conf`、`StartUpGaps.conf`、`UmetripAds.conf` 及其他已替换资源保留公开路径供兼容回滚，不与当前同 App 入口同时启用。高德不再单独加载页面净化；航旅旧新入口也不并用。
 
 高德合并版本在 Surge 验收通过，用户随后反馈 QX/Loon 实测正常；模拟测试只证明接口处理和业务字段保护，不能替代后续版本的真机复测。微博国际版当前效果差异已接受。微信小程序（问卷管家）开屏仍有残留；一嗨只匹配四张已验证投放图片，新素材需要补充。`ddgksf2013.top` 迁移维护期间不可达，运行资源使用冻结副本；未取得的上游新版不视为已同步。
+
+2026-10-07 知乎托管规则改用仓库脚本保留外链原 HTTP(S) 协议、解码目标一次；非 HTTP(S)、重复目标或不合法目标返回 400。搜索推荐按 JSON 字段处理，避免破坏相邻字段。航旅 `umetrip-safe.js` 无改动时透传；有改动但含不安全整数时保留原响应并记录原因，可能保留广告。以上新修正版待真机验收，旧脚本路径保留。

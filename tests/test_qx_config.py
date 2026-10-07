@@ -185,11 +185,13 @@ REPO_REWRITE = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/q
 REPO_XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu.js"
 HOSTED_REWRITES = {
     "Amap.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/a0e3343ea4f86da12b9864caf0df1c1f7479c4a6/quantumultx/scripts/amap.js"}, True),
-    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/9f2bd622348198b7eaa84ccbfe2c57bc010e7bfd/quantumultx/scripts/umetrip.js"}, False),
+    "Umetrip.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/umetrip-safe.js"}, False),
     "fmz200-Xiaohongshu.snippet": ({REPO_XHS_SCRIPT}, True),
     "AlibabaAmdc.conf": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/amdc.js"}, False),
     "fmz200-XiaoYuZhou.snippet": (set(), False),
-    "fmz200-Zhihu.snippet": ({"https://raw.githubusercontent.com/fmz200/wool_scripts/"
+    "fmz200-Zhihu.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/zhihu-redirect.js",
+                              "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/zhihu-recommend.js",
+                              "https://raw.githubusercontent.com/fmz200/wool_scripts/"
                               "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/zhihu/zhihu.js"}, True),
     "WeChatUnblock.conf": ({"https://raw.githubusercontent.com/zZPiglet/Task/"
                             "0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js"}, False),

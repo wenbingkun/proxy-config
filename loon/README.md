@@ -64,3 +64,5 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 `[Remote Rule]` 引用 `loon/rules/*.list`（由 `build_rules.py` 生成）和 `loon/rules/geoip_cn.list`。`GEOIP,CN` 放在远程列表的最后，而不是本地 `[Rule]`：Loon 的本地规则优先于订阅规则，放在本地会抢先于 Privacy 等列表里的国内 IP 规则。规则内容按 Loon 的资源刷新机制更新；策略组和资源行的变更需要同步到本地 `bootstrap.conf`，同步边界与 QX 相同。
 
 已知效果差异、微信小程序开屏残留及一嗨素材限制见 [QX 说明](../quantumultx/README.md#兼容与已知限制)。模板默认关闭的补充项须按设备验收启用，不能把通用去广告的域名覆盖等同于实际开屏去除。
+
+2026-10-07 航旅安全修正版使用 `umetrip-safe.js`：无改动直接透传；有清理需求但含不安全整数时保留原响应并记录原因，可能保留广告。新版本待真机验收，原 `umetrip.js` 保留回滚。知乎仍使用既有可莉插件，本轮不替换。
