@@ -10,6 +10,10 @@ PLACEHOLDER_2='https://example.com/__SUB_URL_2__'
 
 deploy_tmp_dir=''
 deploy_lock_dir=''
+deploy_lock_owned=0
+deploy_transaction_started=0
+deploy_keep_recovery=0
+deploy_lock_identity=''
 deploy_stage_path=''
 deploy_backup_stage_path=''
 shellcrash_tmp_root=''
@@ -38,18 +42,83 @@ cleanup() {
     if [ -n "$deploy_backup_stage_path" ] && [ -f "$deploy_backup_stage_path" ]; then
         rm -f "$deploy_backup_stage_path"
     fi
-    if [ -n "$deploy_tmp_dir" ] && [ -d "$deploy_tmp_dir" ] && [ -n "$shellcrash_tmp_root" ]; then
+    if [ "$deploy_keep_recovery" = 0 ] && [ -n "$deploy_tmp_dir" ] && [ -d "$deploy_tmp_dir" ] && [ -n "$shellcrash_tmp_root" ]; then
         case "$deploy_tmp_dir" in
             "$shellcrash_tmp_root"/proxy-config.*) rm -rf "$deploy_tmp_dir" ;;
         esac
     fi
-    if [ -n "$deploy_lock_dir" ] && [ -d "$deploy_lock_dir" ]; then
+    if [ "$deploy_lock_owned" = 1 ] && [ "$(cat "$deploy_lock_dir/owner" 2>/dev/null)" = "$deploy_lock_identity" ]; then
+        rm -f "$deploy_lock_dir/owner"
         rmdir "$deploy_lock_dir" 2>/dev/null || true
     fi
 }
 
-trap cleanup 0
-trap 'exit 130' 1 2 15
+finish() {
+    deploy_exit=$?
+    trap - 0
+    trap '' 1 2 15
+    if [ "$deploy_transaction_started" = 1 ]; then
+        set +e
+        if ! recover_deployment; then
+            deploy_exit=1
+        fi
+        [ "$deploy_exit" -ne 0 ] || deploy_exit=1
+    fi
+    set +e
+    cleanup
+    exit "$deploy_exit"
+}
+
+trap finish 0
+trap 'exit 129' 1
+trap 'exit 130' 2
+trap 'exit 143' 15
+
+process_identity() {
+    # Linux /proc starttime distinguishes PID reuse; boot_id distinguishes reboots.
+    [ -r "/proc/$1/stat" ] || return 1
+    process_start=$(sed 's/.*) //' "/proc/$1/stat" | awk '{print $20}')
+    [ -n "$process_start" ] || return 1
+    printf '%s %s %s' "$1" "$deploy_boot_id" "$process_start"
+}
+
+acquire_deploy_lock() {
+    deploy_boot_id=$(cat /proc/sys/kernel/random/boot_id) || fail '无法读取 boot_id，不能安全获取部署锁'
+    deploy_lock_identity=$(process_identity "$$") || fail '无法读取部署进程身份'
+    if ! mkdir "$deploy_lock_dir" 2>/dev/null; then
+        old_owner=$(cat "$deploy_lock_dir/owner" 2>/dev/null) || fail '部署锁缺少所有者信息，请先核实旧任务；不会自动删除'
+        read -r owner_pid owner_boot owner_start extra <<OWNER
+$old_owner
+OWNER
+        case "$owner_pid:$owner_start" in
+            *[!0-9:]*|:*|*:) fail '部署锁身份无效，请先核实旧任务' ;;
+        esac
+        [ -n "$owner_boot" ] && [ -z "$extra" ] || fail '部署锁身份无效'
+        if [ "$owner_boot" = "$deploy_boot_id" ]; then
+            current_owner=$(process_identity "$owner_pid") || current_owner=''
+            [ "$current_owner" != "$old_owner" ] || fail '已有配置部署任务正在运行'
+            # Permission failures must not be interpreted as proof of death.
+            if [ -d "/proc/$owner_pid" ] && [ -z "$current_owner" ]; then
+                fail '无法核实部署锁所有者，保留锁'
+            fi
+        fi
+        # Only one reclaimer can rename this dead owner's directory. Contenders
+        # cannot remove a newly acquired lock after it has been replaced.
+        mkdir "$deploy_lock_dir/reclaim" 2>/dev/null || fail '旧部署锁正在回收或回收曾中断，请先核实'
+        if [ "$(cat "$deploy_lock_dir/owner" 2>/dev/null)" != "$old_owner" ]; then
+            rmdir "$deploy_lock_dir/reclaim" 2>/dev/null || true
+            fail '部署锁身份已变化'
+        fi
+        stale_lock="$deploy_lock_dir.stale.$$"
+        [ ! -e "$stale_lock" ] || fail '旧锁隔离路径已存在，请先核实'
+        mv "$deploy_lock_dir" "$stale_lock" || fail '无法隔离旧部署锁'
+        rm -f "$stale_lock/owner"
+        rmdir "$stale_lock/reclaim" "$stale_lock" || fail '旧部署锁含未知文件，保留供核实'
+        mkdir "$deploy_lock_dir" 2>/dev/null || fail '已有配置部署任务正在运行'
+    fi
+    deploy_lock_owned=1
+    printf '%s\n' "$deploy_lock_identity" >"$deploy_lock_dir/owner"
+}
 
 validate_subscription_url() {
     subscription_name=$1
@@ -92,7 +161,7 @@ download_template() {
 
     # curl enforces a whole-transfer limit; wget -T only bounds idle reads.
     # stderr is discarded because a custom TEMPLATE_URL may carry credentials.
-    curl -fsL --connect-timeout 15 --max-time 120 -o "$download_path" "$download_url" 2>/dev/null
+    curl -fsL --proto '=https' --proto-redir '=https' --connect-timeout 15 --max-time 120 -o "$download_path" "$download_url" 2>/dev/null
 }
 
 provider_url_from_config() {
@@ -129,24 +198,23 @@ stage_provider_cache_invalidation() {
     [ -f "$cache_path" ] || return 1
     mkdir -p "$provider_cache_backup_dir" || return 1
     cp -p "$cache_path" "$provider_cache_backup_dir/$cache_name" || return 1
-    rm -f "$cache_path" || return 1
 }
 
 restore_provider_caches() {
     [ "$provider_cache_transaction_started" = '1' ] || return 0
 
     if [ "$invalidate_sub_cache" = '1' ]; then
-        rm -f "$sub_cache_path"
+        rm -f "$sub_cache_path" || return 1
         if [ -f "$provider_cache_backup_dir/sub.yaml" ]; then
-            mkdir -p "${sub_cache_path%/*}"
-            cp -p "$provider_cache_backup_dir/sub.yaml" "$sub_cache_path"
+            mkdir -p "${sub_cache_path%/*}" || return 1
+            cp -p "$provider_cache_backup_dir/sub.yaml" "$sub_cache_path" || return 1
         fi
     fi
     if [ "$invalidate_sub2_cache" = '1' ]; then
-        rm -f "$sub2_cache_path"
+        rm -f "$sub2_cache_path" || return 1
         if [ -f "$provider_cache_backup_dir/sub2.yaml" ]; then
-            mkdir -p "${sub2_cache_path%/*}"
-            cp -p "$provider_cache_backup_dir/sub2.yaml" "$sub2_cache_path"
+            mkdir -p "${sub2_cache_path%/*}" || return 1
+            cp -p "$provider_cache_backup_dir/sub2.yaml" "$sub2_cache_path" || return 1
         fi
     fi
     provider_cache_transaction_started=0
@@ -212,21 +280,40 @@ failed_provider_names() {
     printf '%s' "$failed_names"
 }
 
-rollback_config() {
-    rollback_reason=$1
-    if [ "$had_previous_config" = '1' ] && [ -s "$backup_path" ]; then
-        deploy_stage_path="$target_dir/.config.yaml.rollback.$$"
-        cp -p "$backup_path" "$deploy_stage_path"
-        mv -f "$deploy_stage_path" "$config_path"
-        deploy_stage_path=''
-        restore_provider_caches
-        if "$start_script" start >/dev/null 2>&1; then
-            fail "$rollback_reason；已恢复上一份配置和 provider 缓存，旧配置的启动命令已成功执行"
-        fi
-        fail "$rollback_reason；已恢复上一份配置和 provider 缓存，但旧配置启动失败，服务可能未运行。请执行 $start_script start 并检查网络，或用部署前的固定备份恢复"
+recover_deployment() {
+    deploy_transaction_started=0
+    if ! "$start_script" stop >/dev/null 2>&1; then
+        deploy_keep_recovery=1
+        log "回滚停止核心失败，未恢复配置或缓存；保留恢复材料：$deploy_tmp_dir；服务状态未确认" >&2
+        return 1
     fi
-    restore_provider_caches
-    fail "$rollback_reason；没有可恢复的旧配置，已保留通过校验的新配置供排查"
+    if [ "$had_previous_config" = '1' ]; then
+        deploy_stage_path="$target_dir/.config.yaml.rollback.$$"
+        if ! cp -p "$backup_path" "$deploy_stage_path" || ! mv -f "$deploy_stage_path" "$config_path" || ! restore_provider_caches; then
+            deploy_keep_recovery=1
+            log "回滚文件恢复失败；保留恢复材料：$deploy_tmp_dir；服务可能未运行" >&2
+            return 1
+        fi
+        deploy_stage_path=''
+        if "$start_script" start >/dev/null 2>&1; then
+            log '已恢复上一份配置和 provider 缓存，旧配置的启动命令已成功执行' >&2
+            return 0
+        fi
+        deploy_keep_recovery=1
+        log "旧配置启动失败，服务可能未运行；保留恢复材料：$deploy_tmp_dir" >&2
+        return 1
+    fi
+    if ! restore_provider_caches; then
+        deploy_keep_recovery=1
+        log "首次部署的缓存恢复失败；保留恢复材料：$deploy_tmp_dir" >&2
+        return 1
+    fi
+    log '没有可恢复的旧配置；核心已停止，保留新配置供排查，需要人工完成首次启动' >&2
+    return 1
+}
+
+rollback_config() {
+    fail "$1"
 }
 
 if [ "$#" -ne 1 ]; then
@@ -234,6 +321,10 @@ if [ "$#" -ne 1 ]; then
 fi
 
 env_file=$1
+case "$env_file" in
+    */*) ;;
+    *) env_file="./$env_file" ;;
+esac
 [ -r "$env_file" ] || fail "无法读取私密参数文件：$env_file"
 
 # providers.env is a trusted, root-owned shell fragment. Keep it mode 600.
@@ -264,8 +355,8 @@ fi
 
 template_url=${TEMPLATE_URL:-$default_template_url}
 case "$template_url" in
-    http://*|https://*) ;;
-    *) fail 'TEMPLATE_URL 必须是 http:// 或 https:// URL' ;;
+    https://*) ;;
+    *) fail 'TEMPLATE_URL 必须是 https:// URL' ;;
 esac
 command -v curl >/dev/null 2>&1 || fail '未找到 curl；模板下载需要 curl 的整次超时，当前配置未改动'
 
@@ -307,9 +398,7 @@ if grep -Eq '^disoverride=1[[:space:]]*$' "$shellcrash_cfg"; then
 fi
 
 deploy_lock_dir="$shellcrash_dir/configs/.proxy-config-deploy.lock"
-if ! mkdir "$deploy_lock_dir" 2>/dev/null; then
-    fail '已有配置部署任务正在运行'
-fi
+acquire_deploy_lock
 
 shellcrash_tmp_root=${SHELLCRASH_TMP_ROOT:-/tmp}
 shellcrash_tmp_root=${shellcrash_tmp_root%/}
@@ -428,30 +517,26 @@ else
     chmod 600 "$deploy_stage_path"
 fi
 
+# From the first service mutation onward, every non-successful exit restores
+# the old state. Cache snapshots are completed before any cache is removed.
+deploy_transaction_started=1
 if [ "$invalidate_sub_cache" = '1' ] || [ "$invalidate_sub2_cache" = '1' ]; then
     log '检测到订阅来源变化，正在失效对应 provider 缓存……'
     if [ "$had_previous_config" = '1' ]; then
-        if ! "$start_script" stop; then
-            "$start_script" start >/dev/null 2>&1 || true
-            fail 'ShellCrash 停止命令失败，当前配置和 provider 缓存未改动'
-        fi
+        "$start_script" stop || fail 'ShellCrash 停止命令失败'
+    fi
+    if [ "$invalidate_sub_cache" = '1' ]; then
+        stage_provider_cache_invalidation "$sub_cache_path" sub.yaml || fail '无法备份 Sub provider 缓存'
+    fi
+    if [ "$invalidate_sub2_cache" = '1' ]; then
+        stage_provider_cache_invalidation "$sub2_cache_path" sub2.yaml || fail '无法备份 Sub2 provider 缓存'
     fi
     provider_cache_transaction_started=1
-    if [ "$invalidate_sub_cache" = '1' ] && \
-        ! stage_provider_cache_invalidation "$sub_cache_path" sub.yaml; then
-        restore_provider_caches
-        if [ "$had_previous_config" = '1' ]; then
-            "$start_script" start >/dev/null 2>&1 || true
-        fi
-        fail '无法失效 Sub provider 缓存，当前配置未改动'
+    if [ "$invalidate_sub_cache" = '1' ]; then
+        rm -f "$sub_cache_path"
     fi
-    if [ "$invalidate_sub2_cache" = '1' ] && \
-        ! stage_provider_cache_invalidation "$sub2_cache_path" sub2.yaml; then
-        restore_provider_caches
-        if [ "$had_previous_config" = '1' ]; then
-            "$start_script" start >/dev/null 2>&1 || true
-        fi
-        fail '无法失效 Sub2 provider 缓存，当前配置未改动'
+    if [ "$invalidate_sub2_cache" = '1' ]; then
+        rm -f "$sub2_cache_path"
     fi
 fi
 
@@ -479,5 +564,6 @@ if [ "$verify_sub_provider" = '1' ] || [ "$verify_sub2_provider" = '1' ]; then
     fi
 fi
 
+deploy_transaction_started=0
 provider_cache_transaction_started=0
 log "ShellCrash 配置部署成功：$config_path"
