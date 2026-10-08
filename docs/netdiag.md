@@ -6,7 +6,7 @@
 
 | 来源 | 内容 | 条件 |
 |---|---|---|
-| 路由器 Mihomo `/logs` 流 | iPhone 进入 Mihomo 内核的每条新连接：源端口、主机、命中规则、策略链；拨号失败等告警 | iPhone 在家庭 Wi-Fi；QX / Loon / Surge 在家都把流量交给路由器。ShellCrash 让国内域名和 IP 绕过内核，**国内流量（如 B 站、微信）看不到**（2026-10-04 实测） |
+| 路由器 Mihomo `/logs` 流 | iPhone 进入 Mihomo 内核的每条新连接：源端口、主机、命中规则、策略链；拨号失败等告警 | iPhone 在家庭 Wi-Fi；QX / Loon / Surge 在家都把流量交给路由器。ShellCrash 让国内域名和 IP 绕过内核，**国内流量（如 B 站、微信）看不到**（2026-10-04 实测）。只按 `DEVICE_IPS` 过滤时，iPhone 经临时 IPv6 地址发出的连接看不到；配置下文的 IPv6 归属后可以看到 |
 | 路由器 `/connections` | 采集时仍打开的连接：远端 IP、DNS 模式、流量 | 同上 |
 | Surge HTTP API | 每个请求的规则、策略、notes（DNS、规则评估、错误）、耗时，以及 DNS 缓存、事件、模块；`/v1/requests/recent` 只保留最近 50 条，记录器每 2 秒轮询 | Surge 是当前 VPN，启用本地模块 `netdiag-api.sgmodule`；iPhone 在家庭局域网，或用数据线连电脑（蜂窝网络也可） |
 
@@ -32,6 +32,15 @@ iOS 同一时间只能运行一个 VPN，对比三端行为时需要依次切换
 2. `python3 scripts/netdiag.py install-service`：安装并启动 systemd 用户服务 `ios-netdiag.service`，持续记录。服务直接运行当前工作区里的 `scripts/netdiag.py`：切到没有这个文件的分支前，先 `systemctl --user stop ios-netdiag ios-netdiag-usb`，切回后再 `start`；卸载时 `systemctl --user disable --now` 这两个服务，并删除 `~/.config/systemd/user/ios-netdiag*.service`。
 3. 数据线路径（可选，蜂窝网络下读取 Surge）：Windows 装“Apple 设备”App，iPhone 用数据线连接并信任；WSL 建 venv 装 `pymobiledevice3`，在 env 中加 `PYMOBILEDEVICE3=<venv>/bin/pymobiledevice3` 与 `SURGE_API_USB=http://127.0.0.1:16171`，再运行一次 `install-service`，会多装 `ios-netdiag-usb.service`（经 Windows usbmuxd `127.0.0.1:27015` 把本地 16171 转发到 iPhone 的 6171）。局域网不通时记录器自动改走 USB。Windows 重启后需要先打开一次“Apple 设备”App，usbmuxd 才会运行。
 4. Surge（可选）：把 `surge/netdiag-api.example.sgmodule` 复制为 iCloud Drive/Surge/`netdiag-api.sgmodule`，换成随机密钥，在 Surge 的模块列表中启用。该 API 监听所有网卡，在不信任的 Wi-Fi 上可以关掉模块。
+5. IPv6 归属（可选）：iPhone 也会用临时 IPv6 地址连到路由器，这些地址没法写进 `DEVICE_IPS`。在 env 中加：
+
+   ```
+   ROUTER_SSH=<已配好免密登录的 ssh 主机别名>
+   DEVICE_MACS=<与 DEVICE_IPS 同顺序的 MAC>
+   # ROUTER_LAN_IF=br-lan（默认值）
+   ```
+
+   然后重启服务。iPhone 的“设置 → 无线局域网 → 家庭 Wi-Fi ⓘ → 私有无线局域网地址”必须是“固定”，`DEVICE_MACS` 就填那里显示的地址。两项要么都填、要么都不填；格式错误、条数与 `DEVICE_IPS` 不等或有重复时，记录器报配置错误，IPv4 照常记录。
 
 ## 使用
 
@@ -47,6 +56,15 @@ python3 scripts/netdiag.py get router /proxies
 ## 给代理的约定
 
 报告的 Sources 段标有 `INCOMPLETE` 时，表示有实时数据没拿到，报告只覆盖已记录的部分；`ids skipped` 表示 2 秒轮询可能漏掉了请求，计数只是下限。
+
+IPv6 归属的工作方式和边界：
+- 记录器每 30 秒（遇到未知 IPv6 源时最快 10 秒）经 SSH 读一次路由器的 DHCP 租约和 `ip -6 neigh show dev <LAN_IF>`。只有租约 MAC 等于 `DEVICE_MACS` 时，才把邻居表里属于这个 MAC、状态正常的公网 / ULA 地址算作该设备的地址；链路本地地址不在范围内。
+- 每条 IPv6 记录带 `v6`：`current` 表示本次记录器会话里最近一次读取成功，且距今不超过 90 秒；`grace` 表示读取失败、记录器刚启动尚未读取成功，或该地址已不在最近一次成功读取里，但距离最后一次看到它不超过 10 分钟。超过 10 分钟就不再归属。
+- 租约 MAC 变了、找不到租约、或者同一地址同时对应其他 MAC 时，立即停止归属；冲突的地址要连续两次成功读取都只对应目标 MAC 才恢复，冲突记录保留 7 天。
+- 状态快照在 `STATE/v6map.json`（只由记录器写），每次读取的事件在 `records/<日期>/v6map.jsonl`。`collect` 会按事件列出窗口内读取失败、身份异常或没有刷新记录的区间（`INCOMPLETE: IPv6 attribution …`），并按快照过滤 `/connections`。快照分两种情况：读取失败或陈旧但结构完好时仍按上面的宽限规则使用，同时标 `INCOMPLETE`；快照不存在、无法解析、结构或字段无效，或者是用另一套配置（`ROUTER_SSH`、`DEVICE_MACS`、`ROUTER_LAN_IF`、`DEVICE_IPS`）生成的，就完全不用，退回只按 IPv4，直到记录器按当前配置刷新。
+- 每次读取都要求租约和邻居表两段完整（远端命令每一步都必须成功，两段各有结束标记，行格式必须可识别）；截断或格式异常算读取失败，不会当成空表。
+- 不暂存内容：地址第一次出现、到下一次读取之前的连接不会被记录。`missed_before_attribution`、`unknown_dropped`、`overflow` 是这类丢弃的计数，只是下限；为 0 也不能证明没有漏记。
+- 未配置时，Sources 写 `IPv6: not attributed (IPv4/explicit DEVICE_IPS only)`。
 
 用户说“分析刚才的网络行为”时：先 `status`，再按用户描述的时间 `collect --since <窗口>`，读报告和会话目录里的原始 JSON 定位问题，必要时用 `get` 查询当前策略选择或 DNS。要对比各端时，请用户依次在 QX、Loon、Surge 中复现，每次复现后分别采集。报告和原始数据含浏览记录，只在回复中引用必要部分，不提交、不上传。报告只自动隐去家庭 SSID：Surge notes 的原始 JSON 里还有代理节点的域名和 IP、机场相关域名（订阅、面板、DoH），回复、`.local` 以外的文件、提交说明和 PR 中都不能出现这些内容。
 
