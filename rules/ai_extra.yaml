@@ -38,6 +38,9 @@ domain_suffix:
   - coze.com
   - perplexity.ai
   - midjourney.com
+  - meta.ai
+  - metaaivm.com
+  - muse.ai
 
 domain_keyword:
   - antigravity

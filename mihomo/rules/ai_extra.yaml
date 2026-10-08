@@ -40,5 +40,8 @@ payload:
   - DOMAIN-SUFFIX,coze.com
   - DOMAIN-SUFFIX,perplexity.ai
   - DOMAIN-SUFFIX,midjourney.com
+  - DOMAIN-SUFFIX,meta.ai
+  - DOMAIN-SUFFIX,metaaivm.com
+  - DOMAIN-SUFFIX,muse.ai
   - DOMAIN-KEYWORD,antigravity
   - DOMAIN-KEYWORD,cloudcode-pa

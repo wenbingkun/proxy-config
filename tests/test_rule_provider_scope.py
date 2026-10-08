@@ -45,6 +45,9 @@ REQUIRED_LOCAL_DOMAINS = {
         "cursor.sh",
         "civitai.com",
         "lmarena.ai",
+        "meta.ai",
+        "metaaivm.com",
+        "muse.ai",
     },
     ROOT / "rules" / "social_media.yaml": {
         "redditspace.com",
