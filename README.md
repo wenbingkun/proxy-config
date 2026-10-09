@@ -44,19 +44,10 @@ git commit -am "feat: ..." && git push   # 3. 设备按各自刷新周期加载
 提交前检查：
 
 ```bash
-set -e
-python3 scripts/build_rules.py --check
-python3 scripts/build_router_config.py --check
-python3 scripts/build_surge_modules.py --check
-python3 scripts/build_loon_plugins.py --check
-python3 scripts/check_hygiene.py
-python3 scripts/check_acceptance.py
-for t in tests/test_*.py; do [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"; done
-python3 scripts/check_reject_conflicts.py --self-test
-sh -n mihomo/shellcrash/deploy.sh
+sh scripts/check_all.sh
 ```
 
-`tests/test_shellcrash_override.py` 需要 Mihomo 核心与 ShellCrash 覆写脚本，由 CI 运行。
+清单只维护在这个脚本里，CI 也调用它。`tests/test_shellcrash_override.py` 需要 Mihomo 核心与 ShellCrash 覆写脚本，由 CI 运行。
 
 ## 安全
 

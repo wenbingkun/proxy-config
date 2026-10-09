@@ -153,25 +153,8 @@ jobs:
           print(f"mihomo/verge/config.yaml: {len(providers)} rule-providers defined.")
           EOF
 
-      - name: Check generated files are up to date
-        run: |
-          python3 scripts/build_rules.py --check
-          python3 scripts/build_router_config.py --check
-          python3 scripts/build_surge_modules.py --check
-          python3 scripts/build_loon_plugins.py --check
-
-      - name: Check repository hygiene and acceptance
-        run: |
-          python3 scripts/check_hygiene.py
-          python3 scripts/check_upstreams.py
-          python3 scripts/check_acceptance.py
-          for t in tests/test_*.py; do
-            [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"
-          done
-          python3 scripts/check_reject_conflicts.py --self-test
-
-      - name: Check shell script syntax
-        run: sh -n mihomo/shellcrash/deploy.sh
+      - name: Run pre-commit checks
+        run: sh scripts/check_all.sh
 
       - name: Validate configs with ShellCrash Mihomo
         run: |

@@ -25,19 +25,10 @@
 ## 提交前检查（仓库根目录执行，任一失败即停）
 
 ```sh
-set -e
-python3 scripts/build_rules.py --check
-python3 scripts/build_router_config.py --check
-python3 scripts/build_surge_modules.py --check
-python3 scripts/build_loon_plugins.py --check
-python3 scripts/check_hygiene.py
-python3 scripts/check_upstreams.py
-python3 scripts/check_acceptance.py
-for t in tests/test_*.py; do [ "$t" = tests/test_shellcrash_override.py ] || python3 "$t"; done
-sh -n mihomo/shellcrash/deploy.sh
+sh scripts/check_all.sh
 ```
 
-`tests/test_shellcrash_override.py` 需要固定版本的 Mihomo 核心、mmdb 与 ShellCrash `clash_modify.sh`（版本与哈希见 `.github/workflows/validate.yml`），由 CI 运行；本地跑时按同样哈希下载。不要用 `cmd || echo` 这类会吞掉失败的写法。
+清单只写在 `scripts/check_all.sh`（CI 调用同一脚本），新增检查加在那里；以它的退出码为准，最后一行是 `all checks passed`。`tests/test_shellcrash_override.py` 需要固定版本的 Mihomo 核心、mmdb 与 ShellCrash `clash_modify.sh`（版本与哈希见 `.github/workflows/validate.yml`），由 CI 运行；本地跑时按同样哈希下载。不要用 `cmd || echo` 这类会吞掉失败的写法。
 
 ## 发布路径
 
