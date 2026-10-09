@@ -83,7 +83,7 @@ sh scripts/check_all.sh
 
 分工：Claude Code 负责开发（探索、实现、跑测试），主会话用 sonnet，检索交给 haiku 的 Explore 子代理；opus advisor 只在 Claude 自行判断的决策点给按需建议（子代理也会继承），不算审核关卡。Codex 负责提交前审核，这是唯一的审核关卡。同一仓库同一时间只让一个代理写代码，需要并行时用 git worktree。agy 不参与本仓库的开发和审核。本仓库的说明文件不写具体模型版本号。
 
-1. 先查清再动手。改配置前写方案或审核报告，交用户转给 Codex 审核；**审核通过前不 commit、不 push**。Codex 审核期间只读，只出意见，不改仓库文件，需要的修改交回 Claude 完成。常规审核用 `codex --profile review`；涉及凭据、MitM、证书、部署和回滚、权限、CI 安全的改动用 `codex --profile review-deep`。两个 profile 都是只读沙箱，升权由用户确认（前提是 `~/.codex/rules/` 中没有 allow 规则，所以审批时不要选“永久允许”）：需要联网的检查经批准后运行，需要写入的验证放隔离副本；写 `CODEX-REVIEW*.md` 和 `evidence/` 同样要经用户批准。
+1. 先查清再动手。改配置前写方案或审核报告，交用户转给 Codex 审核；**审核通过前不 commit、不 push**。Codex 审核期间只读，只出意见，不改仓库文件，需要的修改交回 Claude 完成。本机的 `.codex/config.toml`（Git 忽略）把 Codex 在本仓库的默认设置定为常规审核：只读沙箱、high、升权由用户确认，所以在本仓库直接打开 Codex（侧边栏或 `codex`）就是常规审核。涉及凭据、MitM、证书、部署和回滚、权限、CI 安全的改动用 `codex -c model_reasoning_effort=xhigh`：项目配置优先于 `--profile`，`review-deep` 在本仓库提不上档位；侧边栏的模型选择会写回全局 `~/.codex/config.toml`，不要用它切换档位。升权由用户确认的前提是 `~/.codex/rules/` 中没有 allow 规则，所以审批时不要选“永久允许”：需要联网的检查经批准后运行，需要写入的验证放隔离副本；写 `CODEX-REVIEW*.md` 和 `evidence/` 同样要经用户批准；合并等写入操作先用 `/permissions` 临时放开。
 2. 报告放 `.local/<router|qx|loon|repo>/<YYYY-MM-DD>-<topic>/`（日期取任务开始日）：`PLAN*.md`、`REVIEW*.md`、`CODEX-REVIEW*.md`、`evidence/`、`rollback/`。报告要写清改动、依据、已跑的验证及复跑命令、反向测试、待审重点和范围外遗留。
    `.local/` 只在用户本机（WSL）存在。动手前先看 `.local/README.md`：不存在就是云端会话或新克隆，**不要创建 `.local/` 及其中的文件**（云端写入回不到本机），方案和报告直接写在回复里，由用户回本机后归档；设备文件（iCloud、路由器）在云端同样不可用。
 3. 审核通过后在功能分支提交（Conventional Commits，如 `fix(loon): …`），开 PR，CI 全绿。合并默认由用户另行安排 Codex 完成（不属于只读审核阶段）；只有用户当次明确授权，代理才自行 squash 合并并删除分支。
