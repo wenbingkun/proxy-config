@@ -6,6 +6,8 @@ Checks:
   - No duplicate entries across different rule files for the same field (WARNING)
   - Files end with a newline (ERROR)
   - Only allowed field keys are used (ERROR)
+  - No repeated key within one YAML mapping in rules/ or mihomo/ (ERROR);
+    safe_load keeps only the last value, so later checks never see the first
 """
 from __future__ import annotations
 
@@ -28,6 +30,46 @@ ALLOWED_KEYS = {
     "ip_cidr",
     "ip_cidr6",
 }
+
+def find_duplicate_keys(text: str) -> list[tuple[str, int]]:
+    """Return (key, line) for each key repeated within the same mapping node.
+
+    Works on the composed node graph, so a merge (``<<: *anchor``) followed by an
+    explicit override is not a repeat; aliased nodes are visited once.
+    """
+    problems: list[tuple[str, int]] = []
+    visited: set[int] = set()
+    stack = [yaml.compose(text)]
+    while stack:
+        node = stack.pop()
+        if node is None or id(node) in visited:
+            continue
+        visited.add(id(node))
+        if isinstance(node, yaml.MappingNode):
+            seen: set[tuple[str, str]] = set()
+            for key, value in node.value:
+                if isinstance(key, yaml.ScalarNode):
+                    ident = (key.tag, key.value)
+                    if ident in seen:
+                        problems.append((key.value, key.start_mark.line + 1))
+                    seen.add(ident)
+                stack.extend((key, value))
+        elif isinstance(node, yaml.SequenceNode):
+            stack.extend(node.value)
+    return sorted(problems, key=lambda item: item[1])
+
+
+def check_duplicate_keys(paths: list[Path], errors: list[str]) -> None:
+    for path in paths:
+        rel = path.relative_to(ROOT)
+        try:
+            problems = find_duplicate_keys(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            errors.append(f"{rel}: YAML parse error: {exc}")
+            continue
+        for key, line in problems:
+            errors.append(f"{rel}:{line}: duplicate key '{key}' in the same mapping")
+
 
 def check_file(path: Path, errors: list[str], warnings: list[str]) -> dict[str, list[str]]:
     """Check a single rule file. Returns the parsed data for cross-file checks."""
@@ -103,6 +145,9 @@ def main() -> int:
 
     check_cross_file(file_data, warnings)
 
+    yaml_files = sorted(RULES_DIR.glob("*.yaml")) + sorted((ROOT / "mihomo").rglob("*.yaml"))
+    check_duplicate_keys(yaml_files, errors)
+
     if warnings:
         print("WARNINGS (will not block merge):")
         for w in warnings:
@@ -114,7 +159,10 @@ def main() -> int:
             print(f"  [error] {e}")
         return 1
 
-    print(f"Rules hygiene OK ({len(rule_files)} files checked).")
+    print(
+        f"Rules hygiene OK ({len(rule_files)} files checked; "
+        f"{len(yaml_files)} YAML files checked for duplicate keys)."
+    )
     return 0
 
 

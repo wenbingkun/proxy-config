@@ -224,10 +224,15 @@ provider_cache_has_nodes() {
     cache_path=$1
 
     [ -s "$cache_path" ] || return 1
+    # Only confirms that at least one node exists; indentation style and
+    # comments are not validity conditions (the core accepts both list forms).
     awk '
         /^[[:space:]]*proxies:[[:space:]]*/ {
             value = $0
             sub(/^[[:space:]]*proxies:[[:space:]]*/, "", value)
+            sub(/^#.*$/, "", value)
+            sub(/[[:space:]]+#.*$/, "", value)
+            sub(/[[:space:]]+$/, "", value)
             if (value != "") {
                 if (value ~ /^\[/ && value !~ /^\[[[:space:]]*\]$/) {
                     found = 1
@@ -237,11 +242,12 @@ provider_cache_has_nodes() {
             in_proxies = 1
             next
         }
-        in_proxies && /^[^[:space:]]/ { exit }
-        in_proxies && /^[[:space:]]*-[[:space:]]+/ {
+        in_proxies && /^[[:space:]]*(#|$)/ { next }
+        in_proxies && /^[[:space:]]*-([[:space:]]|$)/ {
             found = 1
             exit
         }
+        in_proxies && /^[^[:space:]]/ { exit }
         END { exit found ? 0 : 1 }
     ' "$cache_path"
 }

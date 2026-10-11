@@ -248,7 +248,9 @@ if [ "$action" = 'start' ] && [ ! -f "$root/provider_fetch_should_fail" ]; then
     config="$root/yamls/config.yaml"
     mkdir -p "$cache_dir"
     if grep -q '^  Sub:$' "$config" && [ ! -f "$cache_dir/sub.yaml" ]; then
-        if [ -f "$root/provider_fetch_empty" ]; then
+        if [ -f "$root/provider_fetch_body" ]; then
+            cp "$root/provider_fetch_body" "$cache_dir/sub.yaml"
+        elif [ -f "$root/provider_fetch_empty" ]; then
             printf '%s\n' 'proxies: []' >"$cache_dir/sub.yaml"
         else
             printf '%s\n' 'proxies:' '  - name: fixture-sub-node' >"$cache_dir/sub.yaml"
@@ -556,6 +558,44 @@ exit 0
             )
         run_deploy(env_path, process_env, should_succeed=False)
         assert config_path.read_bytes() == deployed
+
+        # The readiness check only asks whether a node exists: equivalent YAML
+        # forms the core accepts must pass, and files without a node must fail.
+        write_env(env_path, shellcrash_dir, "good.yaml", provider_url_1=TEST_PROVIDER_URL_1)
+        run_deploy(env_path, process_env, should_succeed=True)
+        current_url = TEST_PROVIDER_URL_1
+        provider_body = shellcrash_dir / "provider_fetch_body"
+        node = "{name: fixture-node, type: http, server: 127.0.0.1, port: 18080}"
+        provider_cases = (
+            (f"proxies:\n- {node}\n", True),
+            (f"proxies: # valid comment\n  - {node}\n", True),
+            (f"proxies:\n# between items\n\n  - {node}\n", True),
+            (f"proxies: [{node}] # flow list\n", True),
+            ("", False),
+            ("# only a comment\n", False),
+            ("proxies: [] # empty\n", False),
+            ("proxies: # empty\n# still empty\nproxy-groups: []\n", False),
+            ("proxy-groups:\n- name: no-proxies-key\n", False),
+        )
+        for body, should_succeed in provider_cases:
+            provider_body.write_text(body, encoding="utf-8")
+            next_url = (
+                TEST_PROVIDER_URL_1_CHANGED
+                if current_url == TEST_PROVIDER_URL_1
+                else TEST_PROVIDER_URL_1
+            )
+            previous_config = config_path.read_bytes()
+            previous_cache = sub_cache.read_bytes()
+            write_env(env_path, shellcrash_dir, "good.yaml", provider_url_1=next_url)
+            output = run_deploy(env_path, process_env, should_succeed=should_succeed)
+            if should_succeed:
+                assert sub_cache.read_bytes() == body.encode(), body
+                current_url = next_url
+            else:
+                assert "Sub 订阅获取失败" in output, (body, output)
+                assert config_path.read_bytes() == previous_config, body
+                assert sub_cache.read_bytes() == previous_cache, body
+        provider_body.unlink()
 
     print("ShellCrash deployment transaction tests passed")
     return 0

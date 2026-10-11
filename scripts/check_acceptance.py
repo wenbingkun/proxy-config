@@ -7,6 +7,7 @@ Exit code 1 if any check fails.
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -111,16 +112,17 @@ def check_security(failures: list[str]) -> None:
             )
 
     # Scan tracked files and untracked candidates that are not gitignored.
+    # -z gives raw NUL-separated paths; without it Git quotes and escapes
+    # non-ASCII or special names, which would then be skipped as missing files.
     candidate_result = subprocess.run(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
         cwd=ROOT,
         capture_output=True,
-        text=True,
     )
     if candidate_result.returncode != 0:
         fail("git ls-files failed; credential scan incomplete", failures)
         return
-    candidates = candidate_result.stdout.splitlines()
+    candidates = [os.fsdecode(raw) for raw in candidate_result.stdout.split(b"\0") if raw]
 
     # Scan executable/config formats where machine-local secrets are most likely.
     SCAN_SUFFIXES = {".conf", ".yaml", ".yml", ".ini", ".txt", ".py", ".sh", ".dconf", ".sgmodule", ".md", ".js", ".json", ".snippet", ".plugin", ".list"}
@@ -164,9 +166,10 @@ def check_security(failures: list[str]) -> None:
         for match in re.finditer(token_pattern, text):
             token_value = match.group(1)
             if not PLACEHOLDER_PATTERNS.search(token_value):
+                line = text.count("\n", 0, match.start()) + 1
                 fail(
-                    f"{rel_path}: possible real subscription token: "
-                    f"{TOKEN_QUERY_KEY}={token_value!r} — "
+                    f"{rel_path}:{line}: possible real subscription token: "
+                    f"{TOKEN_QUERY_KEY}=<redacted> — "
                     "use a placeholder instead",
                     failures,
                 )
