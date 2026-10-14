@@ -2,5 +2,6 @@
 # Source: rules/intl_brokers.yaml
 DOMAIN-SUFFIX,saxobank.com
 DOMAIN-SUFFIX,home.saxo
+DOMAIN-SUFFIX,interactivebrokers.com
 DOMAIN-SUFFIX,webull.com
 DOMAIN-SUFFIX,webull.com.hk
