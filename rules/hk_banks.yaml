@@ -70,8 +70,8 @@ domain_suffix:
   - bsgroup.com.hk
 
   # Interactive Brokers (verified reachable from mainland on user's network;
-  # covers ndcdyn/gdcdyn/cdcdyn web gateways and mcgw* Shenzhen app gateway)
-  - interactivebrokers.com
+  # api.ibkr.com app API and mcgw* Shenzhen app gateway). interactivebrokers.com
+  # moved to intl_brokers.yaml: mainland DNS answers for it are poisoned (2026-10).
   - interactivebrokers.hk
   - ibkr.com
   - ibkr.com.hk

@@ -3,6 +3,12 @@ domain_suffix:
   - saxobank.com
   - home.saxo
 
+  # Interactive Brokers web gateways (ndcdyn/gdcdyn/cdcdyn). Mainland DNS, including
+  # encrypted domestic resolvers, returns poisoned answers for this domain (2026-10);
+  # the servers themselves are reachable once resolved remotely. Other IBKR domains
+  # stay direct in hk_banks.yaml.
+  - interactivebrokers.com
+
   # Webull (overseas servers; no user-confirmed mainland reachability)
   - webull.com
   - webull.com.hk
