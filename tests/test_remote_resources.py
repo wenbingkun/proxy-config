@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 from unittest.mock import patch
 from pathlib import Path
@@ -76,7 +77,7 @@ def test_surge_reject_overlap_warns_but_bad_input_fails() -> None:
     try:
         check.surge_reject_urls = lambda: [f"https://rules.example/{name}" for name in bodies]
         check.read_response = lambda url, *_args: (200, "text/plain", bodies[url.rsplit("/", 1)[1]], url)
-        failures, warnings = check.reject_overlap_report(5)
+        failures, warnings, cdn_warnings = check.reject_overlap_report(5)
     finally:
         check.read_response, check.surge_reject_urls = original_read, original_urls
     assert len(failures) == 2, failures
@@ -84,6 +85,156 @@ def test_surge_reject_overlap_warns_but_bad_input_fails() -> None:
     assert any("ads.coingecko.com" in w and "excluded" not in w for w in warnings), warnings
     assert any("metrics.citi.com" in w and "[excluded by reject_allow.list]" in w for w in warnings), warnings
     assert not any("noconflict.invalid" in w for w in warnings), warnings
+    assert cdn_warnings == [], cdn_warnings
+
+
+JSDELIVR = "https://cdn.jsdelivr.net/gh/owner/repo@master/rule/QuantumultX/Test/Test.list"
+ORIGIN = "https://raw.githubusercontent.com/owner/repo/master/rule/QuantumultX/Test/Test.list"
+SIZE_BODY = b"Package size exceeded the configured limit of 50 MB. Try https://github.com/owner/repo instead."
+RULES_BODY = b"payload:\n  - '+.ads.example'\n" * 500
+
+
+def http_error(url: str, code: int, body: bytes) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError(url, code, "error", email.message.Message(), io.BytesIO(body))
+
+
+def test_jsdelivr_origin_url_mapping() -> None:
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    cases = {
+        JSDELIVR + "#out=IP-CIDR+IP6-CIDR&ntf=0": ORIGIN,
+        f"https://cdn.jsdelivr.net/gh/owner/repo@{sha}/a/b/c.yaml":
+            f"https://raw.githubusercontent.com/owner/repo/{sha}/a/b/c.yaml",
+        "https://cdn.jsdelivr.net/gh/owner/repo@main/": None,
+        "https://cdn.jsdelivr.net/gh/owner/repo/rule.list": None,
+        "https://cdn.jsdelivr.net/npm/package@1.0.0/index.js": None,
+        "https://fastly.jsdelivr.net/gh/owner/repo@master/rule.list": None,
+        "http://cdn.jsdelivr.net/gh/owner/repo@master/rule.list": None,
+        "https://raw.githubusercontent.com/owner/repo/master/rule.list": None,
+    }
+    for url, expected in cases.items():
+        assert check.jsdelivr_origin_url(url) == expected, (url, check.jsdelivr_origin_url(url))
+
+
+def run_size_fallback(url: str, cdn_code: int, cdn_body: bytes, origin_code: int,
+                      complete: bool = False, retries: int = 0) -> tuple[check.Result, list[str]]:
+    requested: list[str] = []
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> FakeResponse:
+        requested.append(request.full_url)
+        if request.full_url.startswith("https://raw.githubusercontent.com/"):
+            if origin_code != 200:
+                raise http_error(request.full_url, origin_code, b"404: Not Found")
+            return FakeResponse(200, RULES_BODY, request.full_url)
+        raise http_error(request.full_url, cdn_code, cdn_body)
+
+    resource = check.Resource(url, "qx-resource", "quantumultx/bootstrap.example.conf:1")
+    with patch.object(check.urllib.request, "urlopen", fake_urlopen):
+        result = check.fetch(resource, "light", timeout=1, retries=retries, complete=complete)
+    return result, requested
+
+
+def test_jsdelivr_size_error_checks_origin() -> None:
+    """jsDelivr's transient whole-repo fallback only warns when the same file passes at the origin."""
+    url = JSDELIVR + "#out=IP-CIDR&ntf=0"
+    result, requested = run_size_fallback(url, 403, SIZE_BODY, 200, retries=1)
+    assert requested == [url, url, ORIGIN], requested
+    assert result.ok and result.resource.url == url and result.final_url == ORIGIN, result
+    assert "package size fallback" in result.warning and ORIGIN in result.warning, result.warning
+
+    # A file deleted or renamed upstream still fails, and the message names both sides.
+    result, requested = run_size_fallback(JSDELIVR, 403, SIZE_BODY, 404)
+    assert requested == [JSDELIVR, ORIGIN], requested
+    assert not result.ok and not result.warning, result
+    assert "package size fallback" in result.message and "HTTP 404" in result.message, result.message
+
+    # Other 403s, other hosts and pinned script comparisons never consult the origin.
+    other_host = "https://cdn.example/gh/owner/repo@master/rule/QuantumultX/Test/Test.list"
+    for case_url, body, complete in ((JSDELIVR, b"Forbidden", False), (other_host, SIZE_BODY, False),
+                                     (JSDELIVR, SIZE_BODY, True)):
+        result, requested = run_size_fallback(case_url, 403, body, 200, complete=complete)
+        assert requested == [case_url], requested
+        assert not result.ok and result.message == "HTTP 403" and not result.warning, result
+    result, requested = run_size_fallback(JSDELIVR, 404, SIZE_BODY, 200)
+    assert requested == [JSDELIVR] and not result.ok, (requested, result)
+
+
+def test_reject_overlap_size_error_checks_origin() -> None:
+    bodies = {ORIGIN: b"DOMAIN-SUFFIX,noconflict.invalid\n"}
+    requested: list[str] = []
+
+    def fake_read(url: str, *_args: object) -> tuple[int, str, bytes, str]:
+        requested.append(url)
+        if url in bodies:
+            return 200, "text/plain", bodies[url], url
+        raise http_error(url, 403, SIZE_BODY if url == JSDELIVR else b"Forbidden")
+
+    other = "https://cdn.jsdelivr.net/gh/owner/repo@master/rule/Surge/Other/Other.list"
+    with patch.object(check, "surge_reject_urls", return_value=[JSDELIVR, other]), \
+         patch.object(check, "read_response", fake_read):
+        failures, warnings, cdn_warnings = check.reject_overlap_report(5)
+    assert requested == [JSDELIVR, ORIGIN, other], requested
+    assert len(failures) == 1 and other in failures[0] and "HTTPError" in failures[0], failures
+    assert warnings == [], warnings
+    assert len(cdn_warnings) == 1 and JSDELIVR in cdn_warnings[0] and ORIGIN in cdn_warnings[0], cdn_warnings
+
+    # An unparsable origin copy fails without a "passed at the origin" warning.
+    bodies[ORIGIN] = b"IP-CIDR,not-a-cidr\n"
+    with patch.object(check, "surge_reject_urls", return_value=[JSDELIVR]), \
+         patch.object(check, "read_response", fake_read):
+        failures, _, cdn_warnings = check.reject_overlap_report(5)
+    assert len(failures) == 1 and "not-a-cidr" in failures[0] and cdn_warnings == [], (failures, cdn_warnings)
+
+    bodies.clear()
+    with patch.object(check, "surge_reject_urls", return_value=[JSDELIVR]), \
+         patch.object(check, "read_response", fake_read):
+        failures, _, cdn_warnings = check.reject_overlap_report(5)
+    assert len(failures) == 1 and "package size fallback" in failures[0], failures
+    assert cdn_warnings == [], cdn_warnings
+
+
+def test_full_mode_fallback_keeps_provider_url() -> None:
+    """A full-mode clash rule checked at the origin still feeds the provider defined by its jsDelivr URL."""
+    url = "https://cdn.jsdelivr.net/gh/owner/repo@master/rule/Clash/Test/Test.yaml"
+    origin = "https://raw.githubusercontent.com/owner/repo/master/rule/Clash/Test/Test.yaml"
+    body = b'payload:\n  - IP-CIDR,192.0.2.0/24\n'
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> FakeResponse:
+        if request.full_url == origin:
+            return FakeResponse(200, body, origin)
+        raise http_error(request.full_url, 403, SIZE_BODY)
+
+    resource = check.Resource(url, "clash-rule", "mihomo/verge/config.yaml:1", "yaml")
+    with patch.object(check.urllib.request, "urlopen", fake_urlopen):
+        result = check.fetch(resource, "full", timeout=1, retries=0)
+    assert result.ok and result.warning and result.body == body, result
+    config = content_fixture()
+    config["rule-providers"]["Fixture"]["url"] = url
+    comparisons, missing, _ = check.mihomo_content_report([result], config)
+    assert [(c.name, c.ip_rules, c.origin) for c in comparisons] == [("Fixture", 1, f"http:{url}")], comparisons
+    assert missing == ["Fixture"], missing
+
+
+def test_warnings_do_not_fail_main() -> None:
+    resource = check.Resource(JSDELIVR, "qx-resource", "quantumultx/bootstrap.example.conf:1")
+    warned = check.Result(resource, True, 200, "text/plain", ORIGIN, 10, "ok",
+                          warning="jsDelivr HTTP 403 package size fallback; 100%\nok")
+    failed = check.Result(resource, False, 403, "", JSDELIVR, 0, "HTTP 403")
+
+    def run(result: check.Result, env: dict[str, str]) -> tuple[int, str]:
+        with patch.object(check, "extract_resources", return_value=[resource]), \
+             patch.object(check, "fetch", return_value=result), \
+             patch.dict(os.environ, env, clear=True), patch.object(sys, "argv", ["check"]), \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            code = check.main()
+        return code, output.getvalue()
+
+    code, text = run(warned, {})
+    assert code == 0 and "[warn] qx-resource" in text and "1 warnings" in text, text
+    assert "::warning::" not in text, text
+    code, text = run(warned, {"GITHUB_ACTIONS": "true"})
+    assert code == 0 and "::warning::qx-resource" in text and "100%25%0Aok" in text, text
+    code, text = run(failed, {"GITHUB_ACTIONS": "true"})
+    assert code == 1 and "[fail] qx-resource" in text and "::warning::" not in text, text
 
 
 def test_provider_content_types() -> None:
@@ -218,7 +369,7 @@ def test_content_main_exit_and_modes() -> None:
     with patch.object(check, "extract_resources", return_value=[ip_result.resource]), \
          patch.object(check, "script_update_targets", return_value=[]), \
          patch.object(check, "fetch", return_value=ip_result), \
-         patch.object(check, "reject_overlap_report", return_value=([], [])), \
+         patch.object(check, "reject_overlap_report", return_value=([], [], [])), \
          patch.object(check, "mihomo_content_report", side_effect=lambda results: original_report(results, config)) as report, \
          patch.dict(os.environ, {}, clear=True), contextlib.redirect_stdout(io.StringIO()) as output:
         with patch.object(sys, "argv", ["check", "--mode", "light"]):
@@ -381,6 +532,11 @@ def main() -> int:
 
     test_empty_range_falls_back_to_plain_get()
     test_surge_reject_overlap_warns_but_bad_input_fails()
+    test_jsdelivr_origin_url_mapping()
+    test_jsdelivr_size_error_checks_origin()
+    test_reject_overlap_size_error_checks_origin()
+    test_warnings_do_not_fail_main()
+    test_full_mode_fallback_keeps_provider_url()
     test_provider_content_types()
     test_mihomo_content_coverage()
     test_candidate_checkout_and_summary()

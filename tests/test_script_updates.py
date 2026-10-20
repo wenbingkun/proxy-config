@@ -128,7 +128,7 @@ def test_main_comparisons() -> None:
          patch.object(check, "extract_resources", return_value=resources), \
          patch.object(check, "fetch", side_effect=fetched), \
          patch.object(check, "mihomo_content_report", return_value=([], [], [])), \
-         patch.object(check, "reject_overlap_report", return_value=([], [])):
+         patch.object(check, "reject_overlap_report", return_value=([], [], [])):
         summary = Path(temp) / "summary.md"
         with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}), \
              contextlib.redirect_stdout(io.StringIO()) as output:
