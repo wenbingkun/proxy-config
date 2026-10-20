@@ -14,7 +14,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import yaml
@@ -70,6 +70,9 @@ QX_USER_AGENT = "Quantumult X"
 # kelee.one only serves requests that look like Loon on iOS (Loon plus CFNetwork/Darwin); this is
 # a string verified to work, not a guess at the server's rule.
 LOON_USER_AGENT = "Loon/3.5.2 (996) CFNetwork/3826 Darwin/25.0.0"
+# jsDelivr serves GitHub files one by one; when that fails it falls back to the whole repository,
+# which a large repo (blackmatrix7, ~4.5 GB) exceeds. Seen as a transient 403 that recovers by itself.
+JSDELIVR_SIZE_MARKER = b"Package size exceeded the configured limit"
 
 
 @dataclass(frozen=True)
@@ -91,6 +94,8 @@ class Result:
     message: str
     # Retain full provider/selected script responses for comparisons without another download.
     body: bytes = field(default=b"", repr=False)
+    # Set when the check passed only through the origin fallback; reported but never fails the run.
+    warning: str = ""
 
 
 @dataclass(frozen=True)
@@ -123,6 +128,25 @@ def redact_url(url: str) -> str:
     parsed = urllib.parse.urlsplit(url)
     query = "<redacted>" if parsed.query else ""
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, ""))
+
+
+def jsdelivr_origin_url(url: str) -> str | None:
+    """The same ref and path on raw.githubusercontent.com for a cdn.jsdelivr.net GitHub file URL."""
+    parsed = urllib.parse.urlsplit(url)
+    match = re.fullmatch(r"/gh/([^/@]+)/([^/@]+)@([^/]+)/(.+)", parsed.path)
+    if parsed.scheme != "https" or parsed.hostname != "cdn.jsdelivr.net" or not match:
+        return None
+    owner, repo, ref, path = match.groups()
+    return f"https://raw.githubusercontent.com/{owner}/{repo}/{ref}/{path}"
+
+
+def is_jsdelivr_size_error(url: str, exc: urllib.error.HTTPError) -> bool:
+    if exc.code != 403 or jsdelivr_origin_url(url) is None:
+        return False
+    try:
+        return JSDELIVR_SIZE_MARKER in exc.read(1024)
+    except (OSError, http.client.HTTPException):
+        return False
 
 
 def is_skipped_url(url: str) -> bool:
@@ -321,6 +345,7 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int, complete:
     last_error = "unknown error"
 
     for attempt in range(retries + 1):
+        size_error = False
         try:
             status, content_type, body, final_url = read_response(resource.url, headers, timeout, limit)
             if not body and "Range" in headers:
@@ -358,11 +383,21 @@ def fetch(resource: Resource, mode: str, timeout: float, retries: int, complete:
         except urllib.error.HTTPError as exc:
             last_error = f"HTTP {exc.code}"
             status = exc.code
+            size_error = is_jsdelivr_size_error(resource.url, exc)
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as exc:
             last_error = f"{exc.__class__.__name__}: {exc.reason if isinstance(exc, urllib.error.URLError) else exc}"
             status = None
         if attempt < retries:
             time.sleep(0.5 * (attempt + 1))
+
+    origin_url = jsdelivr_origin_url(resource.url)
+    if size_error and not complete and origin_url:
+        # Check the file itself at the origin: a deleted or renamed upstream file still fails.
+        origin = fetch(replace(resource, url=origin_url), mode, timeout, retries)
+        note = f"jsDelivr HTTP 403 package size fallback; origin {redact_url(origin_url)}: {origin.message}"
+        if origin.ok:
+            return replace(origin, resource=resource, warning=note)
+        last_error = note
 
     return Result(
         resource=resource,
@@ -635,22 +670,40 @@ def surge_reject_urls() -> list[str]:
     return urls
 
 
-def reject_overlap_report(timeout: float) -> tuple[list[str], list[str]]:
-    """Return (failures, warnings). Overlaps only warn; download and parse problems fail."""
+def reject_overlap_report(timeout: float) -> tuple[list[str], list[str], list[str]]:
+    """Return (failures, overlap warnings, CDN fallback warnings).
+
+    Overlaps only warn; download and parse problems fail.
+    """
     failures: list[str] = []
     warnings: list[str] = []
+    cdn_warnings: list[str] = []
     urls = surge_reject_urls()
     if not urls:
-        return [f"no REJECT RULE-SET lines in {SURGE_REJECT_MODULE.relative_to(ROOT)}"], []
+        return [f"no REJECT RULE-SET lines in {SURGE_REJECT_MODULE.relative_to(ROOT)}"], [], []
     try:
         repo = check_reject_conflicts.load_repo()
     except check_reject_conflicts.InputError as exc:
-        return [f"repo rules: {exc}"], []
+        return [f"repo rules: {exc}"], [], []
     headers = {"User-Agent": USER_AGENT, "Accept": "*/*"}
+    errors = (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException)
     for url in urls:
+        cdn_note = ""
         try:
-            status, _, body, _ = read_response(url, headers, timeout, FULL_LIMIT)
-        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as exc:
+            try:
+                status, _, body, _ = read_response(url, headers, timeout, FULL_LIMIT)
+            except urllib.error.HTTPError as exc:
+                if not is_jsdelivr_size_error(url, exc):
+                    raise
+                origin_url = jsdelivr_origin_url(url) or ""
+                fallback = f"jsDelivr HTTP 403 package size fallback; origin {redact_url(origin_url)}"
+                try:
+                    status, _, body, _ = read_response(origin_url, headers, timeout, FULL_LIMIT)
+                except errors as origin_exc:
+                    failures.append(f"{redact_url(url)}: {fallback}: {origin_exc.__class__.__name__}: {origin_exc}")
+                    continue
+                cdn_note = f"{redact_url(url)}: {fallback}: HTTP {status}"
+        except errors as exc:
             failures.append(f"{redact_url(url)}: {exc.__class__.__name__}: {exc}")
             continue
         if not 200 <= status < 300 or len(body) > FULL_LIMIT:
@@ -661,13 +714,20 @@ def reject_overlap_report(timeout: float) -> tuple[list[str], list[str]]:
         except (check_reject_conflicts.InputError, UnicodeDecodeError) as exc:
             failures.append(f"{redact_url(url)}: {exc}")
             continue
+        if cdn_note:
+            cdn_warnings.append(cdn_note)
         out = check_reject_conflicts.analyse(repo, rules)
         for kind in ("definite", "partial", "possible", "unanalysed"):
             for source, repo_rule, reject_rule in out[kind]:
                 # The module's NOT(reject_allow.list) keeps these bank/broker hosts unblocked.
                 note = " [excluded by reject_allow.list]" if source in build_rules.SURGE_REJECT_ALLOW_SOURCES else ""
                 warnings.append(f"{kind}: {reject_rule} over {repo_rule} ({source}) in {redact_url(url)}{note}")
-    return failures, warnings
+    return failures, warnings, cdn_warnings
+
+
+def annotation(message: str) -> str:
+    """Escape a GitHub Actions workflow command message."""
+    return message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
 def parse_args() -> argparse.Namespace:
@@ -713,6 +773,7 @@ def main() -> int:
     failures = sorted((result for result in results if not result.ok), key=lambda item: item.resource.url)
     overlap_failures: list[str] = []
     content_failures: list[str] = []
+    cdn_warnings: list[str] = []
     if args.mode == "full":
         script_comparisons = script_update_report(results, targets, args.timeout, args.retries, args.workers)
         emit_script_report(script_comparisons, script_failures)
@@ -725,7 +786,7 @@ def main() -> int:
             content_failures += [f"{name}: destination IP rules lack an IP-stage reference" for name in missing]
         except (ValueError, UnicodeError, yaml.YAMLError, OSError) as exc:
             content_failures = [f"not compared: {exc}"]
-        overlap_failures, overlap_warnings = reject_overlap_report(args.timeout)
+        overlap_failures, overlap_warnings, cdn_warnings = reject_overlap_report(args.timeout)
         if overlap_warnings:
             excluded = sum("[excluded by reject_allow.list]" in w for w in overlap_warnings)
             print(f"Surge REJECT lists: {len(overlap_warnings)} candidate overlaps with repo-routed rules before "
@@ -736,6 +797,18 @@ def main() -> int:
     counts: dict[str, int] = {}
     for result in results:
         counts[result.resource.kind] = counts.get(result.resource.kind, 0) + 1
+
+    warnings = [
+        f"{result.resource.kind} {redact_url(result.resource.url)}: {result.warning} ({result.resource.source})"
+        for result in sorted(results, key=lambda item: item.resource.url) if result.warning
+    ]
+    warnings += [f"surge-reject-list {message}" for message in cdn_warnings]
+    if warnings:
+        print("Remote resource warnings (jsDelivr package size fallback; the same file passed at the origin):")
+        for message in warnings:
+            print(f"  [warn] {message}")
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                print(f"::warning::{annotation(message)}")
 
     if failures or overlap_failures or content_failures or script_failures:
         print("Remote resource check failed:")
@@ -755,7 +828,8 @@ def main() -> int:
         return 1
 
     summary = ", ".join(f"{kind}={count}" for kind, count in sorted(counts.items()))
-    print(f"Remote resources OK ({len(results)} unique; {summary}; mode={args.mode}).")
+    noted = f"; {len(warnings)} warnings" if warnings else ""
+    print(f"Remote resources OK ({len(results)} unique; {summary}; mode={args.mode}{noted}).")
     return 0
 
 
