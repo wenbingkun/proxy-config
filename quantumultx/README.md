@@ -2,7 +2,7 @@
 
 > 返回 [总览](../README.md)。下文仓库命令均在仓库根目录执行。
 
-Quantumult X 采用 **本地 bootstrap + 远程 snippet** 架构，保证 MitM 证书等本地私密信息永远不会被远程配置覆盖。
+Quantumult X 是 iPhone、iPad 的备用客户端（主力是 Loon，2026-10-24 起），覆盖仍与 Loon 同步。它采用 **本地 bootstrap + 远程 snippet** 架构，保证 MitM 证书等本地私密信息永远不会被远程配置覆盖。
 
 ## 第一次配置（仅需一次）
 
