@@ -28,13 +28,34 @@ for fixture in ['amap_home_cases.js', 'amap_taxi_cases.js']:
  subprocess.run(['node', str(h/'tests/fixtures'/fixture)], check=True)
 # Cross-client rule scope and the jq expression must remain equivalent.
 import re
+# Loon plugins use the new rewrite syntax (2026-10-24, official converter): the pattern sits in /…/i with every "/"
+# escaped, so QX/Surge patterns are compared after escaping theirs; jq is a JSON string literal.
+LOON_LINE=re.compile(r'(request|response) if \$\{\w+\} == true && \$\{url\} ~= /(.+)/i then (.+)')
+QX_ACTION={'reject':'reject(404)','reject-200':'reject(200)','reject-dict':'reject_dict(200)','reject-img':'reject_img(200)'}
+def esc(p):return re.sub(r'(?<!\\)/',r'\\/',p)
+def loon_rows(path):
+ rows=[m.groups() for m in map(LOON_LINE.fullmatch,path.read_text().splitlines()) if m]
+ assert rows, path
+ return rows
+def loon_jq(action):
+ assert action.startswith('response.json.jq(') and action.endswith(')'), action
+ return json.loads(action[len('response.json.jq('):-1])
+def jq_of(path,key):
+ if path.suffix=='.plugin':return next(loon_jq(a) for ph,p,a in loon_rows(path) if ph=='response' and key in p)
+ return next(l for l in path.read_text().splitlines() if key in l and not l.startswith('#')).split("'",2)[1]
 sources = [h/'quantumultx/rewrite/StartupSupplement.conf', h/'loon/plugins/StartupSupplement.plugin', h/'surge/modules/converted/StartupSupplement.sgmodule']
 patterns=[]
 for path in sources:
- rules=[line.split(' ',1)[0] for line in path.read_text().splitlines() if line.startswith('^https')]
+ if path.suffix=='.plugin':rules=[p for _,p,_ in loon_rows(path)]
+ else:rules=[esc(line.split(' ',1)[0]) for line in path.read_text().splitlines() if line.startswith('^https')]
  assert len(rules)==10, path
  patterns.append(rules)
 assert set(patterns[0])==set(patterns[1])==set(patterns[2])
+# QX reject actions map to the converter's Loon actions, request phase only.
+for app in ['StartupSupplement','DaMai','NeteaseMail']:
+ qx={esc(l.split()[0]):QX_ACTION[l.split()[2]] for l in (h/f'quantumultx/rewrite/{app}.conf').read_text().splitlines() if l.startswith('^') and l.split()[2] in QX_ACTION}
+ loon={p:a for ph,p,a in loon_rows(h/f'loon/plugins/{app}.plugin') if ph=='request'}
+ assert qx and qx==loon, app
 sh,ehi,didi=[re.compile(next(p for p in patterns[0] if key in p)) for key in ['apiproxy', 'externalimage', 'img-ys011']]
 assert sh.search('https://apiproxy.zuche.com/resource/cardes/toufang/marketing/v1?test=1')
 for path in ['v11', 'v1/extra', 'v2']:
@@ -78,9 +99,13 @@ for app, count in [('DaMai', 6), ('NeteaseMail', 1)]:
  rules=[]
  for path in paths:
   rows={}
-  for line in path.read_text().splitlines():
-   if "'" in line and ('jsonjq-response-body' in line or 'response-body-json-jq' in line or 'http-response-jq' in line):
-    pattern=line.split()[1] if line.startswith('http-response-jq') else line.split()[0]
+  if path.suffix=='.plugin':
+   jq=[(p,loon_jq(a)) for ph,p,a in loon_rows(path) if ph=='response']
+   rows=dict(jq)
+   assert len(rows)==len(jq), path
+  for line in path.read_text().splitlines() if path.suffix!='.plugin' else []:
+   if "'" in line and ('jsonjq-response-body' in line or 'http-response-jq' in line):
+    pattern=esc(line.split()[1] if line.startswith('http-response-jq') else line.split()[0])
     assert pattern not in rows, (path,pattern)
     rows[pattern]=line.split("'",2)[1]
   assert len(rows)==count, (path,len(rows))
@@ -139,16 +164,14 @@ for path in sources:
   assert host not in hostline, (path,host)
  assert 'yunbusiness' not in text and 'jingdong[invalid]' not in text
 for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/'surge/modules/converted/DaMai.sgmodule']:
- line=next(line for line in path.read_text().splitlines() if 'aristotle' in line)
- expr=line.split("'",2)[1]
+ expr=jq_of(path,'aristotle')
  fixture={'data':{'data':{'top':{'keywords':['concert','artist']}},'nodes':[]}}
  out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
  assert out['data']['data']['top']['keywords']==['concert','artist']
 print('JD/bank MitM exclusions and Damai search-hint preservation passed.')
 
 for path in [h/'quantumultx/rewrite/DaMai.conf',h/'loon/plugins/DaMai.plugin',h/'surge/modules/converted/DaMai.sgmodule']:
- line=next(line for line in path.read_text().splitlines() if 'appglobalconfig' in line)
- expr=line.split("'",2)[1]
+ expr=jq_of(path,'appglobalconfig')
  fixture={'data':{'searchTip':{'text':'artist'},'searchTips':['concert'],'pop':{'ad':1},'business':'normal'}}
  out=json.loads(subprocess.run(['jq','-c',expr],input=json.dumps(fixture),text=True,capture_output=True,check=True).stdout)
  assert out['data']['searchTip']==fixture['data']['searchTip'] and out['data']['searchTips']==['concert']

@@ -16,8 +16,20 @@
 #   - pinned 1x https://raw.githubusercontent.com/fmz200/wool_scripts/main/ -> 5d5f63f
 #   - the amdc dispatch reject (the standalone 阿里系 amdc item handles it for every client)
 #   - added idle.ad.expose (splash ads)
-# To refresh, fetch the source at a new commit, redo these changes and send it through a PR.
+#   - 2026-10-24: one switch per feature group; [Rewrite] lines converted to Loon's new syntax with the official
+#     rewrite converter (input: main f55a1d380df3c3ad1c4631be4a7b2bdad8d6a2a3) and gated by "${switch} == true && ";
+#     [Script] lines stay classic with enable={switch}. A switch only stops this plugin.
+# To refresh, fetch the source at a new commit, redo these changes (convert [Rewrite] with the official Loon
+# rewrite converter, then re-apply the switch conditions) and send it through a PR.
 #############################################
+
+[Argument]
+xy_splash = switch,true,false,tag=开屏与广告曝光,desc=开屏广告与广告曝光上报
+xy_home = switch,true,false,tag=首页,desc=闲鱼币入口、发布球、首页信息流广告、顶部频道菜单、常访问的圈子
+xy_search = switch,true,false,tag=搜索,desc=搜索栏填充词、多余推荐列表、搜索结果信息流广告
+xy_item = switch,true,false,tag=商品详情,desc=详情页底部推荐、周边推荐、「这些宝贝超好卖」
+xy_social = switch,true,false,tag=我的、消息与关注,desc=我的页底部推荐、消息页与关注页的推荐和圈子横幅、个人主页
+xy_local = switch,true,false,tag=同城,desc=定位地区信息流广告与同城页横幅
 
 [Rule]
 DOMAIN-KEYWORD,iyes.youku.com,REJECT
@@ -25,54 +37,54 @@ DOMAIN-KEYWORD,iyes.youku.com,REJECT
 
 
 [Rewrite]
-^https?:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.idle\.ad\.expose reject-200
+request if ${xy_splash} == true && ${url} ~= /^https?:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.idle\.ad\.expose/i then reject(200)
 # 搜索页多余推荐列表
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.item\.search\.activate\/2\.0 reject-dict
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\.discover\/1\.0 reject-dict
+request if ${xy_search} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.item\.search\.activate\/2\.0/i then reject_dict(200)
+request if ${xy_search} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\.discover\/1\.0/i then reject_dict(200)
 # 这些宝贝超好卖
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.resell\.recommendorhotcate\/1\.0 reject-dict
+request if ${xy_item} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.resell\.recommendorhotcate\/1\.0/i then reject_dict(200)
 # 用闲鱼币买更便宜
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.idle\.coin\.nextfresh\/1\.0 reject-dict
+request if ${xy_home} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.idle\.coin\.nextfresh\/1\.0/i then reject_dict(200)
 # 闲鱼我的页面底部商品推荐
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.buy\.feeds reject-dict
+request if ${xy_social} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.buy\.feeds/i then reject_dict(200)
 # 消息页感兴趣推荐
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.playboy\.recommend\/1\.0 reject
+request if ${xy_social} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.playboy\.recommend\/1\.0/i then reject(404)
 # 开屏广告
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlecommerce\.splash\.ads reject-dict
+request if ${xy_splash} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlecommerce\.splash\.ads/i then reject_dict(200)
 
 # 搜索栏填充词
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\.shade\/ response-body-json-jq 'del(.data)'
+response if ${xy_search} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\.shade\//i then response.json.jq("del(.data)")
 # 首页闲鱼币入口、底部发布球
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.user\.strategy\.list\/ response-body-json-jq 'del(.data)'
+response if ${xy_home} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.user\.strategy\.list\//i then response.json.jq("del(.data)")
 # 关注的人页面圈子横幅
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.group\.myself\.banner\/ response-body-json-jq '.data.bannerList = []'
+response if ${xy_social} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.group\.myself\.banner\//i then response.json.jq(".data.bannerList = []")
 # 主页关注的人感兴趣推荐
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.playboy\.recommend\/2\.0 response-body-json-jq '.data.recommends = [] | .data.items = [] | .data.next = false'
+response if ${xy_social} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.playboy\.recommend\/2\.0/i then response.json.jq(".data.recommends = [] | .data.items = [] | .data.next = false")
 # 商品详情页底部推荐
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.recommend\.list\/ response-body-json-jq '.data.cardList = []'
+response if ${xy_item} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.item\.recommend\.list\//i then response.json.jq(".data.cardList = []")
 # 首页关注频道常访问的圈子
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.fun\.follow\.often\.visit response-body-json-jq '.data.sections = []'
+response if ${xy_home} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.fun\.follow\.often\.visit/i then response.json.jq(".data.sections = []")
 # 主页关注页面圈子新横幅
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.circle\.myself\.banner\/1\.0 response-body-json-jq '.data.bannerList = []'
+response if ${xy_social} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.circle\.myself\.banner\/1\.0/i then response.json.jq(".data.bannerList = []")
 # 主页关注页面圈子常访问
-^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.circle\.visited\/1\.0 response-body-json-jq '.data.visitedCircleList = []'
+response if ${xy_social} == true && ${url} ~= /^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.circle\.visited\/1\.0/i then response.json.jq(".data.visitedCircleList = []")
 
 
 [Script]
 # 商品信息流广告
-http-response ^https:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.nextfresh\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 商品信息流广告
+http-response ^https:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.nextfresh\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 商品信息流广告, enable={xy_home}
 # 定位地区页面的信息流广告
-http-response ^https:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.home\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 定位地区页面的信息流广告
+http-response ^https:\/\/(g-)?acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.home\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 定位地区页面的信息流广告, enable={xy_local}
 # 个人主页
-http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.idle\.user\.page\.my\.adapter\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 个人主页
+http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.idle\.user\.page\.my\.adapter\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 个人主页, enable={xy_social}
 # 首页顶部频道菜单
-http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.circle\.list\/1\.0 script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 首页顶部频道菜单
+http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.circle\.list\/1\.0 script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 首页顶部频道菜单, enable={xy_home}
 # 商品详情页周边推荐
-http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.nearby\.itemdetail\.enter\/1\.0 script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 商品详情页周边推荐
+http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.nearby\.itemdetail\.enter\/1\.0 script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 商品详情页周边推荐, enable={xy_item}
 # 搜索结果信息流广告
-http-response ^https:\/\/g-acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 搜索结果信息流广告
+http-response ^https:\/\/g-acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlemtopsearch\.search\/ script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 搜索结果信息流广告, enable={xy_search}
 # 同城页横幅广告
-http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.flow\.plat\.section script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 同城页横幅广告
+http-response ^https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idle\.local\.flow\.plat\.section script-path = https://raw.githubusercontent.com/ishowshu/qx/d38e2289f4f388dfc55aaa8f19c8d002d828f62a/script/goofish.js, requires-body = true, tag = 同城页横幅广告, enable={xy_local}
 
 
 [MITM]
