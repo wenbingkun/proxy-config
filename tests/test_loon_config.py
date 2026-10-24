@@ -343,6 +343,19 @@ MIRROR_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loo
 # it replaces Kelee's RedPaper.
 XHS_PLUGIN = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/Xiaohongshu.plugin"
 XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js"
+# Xiaohongshu switches (2026-10-24): one per feature group, keyed by a fragment of each script's pattern.
+XHS_SWITCHES = {
+    r"\/search\/(banner|hot)_list": "xhs_search", r"\/search\/(hint|trending)\?": "xhs_search",
+    r"\/search\/notes\?": "xhs_search",
+    r"\/system_service\/config\?": "xhs_splash", r"\/system_service\/splash_config": "xhs_splash",
+    r"\/note\/widgets": "xhs_widgets",
+    r"\/note\/(imagefeed|live_photo\/save)": "xhs_watermark", r"(v2\/note\/feed|v3\/note\/videofeed)": "xhs_watermark",
+    r"(v4\/note\/videofeed|v10\/note\/video\/save)": "xhs_watermark",
+    r"(v5\/note\/comment\/list|v3\/note\/comment\/sub_comments)": "xhs_watermark",
+    r"\/comment\/video\/download": "xhs_watermark",
+    r"\/(followfeed|homefeed)\?": "xhs_feed",
+    r"\/homefeed\/categories": "xhs_channels",
+}
 # WeChat (2026-10-24): one repo plugin with a switch per script; replaces Kelee's unlock plugin and the fmz200
 # official-account mirror on Loon. QX keeps WeChatUnblock.conf and the fmz200 snippet, Surge its wechat and
 # wechat-mp modules (no plugin switches there). 商品推广 (cps_product_info) is left to bm7 Advertising.
@@ -387,6 +400,18 @@ def check_fmz200_plugins(failures: list[str]) -> None:
     scripts = set(re.findall(r"script-path=([^,\s]+)", "\n".join(l for l in xhs_text.splitlines() if not l.startswith("#"))))
     if scripts != {XHS_SCRIPT}:
         failures.append(f"Xiaohongshu.plugin: scripts must be exactly [{XHS_SCRIPT}], got {sorted(scripts)}")
+    xhs_body = sections(xhs_text)
+    xhs_args = {l.split("=", 1)[0].strip(): l.split("=", 1)[1].replace(" ", "") for l in xhs_body.get("Argument", [])}
+    if set(xhs_args) != set(XHS_SWITCHES.values()) or any(not v.startswith("switch,true,false,") for v in xhs_args.values()):
+        failures.append(f"Xiaohongshu.plugin: switches must be {sorted(set(XHS_SWITCHES.values()))}, default true, got {xhs_args}")
+    xhs_scripts = xhs_body.get("Script", [])
+    if len(xhs_scripts) != len(XHS_SWITCHES):
+        failures.append(f"Xiaohongshu.plugin: expected {len(XHS_SWITCHES)} scripts, got {len(xhs_scripts)}")
+    for line in xhs_scripts:
+        want = {sw for frag, sw in XHS_SWITCHES.items() if frag in line.split()[1]}
+        got = re.findall(r"enable=\{(\w+)\}", line)
+        if len(want) != 1 or got != list(want):
+            failures.append(f"Xiaohongshu.plugin: {line.split()[1]} must have enable={{{sorted(want)}}}, got {got}")
     for name in FMZ200_MIRRORS:
         path = ROOT / "loon" / "plugins" / f"fmz200-{name}.plugin"
         text = path.read_text(encoding="utf-8") if path.exists() else ""
