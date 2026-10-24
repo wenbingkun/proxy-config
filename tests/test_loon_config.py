@@ -381,8 +381,9 @@ def check_fmz200_plugins(failures: list[str]) -> None:
         if state not in line.split(",", 1)[1].replace(" ", ""):
             failures.append(f"loon: fmz200 plugin must have {state} (off until checked on the device): {line.split(',')[0]}")
     xhs = [l for l in plugin if l.split(",")[0].strip() == XHS_PLUGIN]
-    if len(xhs) != 1 or "enabled=false" not in xhs[0].replace(" ", ""):
-        failures.append("loon: Xiaohongshu.plugin must be listed once and stay off until checked on the device")
+    # Accepted on the device on 2026-10-24 (v2 script, six switches), so on by default.
+    if len(xhs) != 1 or "enabled=true" not in xhs[0].replace(" ", ""):
+        failures.append("loon: Xiaohongshu.plugin must be listed once and on (accepted on the device)")
     amdc = [l for l in plugin if l.split(",")[0].strip() == XHS_PLUGIN.replace("Xiaohongshu.plugin", "AlibabaAmdc.plugin")]
     if len(amdc) != 1 or "enabled=false" not in amdc[0].replace(" ", ""):
         failures.append("loon: AlibabaAmdc.plugin must be listed once and stay off until checked on the device")
@@ -424,8 +425,9 @@ def check_fmz200_plugins(failures: list[str]) -> None:
 def check_wechat_plugin(failures: list[str]) -> None:
     plugin = sections(LOON_CONFIG.read_text(encoding="utf-8")).get("Plugin", [])
     wechat = [l for l in plugin if l.split(",")[0].strip() == WECHAT_PLUGIN]
-    if len(wechat) != 1 or "enabled=false" not in wechat[0].replace(" ", ""):
-        failures.append("loon: WeChat.plugin must be listed once and stay off until checked on the device")
+    # Accepted on the device on 2026-10-24 (both switches checked on and off), so on by default.
+    if len(wechat) != 1 or "enabled=true" not in wechat[0].replace(" ", ""):
+        failures.append("loon: WeChat.plugin must be listed once and on (accepted on the device)")
     for old in ("Weixin_external_links_unlock", "fmz200-WeChatOfficialAccount"):
         if any(old in l for l in plugin):
             failures.append(f"loon: {old} was replaced by loon/plugins/WeChat.plugin")
