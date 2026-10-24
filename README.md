@@ -6,9 +6,9 @@
 
 | 客户端 | 设备 | 加载方式 | 文档 |
 |---|---|---|---|
-| Quantumult X | iPhone / iPad | 本地 bootstrap + 远程 snippet | [quantumultx/](quantumultx/README.md) |
-| Loon（试点） | iPhone | 本地 bootstrap + 远程规则 / 插件 | [loon/](loon/README.md) |
-| Surge（试点） | iPhone | 托管配置 + 本地分离配置 + 模块 | [surge/](surge/README.md) |
+| Quantumult X（备用） | iPhone / iPad | 本地 bootstrap + 远程 snippet | [quantumultx/](quantumultx/README.md) |
+| Loon（主力） | iPhone / iPad | 本地 bootstrap + 远程规则 / 插件 | [loon/](loon/README.md) |
+| Surge（试用结束，已冻结） | iPhone | 托管配置 + 本地分离配置 + 模块 | [surge/](surge/README.md) |
 | Clash Verge Rev | Windows | 本地主配置 + rule-providers | [mihomo/verge/](mihomo/verge/README.md) |
 | ShellCrash | 路由器 | 公开策略模板 + 路由器本地注入订阅 | [mihomo/shellcrash/](mihomo/shellcrash/README.md) |
 

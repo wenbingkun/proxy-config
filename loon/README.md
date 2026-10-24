@@ -1,8 +1,8 @@
-# Loon（iPhone，试点）
+# Loon（iPhone / iPad，主力）
 
 > 返回 [总览](../README.md)。下文仓库命令均在仓库根目录执行。
 
-Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去广告；QX 保留为回滚方案，两者不要同时开启 VPN。与 QX 相同，采用**本地 bootstrap + 远程规则**：模板 `loon/bootstrap.example.conf` 进 Git，填好私密信息的 `loon/bootstrap.conf` 只留在本地。
+Loon 是 iPhone、iPad 的主力客户端（2026-10-24 起；最初的试点用来验证 HTTP/2 MitM 下的哔哩哔哩去广告）；QX 为备用，两者不要同时开启 VPN。与 QX 相同，采用**本地 bootstrap + 远程规则**：模板 `loon/bootstrap.example.conf` 进 Git，填好私密信息的 `loon/bootstrap.conf` 只留在本地。
 
 ## 第一次配置
 
@@ -22,7 +22,7 @@ Loon 目前是试点客户端，用来验证 HTTP/2 MitM 下的哔哩哔哩去�
 
 配置不使用 `ssid-trigger`，全程保持规则模式。策略页上方的 32 个组与 QX 同名同序，在这些组里选择节点。规则和插件实际引用的是排在最后的 16 个「· 自动」ssid 组（如 🤖 人工智能 · 自动、🐟 兜底分流 · 自动、🇭🇰 香港节点 · 自动）：连上家里 Wi-Fi 时走 DIRECT，由路由器负责代理；其他网络时走同名的 QX 组。「· 自动」组里没有需要选择的内容。Loon 不能隐藏策略组，所以把它们放在最后。这样在家时，规则层的广告拦截（🛡️ 安全防护）、插件改写和 MitM 仍然生效，而路由器已经不再拦截广告。配置的目标是在家时 DNS 通过 `ssid:HOME_SSID = server:system` 交给路由器；它与按域名指定的 DNS 映射谁优先，官方文档没有说明，要以请求记录中的实际上游为准。
 
-## 试点验收（日常使用前）
+## 新设备验收（日常使用前）
 
 1. SSID 切换：在家里 Wi-Fi 和蜂窝网络下分别访问一个会走代理的网站。请求记录中，「· 自动」组在家应为 DIRECT，在外应为同名 QX 组所选的节点。
 2. 规则加载：`[Remote Rule]` 中每个列表的条数都不为 0，`geoip_cn.list` 应为 1 条。

@@ -8,9 +8,18 @@
 |---|---|---|
 | 路由器 Mihomo `/logs` 流 | iPhone 进入 Mihomo 内核的每条新连接：源端口、主机、命中规则、策略链；拨号失败等告警 | iPhone 在家庭 Wi-Fi；QX / Loon / Surge 在家都把流量交给路由器。ShellCrash 让国内域名和 IP 绕过内核，**国内流量（如 B 站、微信）看不到**（2026-10-04 实测）。只按 `DEVICE_IPS` 过滤时，iPhone 经临时 IPv6 地址发出的连接看不到；配置下文的 IPv6 归属后可以看到 |
 | 路由器 `/connections` | 采集时仍打开的连接：远端 IP、DNS 模式、流量 | 同上 |
-| Surge HTTP API | 每个请求的规则、策略、notes（DNS、规则评估、错误）、耗时，以及 DNS 缓存、事件、模块；`/v1/requests/recent` 只保留最近 50 条，记录器每 2 秒轮询 | Surge 是当前 VPN，启用本地模块 `netdiag-api.sgmodule`；iPhone 在家庭局域网，或用数据线连电脑（蜂窝网络也可） |
+| Surge HTTP API（**当前未使用**：Surge 2026-10-24 起冻结） | 每个请求的规则、策略、notes（DNS、规则评估、错误）、耗时，以及 DNS 缓存、事件、模块；`/v1/requests/recent` 只保留最近 50 条，记录器每 2 秒轮询 | Surge 是当前 VPN，启用本地模块 `netdiag-api.sgmodule`；iPhone 在家庭局域网，或用数据线连电脑（蜂窝网络也可） |
 
 QX 和 Loon 没有可供外部读取请求记录的接口：QX 的 `$configuration` 和 Loon 的 `$config` 只提供策略选择、运行模式、流量统计和 DNS 缓存操作，请求列表和日志只在 App 内查看。因此 QX / Loon 的诊断依靠路由器视角，而且只覆盖进入内核的境外流量：在家时，被 App 拒绝的请求不会出现在路由器上，出现的请求由路由器规则决定出口；国内流量在 QX / Loon 上没有可自动获取的数据。蜂窝网络和外部 Wi-Fi 下，QX / Loon 没有可自动获取的数据，需要回家复现，或在 Surge 中复现。
+
+Surge 冻结后，Loon 内部的规则、改写和脚本执行可以用**临时局域网诊断插件**查看（2026-10-24 用过）：插件里的脚本用 `$httpClient.post` 把指定接口的请求或响应摘要发回 WSL 上的接收端，接收端路径带随机 token。它不能替代 Surge 的逐请求 API：
+
+- 只覆盖事先写进插件的接口，不是通用请求记录；
+- 每次都要用户同意在局域网开放端口，用完删除插件、停止接收端；
+- Loon 把新插件放在列表最前，诊断规则如果匹配正式插件的同一地址，会挡住正式插件，所以只选正式插件不碰的接口，或只在请求阶段匹配；
+- Loon 的 `bypass-tun` 包含局域网网段，探测请求要用公网域名（如 example.com，加入插件 MitM），不能直接访问局域网 IP。
+
+本机材料在 `.local/loon/2026-10-24-xhs-weixin-splash/diag/`，不进仓库。
 
 本次采集未获得可用于逐请求网络诊断的 iOS 系统日志（2026-10-04，iOS 27.2，`pymobiledevice3 syslog live`，默认日志级别）：Surge、Loon、QX 三个隧道进程（Surge-iOS-NE、LoonTunnelProvider、Quantumult X Tunnel）的采集结果中只见系统框架日志，域名显示为 `<private>`，没有 App 自己的逐请求记录；Loon 主 App 自己的日志同样被隐去。这一结论只针对这条采集路线，不推广到其他版本、日志级别或采集方法。
 

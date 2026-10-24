@@ -1,8 +1,10 @@
-# Surge（iPhone，试点）
+# Surge（iPhone，已冻结）
 
 > 返回 [总览](../README.md)。下文仓库命令均在仓库根目录执行。
 
-Surge 是试用中的第四个客户端，与 Loon、QX 不要同时开启 VPN。结构是**托管配置 + 本地分离配置**：
+> **2026-10-24 起冻结**：试用 7 天后暂不购买。不再新增或更新 App 改写模块（`SOURCES` 的固定版本、`modules/converted/` 冻结转换件保持不动）；规则层和策略组随仓库照常更新，测试继续保证配置可用。冻结的是 Surge 专用适配，不是整个依赖闭包：例如 `modules/rewrite/xiaohongshu.sgmodule` 仍引用仓库 `main` 上与 QX、Loon 共用的脚本，共享脚本改动时这里也会变。恢复使用时按下文安装，并重新做真机验收，不沿用 2026-10 的验收结论。见 [AGENTS.md](../AGENTS.md)。
+
+Surge 曾是试用中的第四个客户端，与 Loon、QX 不要同时开启 VPN。结构是**托管配置 + 本地分离配置**：
 
 - 仓库托管 `surge/proxy-config.conf`，内含 `[General]`、`[Proxy Group]`、`[Rule]`、`[Host]`，设备会自动更新它；
 - 设备上的 `bootstrap.conf` 用 `#!include` 引用这几段，节点、MitM、家庭 SSID、机场 DNS 留在本地。

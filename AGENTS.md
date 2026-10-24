@@ -8,9 +8,9 @@
 
 | 线 | 目录 | 设备 |
 |---|---|---|
-| Quantumult X | `quantumultx/` | iPhone、iPad |
-| Loon（试点，QX 为回滚方案） | `loon/` | iPhone |
-| Surge（试点） | `surge/` | iPhone |
+| Quantumult X（备用） | `quantumultx/` | iPhone、iPad |
+| Loon（主力） | `loon/` | iPhone、iPad |
+| Surge（2026-10-24 起冻结，见下） | `surge/` | iPhone |
 | Mihomo | `mihomo/verge/`（Windows Clash Verge Rev）、`mihomo/shellcrash/`（路由器 ShellCrash） | Windows、路由器 |
 
 共享：`rules/`（规则源）、`mihomo/rules/`（生成的 rule-provider，Verge 与路由器共用）、`scripts/`（生成与巡检）、`tests/`、`docs/design.md`。各端用法写在各自目录的 `README.md`，根 README 只做导航。
@@ -38,7 +38,7 @@ sh scripts/check_all.sh
 
 ## 各端约定（改动前先读，别“补齐”有意的差异）
 
-去广告以各端能力相近为目标，优先采用适合该客户端的原生实现，不为统一来源替换已验证方案。当前 Loon 高德保留可莉插件；新增补充前先核对现有覆盖，避免同一 App 出现容易混淆的重复条目。以效果优先，不禁止墨鱼来源；回取的公开资源与脚本固定完整提交，个人站点内容仅用审核后的冻结副本。每 App/服务每端只保留一个启用的专用入口；仅去开屏规则可合入共用补充，阿里系 amdc 独立。QX 同一混合资源双段加载算一个入口。
+去广告以 QX、Loon 两端能力相近为目标（Surge 已冻结，不再要求跟进），优先采用适合该客户端的原生实现，不为统一来源替换已验证方案。当前 Loon 高德保留可莉插件；新增补充前先核对现有覆盖，避免同一 App 出现容易混淆的重复条目。以效果优先，不禁止墨鱼来源；回取的公开资源与脚本固定完整提交，个人站点内容仅用审核后的冻结副本。每 App/服务每端只保留一个启用的专用入口；仅去开屏规则可合入共用补充，阿里系 amdc 独立。QX 同一混合资源双段加载算一个入口。
 
 **策略组**：以路由器模板为基准，三端的 32 个基础策略组组名、组序一致；QX 与 Loon 另有 16 个 ssid 包装组（见下）。
 - 家庭/外出切换（QX、Loon 相同）：需要区分的策略由排在最后的 16 个「· 自动」ssid 组包装，在家走 DIRECT 交给路由器，外出（其他 Wi-Fi、蜂窝）走同名基础组；规则只引用包装组。REJECT、DIRECT、`🛡️ 安全防护` 等不需要切换的策略不包装。全程规则模式：Loon 不用 `ssid-trigger`，QX 不用 `running_mode_trigger` / `ssid_suspended_list`。包装组清单唯一来源是 `scripts/build_rules.py` 的 `HOME_AUTO_GROUPS`（同时决定 `repo.snippet` 的策略名），`tests/test_qx_config.py` 与 `tests/test_loon_config.py` 校验两端模板与之一致。
@@ -62,6 +62,7 @@ sh scripts/check_all.sh
 - 插件图标（`#!icon`）只用小 PNG，不用 GIF：2026-10-05 fmz200 插件的 560 KB 动图图标让 Loon 插件页一直转圈，换成 App Store 的 100×100 PNG（几 KB，`scripts/build_loon_plugins.py` 的 `ICONS`）后真机确认恢复正常。`tests/test_loon_config.py` 拒绝非 PNG 图标；新托管插件要在 `ICONS` 登记对应 App 的图标。QX 的 `img-url` 等其他客户端的图标同样用小 PNG。
 
 **Surge**
+- **2026-10-24 起冻结**（试用结束、暂不购买）：不新增、不更新 App 改写模块，`SOURCES` 的固定版本和 `converted/` 冻结转换件保持不动；规则层（`surge/rules/`、`proxy-config.conf` 的 RULE-SET 行与策略组）和测试照常维护，新增规则集仍要加一行。冻结的是 Surge 专用适配，不是整个依赖闭包：例如小红书模块仍引用仓库 `main` 上的共享脚本。恢复使用时重新做真机验收。以后 QX、Loon 的规则或 jq 内容首次与 Surge 产生差异时，在那次改动里把三端相等的断言拆成两端一致与 Surge 冻结基线，不去改冻结的 Surge。
 - 结构是托管配置 `surge/proxy-config.conf`（公开段）加设备上的 `bootstrap.conf`（`#!include` 公开段，节点、MitM、SSID、机场 DNS 留在本地）。31 个组与 Loon 同名同序，**有意没有** 16 个「· 自动」包装组和 `🛡️ 安全防护`，`HOME_AUTO_GROUPS` 不适用于 Surge。
 - 家庭切换与拦截都在 `surge/modules/home-direct.sgmodule`：两条 `AND(RULE-SET 拒绝列表, NOT RULE-SET reject_allow.list)` 拒绝规则（`pre-matching`；`extended-matching` 写在每个 RULE-SET 子规则上，不写在外层）在前，`SUBNET,SSID:{{{HOME_SSID}}},DIRECT` 在后。UDP 没有预匹配阶段，所以顺序不能颠倒，且这个模块要排在其他含 REJECT 的模块之后。`home-direct-noblock.sgmodule` 只有 SUBNET 一行，用作误拦截时的整体放行开关，二选一启用。
 - 拒绝列表排在仓库规则之前（与 QX / Loon 相反）。重叠情况由 `scripts/check_reject_conflicts.py` 报告；巡检里只告警，输入或下载错误才算失败。金融保护靠 `reject_allow.list`（由 `hk_banks.yaml` + `intl_brokers.yaml` 生成），不要手写例外。
@@ -89,7 +90,7 @@ sh scripts/check_all.sh
 3. 审核通过后在功能分支提交（Conventional Commits，如 `fix(loon): …`），开 PR，CI 全绿。合并默认由用户另行安排 Codex 完成（不属于只读审核阶段）；只有用户当次明确授权，代理才自行 squash 合并并删除分支。
 4. 涉及设备（QX、Loon iCloud 配置、Verge 配置副本、路由器）时：先备份、写入前核对哈希，只替换必要的行，保留订阅、MitM、节点选择和设备覆写。设备行为的结论要能重复验证。
 5. 只做当前任务需要的最小改动。发现范围外的问题，记为后续事项，不顺手修改。
-6. 排查 iPhone 网络问题（用户说“分析刚才的网络行为”）时，先用 `scripts/netdiag.py status` 和 `collect --since <窗口>` 取数据，别让用户截图转述；数据来源、能力边界和约定见 `docs/netdiag.md`。
+6. 排查 iPhone 网络问题（用户说“分析刚才的网络行为”）时，先用 `scripts/netdiag.py status` 和 `collect --since <窗口>` 取数据，别让用户截图转述；数据来源、能力边界和约定见 `docs/netdiag.md`。Surge 冻结后它的 HTTP API 不再可用，只剩路由器视角；Loon 内部的规则、改写和脚本执行要看时，用临时局域网诊断插件（见 `docs/netdiag.md`，需要用户同意开放端口）。
 7. 产物放置：本条仅约束不纳入版本控制的本机辅助产物；正式源码、测试、文档和发布生成物仍按仓库现有目录与生成规则管理。本项目专用的一次性脚本、临时测试工具、下载的依赖与数据（如本地跑 `tests/test_shellcrash_override.py` 用的核心、mmdb）、虚拟环境、采样、日志、PR 正文草稿、取证与回滚材料放在 `.local/`：按任务归档到 `.local/<area>/<日期-主题>/`，跨任务复用的放 `.local/tools/`。多个项目通用的工具按用户全局约定放置，不放进本仓库。都不散落在 `~`、`~/workspace` 等用户目录。临时文件用 `tempfile.TemporaryDirectory()` 或在 `.local/` 下建目录，任务结束前删除本任务创建且不再使用的路径，不在 `/tmp` 遗留（不等于清空共享的 `/tmp`）。例外只限系统或工具规定的位置：`~/.ssh/` 的密钥、systemd 用户服务单元、`docs/netdiag.md` 写明的 netdiag 配置与记录目录；现有 netdiag USB 环境 `~/.local/share/ios-netdiag/venv` 被服务单元和入口脚本固化，作为有限例外保留，下次重建时再迁到 `.local/tools/`（按原版本重建、验证、更新配置和服务单元，验收前保留旧环境）。云端会话按第 2 条不建 `.local/`，辅助产物放系统临时目录；需要交付的结论先写进回复，再删除临时副本。
 
 ## 隐私与安全（公开仓库）
