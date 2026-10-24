@@ -2,6 +2,7 @@
 """Static checks for loon/bootstrap.example.conf and the Loon rule lists."""
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -460,6 +461,84 @@ def check_wechat_plugin(failures: list[str]) -> None:
         failures.append(f"WeChat.plugin: unexpected MitM hosts {sorted(hosts)}")
 
 
+# Plugin switches (2026-10-24): [Rewrite] converted to Loon's new syntax (3.5.1+) with the official converter, each
+# line gated by one switch; classic [Script] lines carry enable={switch}. switch -> (rewrite + script lines, pattern
+# fragments). A switch only stops its own plugin; bm7 Advertising still rejects some of the same requests.
+SWITCHED_PLUGINS = {
+    "StartupSupplement": {
+        "ss_zuche": (1, [r"apiproxy\.zuche\.com"]), "ss_1hai": (1, [r"externalimage\.1hai\.cn"]),
+        "ss_didi": (3, [r"img-ys011\.didistatic\.com", r"res\.xiaojukeji\.com"]),
+        "ss_alibaba_ads": (1, [r"advertisementservice\.getadv"]), "ss_1688": (1, [r"cbu\.app\.homepage\.startup"]),
+        "ss_taobao": (1, [r"home\.splash\.awesome\.get"]), "ss_pdd": (1, [r"cappuccino\/splash"]),
+        "ss_dewu": (1, [r"app\/advertisement\/"]),
+    },
+    "XianYu": {
+        "xy_splash": (2, [r"idle\.ad\.expose", r"splash\.ads"]),
+        "xy_home": (5, [r"coin\.nextfresh", r"user\.strategy\.list", r"follow\.often\.visit",
+                        r"idlehome\.home\.nextfresh", r"home\.circle\.list"]),
+        "xy_search": (4, [r"search\.activate", r"search\.discover", r"search\.shade", r"idlemtopsearch\.search\/"]),
+        "xy_item": (3, [r"item\.recommend\.list", r"recommendorhotcate", r"nearby\.itemdetail"]),
+        "xy_social": (7, [r"item\.buy\.feeds", r"playboy\.recommend\/1", r"playboy\.recommend\/2",
+                          r"group\.myself\.banner", r"circle\.myself\.banner", r"circle\.visited",
+                          r"user\.page\.my\.adapter"]),
+        "xy_local": (2, [r"idle\.local\.home", r"local\.flow\.plat"]),
+    },
+    "DaMai": {
+        "dm_splash": (2, [r"home\.welcome", r"popup\.get"]),
+        "dm_home": (5, [r"home\.float", "querypreloadadvlist", "aristotle", "appglobalconfig",
+                        "loadwantshowlotteryanimationurl"]),
+        "dm_my": (1, [r"user\.my\.content"]),
+    },
+    "NeteaseMail": {
+        "nm_ads": (2, ["mmad", "searchMultiAds|showAds"]), "nm_task": (1, ["task-center"]),
+        "nm_config": (3, [r"function\.do", "getRegConfig", r"api\/page"]),
+    },
+}
+NEW_REWRITE = re.compile(r"(request|response) if \$\{(\w+)\} == true && \$\{url\} ~= /(.+)/i then (.+)")
+# reject only in the request phase, jq only in the response phase (the converter's mappings).
+PHASE_ACTIONS = {
+    "request": re.compile(r"reject\((?:200|404)\)|reject_dict\(200\)|reject_img\(200\)"),
+    "response": re.compile(r'response\.json\.jq\(("(?:[^"\\]|\\.)*")\)'),
+}
+
+
+def check_switched_plugins(failures: list[str]) -> None:
+    for name, switches in SWITCHED_PLUGINS.items():
+        body = sections((ROOT / "loon" / "plugins" / f"{name}.plugin").read_text(encoding="utf-8"))
+        args = {l.split("=", 1)[0].strip(): l.split("=", 1)[1].replace(" ", "") for l in body.get("Argument", [])}
+        if set(args) != set(switches) or any(not v.startswith("switch,true,false,") for v in args.values()):
+            failures.append(f"{name}.plugin: switches must be {sorted(switches)}, default true, got {args}")
+
+        def owner(pattern: str) -> str | None:
+            hits = [sw for sw, (_, frags) in switches.items() if any(f in pattern for f in frags)]
+            return hits[0] if len(hits) == 1 else None
+
+        used = dict.fromkeys(switches, 0)
+        for line in body.get("Rewrite", []):
+            m = NEW_REWRITE.fullmatch(line)
+            if not m:
+                failures.append(f"{name}.plugin: rewrite must be '<phase> if ${{switch}} == true && ${{url}} ~= /…/i then …': {line}")
+                continue
+            phase, sw, pattern, action = m.groups()
+            if sw != owner(pattern):
+                failures.append(f"{name}.plugin: {pattern} must be gated by {owner(pattern)}, got {sw}")
+            act = PHASE_ACTIONS[phase].fullmatch(action)
+            if not act:
+                failures.append(f"{name}.plugin: {phase} cannot run {action}")
+            elif act.groups() and act.group(1) and not json.loads(act.group(1)).strip():
+                failures.append(f"{name}.plugin: empty jq in {line}")
+            used[sw] = used.get(sw, 0) + 1
+        for line in body.get("Script", []):
+            enable = re.findall(r"enable=\{(\w+)\}", line.replace(" ", ""))
+            if len(enable) != 1 or enable[0] != owner(line.split()[1]):
+                failures.append(f"{name}.plugin: {line.split()[1]} needs one enable={{{owner(line.split()[1])}}}, got {enable}")
+                continue
+            used[enable[0]] += 1
+        want = {sw: count for sw, (count, _) in switches.items()}
+        if used != want:
+            failures.append(f"{name}.plugin: switched lines per switch must be {want}, got {used}")
+
+
 def check_plugin_icons(failures: list[str]) -> None:
     # Loon kept spinning on fmz200's 560 KB GIF icon (2026-10-05). Hosted plugins use small PNG icons.
     for path in sorted((ROOT / "loon" / "plugins").glob("*.plugin")):
@@ -514,6 +593,7 @@ def main() -> int:
     check_hosted_plugins(failures)
     check_fmz200_plugins(failures)
     check_wechat_plugin(failures)
+    check_switched_plugins(failures)
     check_plugin_icons(failures)
     check_generator(failures)
     if failures:
