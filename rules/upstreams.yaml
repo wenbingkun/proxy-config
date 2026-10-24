@@ -37,10 +37,6 @@ exceptions:
   reason: Retain the existing native Loon implementation; no cross-client mirroring.
 - client: loon
   field: plugin
-  url: https://kelee.one/Tool/Loon/Lpx/Weixin_external_links_unlock.lpx
-  reason: Retain the existing native Loon implementation; no cross-client mirroring.
-- client: loon
-  field: plugin
   url: https://kelee.one/Tool/Loon/Lpx/YouTube_remove_ads.lpx
   reason: Retain the existing native Loon implementation; no cross-client mirroring.
 - client: loon

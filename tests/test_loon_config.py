@@ -331,15 +331,27 @@ def check_hosted_plugins(failures: list[str]) -> None:
 # device check. Hosted as mirrors that only swap the icon (scripts/build_loon_plugins.py). Written out
 # here so that editing the template or the generator cannot move the expectation with it.
 FMZ200_COMMIT = "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97"
-FMZ200_PLUGINS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban",
+FMZ200_MIRRORS = {"WeChatOfficialAccount", "Meituan-MeituanWaimai", "Hupu", "Mijia", "MaoYan", "LeKe", "Douban",
                   "ChinaMobile", "XiaoYuZhou"}
+# The WeChatOfficialAccount mirror stays published (2026-10-24), but the template loads WeChat.plugin instead.
+FMZ200_PLUGINS = FMZ200_MIRRORS - {"WeChatOfficialAccount"}
 # Mirrors accepted on the device are on by default (2026-10-05).
 FMZ200_ACCEPTED = {"XiaoYuZhou"}
 MIRROR_URL = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/fmz200-"
 # Xiaohongshu (2026-10-05): fmz200's plugin, hosted with every script pointed at the repo's copy of
-# xiaohongshu.js (home feed video notes and the 视频 channel removed); it replaces Kelee's RedPaper.
+# xiaohongshu.js, now xiaohongshu-channels-v2.js (home feed video notes and the 视频/直播/短剧/热点 channels removed);
+# it replaces Kelee's RedPaper.
 XHS_PLUGIN = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/Xiaohongshu.plugin"
-XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js"
+XHS_SCRIPT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js"
+# WeChat (2026-10-24): one repo plugin with a switch per script; replaces Kelee's unlock plugin and the fmz200
+# official-account mirror on Loon. QX keeps WeChatUnblock.conf and the fmz200 snippet, Surge its wechat and
+# wechat-mp modules (no plugin switches there). 商品推广 (cps_product_info) is left to bm7 Advertising.
+WECHAT_PLUGIN = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/WeChat.plugin"
+WECHAT_SCRIPTS = {
+    "wx_unblock": "https://raw.githubusercontent.com/zZPiglet/Task/0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js",
+    "wx_mp_ads": "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/wechat-mp.js",
+}
+BM7_ADVERTISING = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/Loon/Advertising/Advertising.plugin"
 
 
 def check_fmz200_plugins(failures: list[str]) -> None:
@@ -375,13 +387,50 @@ def check_fmz200_plugins(failures: list[str]) -> None:
     scripts = set(re.findall(r"script-path=([^,\s]+)", "\n".join(l for l in xhs_text.splitlines() if not l.startswith("#"))))
     if scripts != {XHS_SCRIPT}:
         failures.append(f"Xiaohongshu.plugin: scripts must be exactly [{XHS_SCRIPT}], got {sorted(scripts)}")
-    for name in FMZ200_PLUGINS:
+    for name in FMZ200_MIRRORS:
         path = ROOT / "loon" / "plugins" / f"fmz200-{name}.plugin"
         text = path.read_text(encoding="utf-8") if path.exists() else ""
         if f"# Source: https://raw.githubusercontent.com/fmz200/wool_scripts/{FMZ200_COMMIT}/Loon/plugin/split/" not in text:
             failures.append(f"{path.name}: must be a mirror of fmz200 at {FMZ200_COMMIT}")
         if "script-path" in text:
             failures.append(f"{path.name}: the reviewed fmz200 plugins must not run scripts")
+
+
+def check_wechat_plugin(failures: list[str]) -> None:
+    plugin = sections(LOON_CONFIG.read_text(encoding="utf-8")).get("Plugin", [])
+    wechat = [l for l in plugin if l.split(",")[0].strip() == WECHAT_PLUGIN]
+    if len(wechat) != 1 or "enabled=false" not in wechat[0].replace(" ", ""):
+        failures.append("loon: WeChat.plugin must be listed once and stay off until checked on the device")
+    for old in ("Weixin_external_links_unlock", "fmz200-WeChatOfficialAccount"):
+        if any(old in l for l in plugin):
+            failures.append(f"loon: {old} was replaced by loon/plugins/WeChat.plugin")
+    bm7 = [l for l in plugin if l.split(",")[0].strip() == BM7_ADVERTISING]
+    if len(bm7) != 1 or "enabled=true" not in bm7[0].replace(" ", ""):
+        failures.append("loon: bm7 Advertising must stay on (it rejects WeChat cps_product_info)")
+    text = (ROOT / "loon" / "plugins" / "WeChat.plugin").read_text(encoding="utf-8")
+    body = sections(text)
+    args = {l.split("=", 1)[0].strip(): l.split("=", 1)[1].replace(" ", "") for l in body.get("Argument", [])}
+    if set(args) != set(WECHAT_SCRIPTS) or any(not v.startswith("switch,true,false,") for v in args.values()):
+        failures.append(f"WeChat.plugin: switches must be exactly {sorted(WECHAT_SCRIPTS)}, default true, got {args}")
+    scripts = body.get("Script", [])
+    got = {}
+    for line in scripts:
+        enable = re.findall(r"enable=\{(\w+)\}", line)
+        path = re.findall(r"script-path=([^,\s]+)", line)
+        if len(enable) != 1 or len(path) != 1:
+            failures.append(f"WeChat.plugin: each script needs one script-path and one enable={{switch}}: {line}")
+            continue
+        got[enable[0]] = (path[0], line.split()[1])
+    if {k: v[0] for k, v in got.items()} != WECHAT_SCRIPTS or len(scripts) != len(WECHAT_SCRIPTS):
+        failures.append(f"WeChat.plugin: scripts must be {WECHAT_SCRIPTS}, got {got}")
+    mp = got.get("wx_mp_ads", ("", ""))[1]
+    if "getappmsgad" not in mp or re.search(mp, "https://mp.weixin.qq.com/mp/cps_product_info?action=x"):
+        failures.append(f"WeChat.plugin: the official-account script must match getappmsgad only, got {mp}")
+    if any(body.get(s) for s in ("Rewrite", "Rule")):
+        failures.append("WeChat.plugin: rules outside [Script] cannot be switched")
+    hosts = {h.strip() for l in body.get("MITM", []) for h in l.split("=", 1)[1].split(",")}
+    if hosts != {"weixin110.qq.com", "security.wechat.com", "mp.weixin.qq.com"}:
+        failures.append(f"WeChat.plugin: unexpected MitM hosts {sorted(hosts)}")
 
 
 def check_plugin_icons(failures: list[str]) -> None:
@@ -437,6 +486,7 @@ def main() -> int:
     check_runtime(loon, failures)
     check_hosted_plugins(failures)
     check_fmz200_plugins(failures)
+    check_wechat_plugin(failures)
     check_plugin_icons(failures)
     check_generator(failures)
     if failures:

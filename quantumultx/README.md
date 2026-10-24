@@ -51,7 +51,7 @@ hostname =   需要解密的域名列表（如 *.example.com）
 | 微博、闲鱼 | `rewrite/fmz200-Weibo.snippet`、`rewrite/fmz200-XianYu.snippet`；微博含分流，需两处加载；闲鱼只有重写，加载到分流会报空资源错误 |
 | 网易邮箱、大麦、航旅纵横 | `rewrite/NeteaseMail.conf`、`rewrite/DaMai.conf`、`rewrite/Umetrip.conf` |
 | Safari、YouTube、微信外链 | `rewrite/QSearch.conf`、`rewrite/YouTube.conf`、`rewrite/WeChatUnblock.conf` |
-| 小红书、知乎、小宇宙 | 仓库 `rewrite/fmz200-*.snippet`；小宇宙保留 AI 总结、正常搜索和推荐，小红书首页去视频笔记与视频频道 |
+| 小红书、知乎、小宇宙 | 仓库 `rewrite/fmz200-*.snippet`；小宇宙保留 AI 总结、正常搜索和推荐，小红书首页去视频笔记与视频、直播、短剧、热点频道（`xiaohongshu-channels-v2.js`） |
 | 阿里系 amdc | `rewrite/AlibabaAmdc.conf`，其他专用入口不再带 amdc |
 | 共用开屏补充 | `rewrite/StartupSupplement.conf`：神州、滴滴、一嗨、1688、拼多多、淘宝、得物；航旅 startup/discardrp 归航旅入口 |
 
