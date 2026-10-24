@@ -78,6 +78,7 @@ jobs:
               "tests/test_surge_config.py",
               "tests/test_umetrip_script.py",
               "tests/test_xiaohongshu_script.py",
+              "tests/test_wechat_mp_script.py",
               "tests/test_amdc_script.py",
               "tests/test_app_ad_cleanup.py",
               "tests/test_amap_script.py",

@@ -14,11 +14,19 @@
 # removed, non-JSON bodies passed through); one rule added for /v6/homefeed/categories (the channel
 # list, which upstream does not match); #!icon is the app's App Store icon (upstream: a 560 KB GIF).
 # Replaces Kelee's RedPaper plugin on Loon (2026-10-05) so the three clients share one script.
+# 2026-10-24: script URLs moved to xiaohongshu-channels-v2.js, which also removes the 热点 channel (homefeed.hot).
+# 2026-10-24: the single 小红书-脚本开关 is split into six switches, one per feature group, each on its own
+# script lines; [Rule] and [Rewrite] stay always on (classic lines there cannot take a switch).
 # To refresh, fetch the source at a new commit, redo these changes and send it through a PR.
 #############################################
 
 [Argument]
-xhs_enable = switch,true,false,tag=小红书-脚本开关
+xhs_search = switch,true,false,tag=搜索页,desc=搜索页横幅、热搜、搜索结果中的广告
+xhs_splash = switch,true,false,tag=开屏广告
+xhs_widgets = switch,true,false,tag=笔记详情小部件,desc=笔记页的合作、商品等小部件
+xhs_watermark = switch,true,false,tag=去水印与保存,desc=图片、实况、视频和评论区图片的水印与保存限制
+xhs_feed = switch,true,false,tag=首页信息流,desc=首页推荐去广告、直播卡片与视频笔记；关注页去「可能感兴趣的人」
+xhs_channels = switch,true,false,tag=频道过滤,desc=去掉视频、直播、短剧、热点频道
 
 [Rule]
 DOMAIN, ads-img-qc.xhscdn.com, REJECT
@@ -43,23 +51,23 @@ AND, ((PROTOCOL, QUIC), (DOMAIN-SUFFIX, xiaohongshu.com)), REJECT
 
 [Script]
 # 搜索页
-http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/search\/(banner|hot)_list script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书搜索页, enable={xhs_enable}
-http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/search\/(hint|trending)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书搜索页, enable={xhs_enable}
-http-response ^https?:\/\/(so|edith)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/search\/notes\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书搜索页, enable={xhs_enable}
+http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/search\/(banner|hot)_list script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书搜索页, enable={xhs_search}
+http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/search\/(hint|trending)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书搜索页, enable={xhs_search}
+http-response ^https?:\/\/(so|edith)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/search\/notes\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书搜索页, enable={xhs_search}
 # 开屏广告
-http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/system_service\/config\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书开屏广告, enable={xhs_enable}
-http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/system_service\/splash_config script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书开屏广告, enable={xhs_enable}
+http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/system_service\/config\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书开屏广告, enable={xhs_splash}
+http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/system_service\/splash_config script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书开屏广告, enable={xhs_splash}
 # 详情页,小部件
-http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/note\/widgets script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书详情页, enable={xhs_enable}
+http-response ^https?:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/note\/widgets script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书详情页, enable={xhs_widgets}
 # 图片水印,视频水印
-http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/note\/(imagefeed|live_photo\/save) script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_enable}
-http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/(followfeed|homefeed)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_enable}
-http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/homefeed\/categories\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书首页频道, enable={xhs_enable}
-http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/(v2\/note\/feed|v3\/note\/videofeed)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_enable}
-http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/(v4\/note\/videofeed|v10\/note\/video\/save)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_enable}
+http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/note\/(imagefeed|live_photo\/save) script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_watermark}
+http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/(followfeed|homefeed)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_feed}
+http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/v\d+\/homefeed\/categories\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书首页频道, enable={xhs_channels}
+http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/(v2\/note\/feed|v3\/note\/videofeed)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_watermark}
+http-response ^https?:\/\/(edith|rec|www)\.(xiaohongshu|rnote)\.com\/api\/sns\/(v4\/note\/videofeed|v10\/note\/video\/save)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书图片视频水印, enable={xhs_watermark}
 # 评论区图片、live图水印，表情包下载
-http-response ^https:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/(v5\/note\/comment\/list|v3\/note\/comment\/sub_comments)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书评论区去水印存储, enable={xhs_enable}
-http-response ^https:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v1\/interaction\/comment\/video\/download\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels.js, requires-body=true, timeout=60, tag=小红书评论区去水印下载, enable={xhs_enable}
+http-response ^https:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/(v5\/note\/comment\/list|v3\/note\/comment\/sub_comments)\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书评论区去水印存储, enable={xhs_watermark}
+http-response ^https:\/\/edith\.(xiaohongshu|rnote)\.com\/api\/sns\/v1\/interaction\/comment\/video\/download\? script-path=https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/xiaohongshu-channels-v2.js, requires-body=true, timeout=60, tag=小红书评论区去水印下载, enable={xhs_watermark}
 
 
 
