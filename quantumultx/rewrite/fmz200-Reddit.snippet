@@ -1,0 +1,22 @@
+#!name=Reddit
+#!desc=某些APP要清除缓存或者重新安装拦截广告才会生效！
+#!author=奶思
+#!homepage=https://github.com/fmz200/wool_scripts
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/0e/07/9e/0e079ea4-79d8-e741-80ec-8f2cf141f36b/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/100x100bb.png
+#!raw-url=https://github.com/fmz200/wool_scripts/raw/main/QuantumultX/rewrite/split/partR/Reddit.snippet
+#!tg-group=https://t.me/QuantumultXCommunity
+#!date=undefined
+# Frozen modified fmz200 QX snippet; source changes require another review.
+# Source: https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/QuantumultX/rewrite/split/partR/Reddit.snippet
+# Source SHA-256: dcb542f43cc4f4b2b3b88cdd547923081b9ec112fc8b69c8b41d10725e53296d
+# Changes: small PNG icon; script pinned to the same commit (Scripts/reddit.js, SHA-256
+#   3178f057b758e8e5fa20477c8abde707fa367482f63553be833773dd33aec3ed): drops promoted posts and comment-page
+#   ads and turns every "isNsfw":true into false (no NSFW blur). No Premium spoofing. Rewrite only.
+# Chosen over ddgksf2013's RedditAds.conf, whose reddit.js is jsjiami-obfuscated and cannot be reviewed.
+#############################################
+
+
+# 过滤推广 关NSFW提示 感谢【xream】分享
+^https?:\/\/gql(-fed)?\.reddit\.com url script-response-body https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/reddit.js
+
+hostname = gql.reddit.com, gql-fed.reddit.com

@@ -45,4 +45,14 @@ assert.deepStrictEqual(meaningful(fixed), expected, 'normal rewrites or MitM cha
 const rules = parse('filter', link, mixed);
 assert(/^(user-agent|USER-AGENT),\s*AVOS\*,\s*reject/im.test(rules), rules);
 assert(/^(ip6-cidr|IP6-CIDR),\s*2402:4e00:1200:ed00:0:9089:6dac:96b6\/128,\s*reject/im.test(rules), rules);
-console.log('Real parser: Cloudflare exclusions, Trojan conversion, Zhihu dual loading and negative control passed.');
+// 12306 loads one mixed file twice: the parser keeps its DIRECT host line in the rewrite output unless
+// #regout drops it, and the filter side must keep exactly that line with its own DIRECT policy.
+const rail = fs.readFileSync(root + '/quantumultx/rewrite/12306.snippet', 'utf8');
+const railLink = 'https://fixture.invalid/12306.snippet';
+assert(/^host,\s*ad\.12306\.cn,\s*direct/im.test(parse('rewrite', railLink, rail)), 'negative control: the DIRECT line no longer leaks into the rewrite');
+const railRewrite = meaningful(parse('rewrite', railLink + '#regout=^host%2C&ntf=0', rail));
+assert.deepStrictEqual(railRewrite.filter(line => !/^hostname=/.test(line)).map(line => line.replace(/^\^/, '')),
+  ['https?:\\/\\/ad\\.12306\\.cn\\/ad\\/ser\\/getAdList url script-analyze-echo-response https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/12306-ads.js'], railRewrite.join('\n'));
+assert(railRewrite.includes('hostname=ad.12306.cn'), railRewrite.join('\n'));
+assert.deepStrictEqual(meaningful(parse('filter', railLink, rail)), ['host, ad.12306.cn, direct']);
+console.log('Real parser: Cloudflare exclusions, Trojan conversion, Zhihu and 12306 dual loading and negative controls passed.');

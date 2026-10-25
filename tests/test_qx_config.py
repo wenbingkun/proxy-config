@@ -197,7 +197,14 @@ HOSTED_REWRITES = {
                             "0a70fbe27dfb072dac29423d661ed3c47cf66aab/asset/UnblockURLinWeChat.js"}, False),
     "YouTube.conf": ({"https://raw.githubusercontent.com/Maasea/sgmodule/"
                       "65075cdb388fc5e3094afd7e7314c67b243f3525/Script/Youtube/youtube.response.js"}, False),
+    "12306.snippet": ({"https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/12306-ads.js"}, True),
+    "fmz200-Reddit.snippet": ({"https://raw.githubusercontent.com/fmz200/wool_scripts/"
+                               "5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/reddit.js"}, False),
 }
+# 12306 (2026-10-25) is the one hosted filter that must not be forced to 🛡️ 安全防护: its only policy sends
+# ad.12306.cn DIRECT ahead of AdRules' reject, so the ad-slot request reaches the echo rewrite.
+DIRECT_FILTERS = {"12306.snippet": "host, ad.12306.cn, direct"}
+ADRULES = "https://raw.githubusercontent.com/Cats-Team/AdRules/main/qx.conf"
 HOSTED_ACCEPTED = {"fmz200-XiaoYuZhou.snippet", "fmz200-Zhihu.snippet", "WeChatUnblock.conf", "YouTube.conf"}
 
 
@@ -222,8 +229,22 @@ def check_hosted_rewrites(failures: list[str]) -> None:
                                     "(off until checked on the device, on once accepted)")
                 if name.endswith(".snippet") and "opt-parser=true" not in opts:
                     failures.append(f"QX [{section}]: snippet {name} needs opt-parser=true")
-                if section == "filter_remote" and "force-policy=🛡️安全防护" not in opts:
+                if section == "filter_remote" and name in DIRECT_FILTERS:
+                    if "force-policy" in opts:
+                        failures.append(f"QX [filter_remote]: {name} must keep its own DIRECT policy (no force-policy)")
+                elif section == "filter_remote" and "force-policy=🛡️安全防护" not in opts:
                     failures.append(f"QX [filter_remote]: {name} must use force-policy=🛡️ 安全防护")
+    filters = [l.split(",")[0].strip() for l in sec.get("filter_remote", [])]
+    for name, rule in DIRECT_FILTERS.items():
+        if filters[:1] != [REPO_REWRITE + name] or ADRULES not in filters:
+            failures.append(f"QX [filter_remote]: {name} must be the first entry, ahead of AdRules")
+        body = (ROOT / "quantumultx" / "rewrite" / name).read_text(encoding="utf-8")
+        policies = [l.strip() for l in body.splitlines() if re.match(r"(host|host-suffix|host-keyword|ip-cidr|ip6-cidr|user-agent),", l.strip(), re.I)]
+        if policies != [rule]:
+            failures.append(f"quantumultx/rewrite/{name}: its only filter rule must be {rule!r}, got {policies}")
+        rewrites = [l for l in sec.get("rewrite_remote", []) if l.split(",")[0].strip().split("#", 1)[0] == REPO_REWRITE + name]
+        if any("#regout=^host%2C&ntf=0," not in l for l in rewrites):
+            failures.append(f"QX [rewrite_remote]: {name} needs #regout=^host%2C&ntf=0 (the parser keeps the DIRECT line otherwise)")
 
 
 def check_local_filter_content(failures: list[str]) -> None:
@@ -311,6 +332,16 @@ def check_pinned_rewrites(failures: list[str]) -> None:
                     failures.append(f"quantumultx/rewrite/{path.name}: loads an unpinned resource {url}")
 
 
+def check_rewrite_order(failures: list[str]) -> None:
+    # bm7 only rejects in the request phase, and a plain QX reject is a 404 with a 0-5 s delay for repeated
+    # requests; the startup supplement and bm7 go after every app rewrite (2026-10-25, order inferred).
+    rewrites = [l.split(",")[0].strip() for l in sections(QX_CONFIG.read_text(encoding="utf-8")).get("rewrite_remote", [])]
+    want = [REPO_REWRITE + "StartupSupplement.conf",
+            "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/QuantumultX/Advertising/Advertising.conf"]
+    if rewrites[-2:] != want:
+        failures.append(f"QX [rewrite_remote] must end with StartupSupplement then bm7 Advertising, got {rewrites[-2:]}")
+
+
 def check_generator(failures: list[str]) -> None:
     for policy in ("DIRECT", "REJECT", AD_GROUP, "🌏 全球加速"):
         if build_rules.home_auto(policy) != policy:
@@ -329,6 +360,7 @@ def main() -> int:
     check_fmz200(failures)
     check_hosted_rewrites(failures)
     check_pinned_rewrites(failures)
+    check_rewrite_order(failures)
     check_local_filter_content(failures)
     check_xiaoyuzhou_features(failures)
     check_generator(failures)
