@@ -1,0 +1,18 @@
+#!name=铁路12306去开屏
+#!desc=墨鱼 12306 去开屏：ad.12306.cn 直连后，本地回应广告位请求。
+#!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ad/05/62/ad056221-9f87-c034-ce27-00c21a921bf3/AppIcon-0-0-1x_U007epad-0-1-0-0-85-220.png/100x100bb.png
+# Sources: ddgksf2013/Scripts@14f55c382e175702e65fe0bc2141c7b108c43e2a 12306.js
+#   (SHA-256 4723bc2236835eea0a8b79529c832a9af1cfd37fa1b160becb3a4b51f9067cd5) and the "# > 12306" section
+#   of ddgksf2013 StartUpAds.conf v2.0.648, fetched 2026-10-25
+#   (SHA-256 9a3443554fe38d94c1b65d648c89f408c87574c674d4a7f4550c758d5d75639b).
+# Changes: the script is the readable hosted copy quantumultx/scripts/12306-ads.js (same answers; an
+#   unreadable request gets the no-ad answer instead of hanging).
+# Load twice (opt-parser=true): as a rewrite with #regout=^host%2C (the resource parser otherwise keeps the
+# DIRECT line in the rewrite output), and as the first [filter_remote] entry without force-policy, so
+# ad.12306.cn goes DIRECT before AdRules rejects it. Other paths on ad.12306.cn are then not rejected either.
+
+host, ad.12306.cn, direct
+
+hostname = ad.12306.cn
+
+^https?:\/\/ad\.12306\.cn\/ad\/ser\/getAdList url script-analyze-echo-response https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/12306-ads.js

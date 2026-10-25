@@ -54,6 +54,10 @@ hostname =   需要解密的域名列表（如 *.example.com）
 | 小红书、知乎、小宇宙 | 仓库 `rewrite/fmz200-*.snippet`；小宇宙保留 AI 总结、正常搜索和推荐，小红书首页去视频笔记与视频、直播、短剧、热点频道（`xiaohongshu-channels-v2.js`） |
 | 阿里系 amdc | `rewrite/AlibabaAmdc.conf`，其他专用入口不再带 amdc |
 | 共用开屏补充 | `rewrite/StartupSupplement.conf`：神州、滴滴、一嗨、1688、拼多多、淘宝、得物；航旅 startup/discardrp 归航旅入口 |
+| 铁路 12306 | `rewrite/12306.snippet`（墨鱼 `12306.js` 的可读托管副本 `scripts/12306-ads.js`）：`ad.12306.cn` 直连后在本地回应广告位请求。在重写（带 `#regout=^host%2C&ntf=0`）和分流各加载一次；分流放在 `[filter_remote]` 第一项、不带 `force-policy`，才能排在 AdRules 的拒绝之前。代价是这个主机上的其他请求也不再被拒绝 |
+| Reddit | `rewrite/fmz200-Reddit.snippet`：去掉推广帖并取消 NSFW 遮罩，不伪装 Premium。墨鱼版的脚本是混淆的，无法审核，所以不用 |
+
+`[rewrite_remote]` 的顺序（2026-10-25）：专用重写在前，开屏补充其次，blackmatrix7 去广告排在最后。bm7 全部是请求阶段的拒绝，其中普通 `reject` 返回 404，短时间内重复的请求还会延迟 0–5 秒。QX 没有说明不同资源之间的规则按什么顺序匹配；按配置顺序推断，bm7 放在最后，同一地址就由专用重写自己处理（200、`{}`、1 像素图、echo 或脚本）。少数专用规则本身就是 `reject`（虎扑、中国移动各有几条），那些地址会从 bm7 的 200 变成 404。如果 QX 是不分类型、整体取第一条命中，高德首页、消息等原来被 bm7 拒绝的接口，会改由专用脚本处理响应；这一点要以真机为准。`tests/test_qx_config.py` 校验最后两项。
 
 KOP 资源解析器及四个辅助脚本（IP_API、地理位置、节点信息、流媒体查询）均引用原站完整提交，版本以模板为准。升级前重新核验字节及对应功能，辅助任务的时间、开关保持现有设置；固定脚本不冻结查询服务的响应。
 
