@@ -366,6 +366,7 @@ WECHAT_SCRIPTS = {
     "wx_mp_ads": "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/wechat-mp.js",
 }
 BM7_ADVERTISING = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/Loon/Advertising/Advertising.plugin"
+STARTUP_SUPPLEMENT = "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/loon/plugins/StartupSupplement.plugin"
 
 
 def check_fmz200_plugins(failures: list[str]) -> None:
@@ -539,6 +540,14 @@ def check_switched_plugins(failures: list[str]) -> None:
             failures.append(f"{name}.plugin: switched lines per switch must be {want}, got {used}")
 
 
+def check_plugin_order(failures: list[str]) -> None:
+    # bm7 only rejects in the request phase (a plain reject drops the connection), so it goes after every
+    # app plugin; the supplement sits just before it to keep its reject(200) (2026-10-25).
+    plugin = [l.split(",")[0].strip() for l in sections(LOON_CONFIG.read_text(encoding="utf-8")).get("Plugin", [])]
+    if plugin[-2:] != [STARTUP_SUPPLEMENT, BM7_ADVERTISING]:
+        failures.append(f"loon: [Plugin] must end with StartupSupplement then bm7 Advertising, got {plugin[-2:]}")
+
+
 def check_plugin_icons(failures: list[str]) -> None:
     # Loon kept spinning on fmz200's 560 KB GIF icon (2026-10-05). Hosted plugins use small PNG icons.
     for path in sorted((ROOT / "loon" / "plugins").glob("*.plugin")):
@@ -594,6 +603,7 @@ def main() -> int:
     check_fmz200_plugins(failures)
     check_wechat_plugin(failures)
     check_switched_plugins(failures)
+    check_plugin_order(failures)
     check_plugin_icons(failures)
     check_generator(failures)
     if failures:
