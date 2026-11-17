@@ -42,6 +42,82 @@ domain_suffix:
   - metaaivm.com
   - muse.ai
 
+  # Content, authentication and model backends need the same policy on every client.
+  - claude.app
+  - claudemcpcontent.com
+  - claudemcpclient.com
+  - oaistatsig.com
+  - sora.com
+  - aistudio.google.com
+  - notebooklm.google.com
+  - notebooklm.google
+  - notebook.google.com
+  - notebook.google
+  - gemini.gstatic.com
+  - gemini.google
+  - jules.google.com
+  - jules.google
+  - stitch.withgoogle.com
+  - labs.google.com
+  - labs.google
+  - flow.google.com
+  - flow.google
+  - opal.google.com
+  - opal.google
+  - ai.studio
+  - githubcopilot.com
+  - grokusercontent.com
+  - grokipedia.com
+  - perplexity.com
+  - pplx.ai
+  - poecdn.net
+  - cursorapi.com
+  - cursor-cdn.com
+  - cursorvm.com
+  - codeiumdata.com
+  - windsurf.build
+  - devin.ai
+
+# Shared clouds/CDNs stay outside AI; only these dedicated hosts are routed here.
+domain:
+  - cdn.openaimerge.com
+  - geminiweb-pa.clients.google.com
+  - geminiweb-pa.clients6.google.com
+  - alkalicore-pa.clients6.google.com
+  - webchannel-alkalimakersuite-pa.clients6.google.com
+  - appsgenaiserver-pa.clients.google.com
+  - appsgenaiserver-pa.clients6.google.com
+  - appsgenaiserver-pa.googleapis.com
+  - cloudaicompanion.googleapis.com
+  - notebooklm.googleapis.com
+  - notebooklm-pa.googleapis.com
+  - robinfrontend-pa.googleapis.com
+  - geller-pa.googleapis.com
+  - copilot-proxy.githubusercontent.com
+  - copilot-workspace.githubnext.com
+  - copilot-telemetry.githubusercontent.com
+  - copilot-telemetry-service.githubusercontent.com
+  - origin-tracker.githubusercontent.com
+  - copilotprodattachments.blob.core.windows.net
+  - production-copilot-host-centralus.webpubsub.azure.com
+  - production-copilot-host-centralus-02.webpubsub.azure.com
+  - production-copilot-host-eastasia.webpubsub.azure.com
+  - production-copilot-host-austriaeast.webpubsub.azure.com
+  - production-copilot-host-westus.webpubsub.azure.com
+  - production-copilot-host-westus3.webpubsub.azure.com
+  - production-copilot-host.webpubsub.azure.com
+  - copilot.microsoft.com
+  - copilot.cloud.microsoft
+  - sydney.bing.com
+  - pplx-res.cloudinary.com
+  - ppl-ai-file-upload.s3.amazonaws.com
+  - agent-stores.s3.us-east-1.amazonaws.com
+  - agent-stores.s3.amazonaws.com
+  - cursor.blob.core.windows.net
+  - anysphere-binaries.s3.us-east-1.amazonaws.com
+  - accounts.spacexsi.com
+  - accounts.spacex.ai
+
 domain_keyword:
   - antigravity
   - cloudcode-pa
