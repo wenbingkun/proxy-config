@@ -1,6 +1,6 @@
 # iPhone 网络诊断（netdiag）
 
-让 WSL 里的代理（Codex、Claude Code）直接读取 iPhone 的网络行为，用户只需复现问题。脚本是 `scripts/netdiag.py`（只用标准库），记录存放在 `~/.local/state/ios-netdiag`，保留 7 天，不进仓库。
+让具备本机读取权限的 WSL 代理直接读取 iPhone 的网络行为，用户只需复现问题。脚本是 `scripts/netdiag.py`（只用标准库），记录存放在 `~/.local/state/ios-netdiag`，保留 7 天，不进仓库。
 
 ## 数据来源与能力边界
 
