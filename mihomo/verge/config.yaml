@@ -346,7 +346,8 @@ rule-providers:
   Lan: {type: http, behavior: ipcidr, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt", path: ./cache/rulesets/Lan.yaml}
   LocalNetwork: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/local_network.yaml", path: ./cache/rulesets/LocalNetwork.yaml}
   DownloadExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/download_extra.yaml", path: ./cache/rulesets/DownloadExtra.yaml}
-  SteamDownload: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/steam_download.yaml", path: ./cache/rulesets/SteamDownload.yaml}
+  # Separate the direct cache from the old list, which also matched Steam store assets.
+  SteamDownload: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/steam_download.yaml", path: ./cache/rulesets/SteamDownloadDirect.yaml}
   IntlBrokers: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/intl_brokers.yaml", path: ./cache/rulesets/IntlBrokers.yaml}
   HkBanks: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/hk_banks.yaml", path: ./cache/rulesets/HkBanks.yaml}
   AIExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/ai_extra.yaml", path: ./cache/rulesets/AIExtra.yaml}
@@ -358,12 +359,12 @@ rule-providers:
   GameExtra: {type: http, behavior: classical, format: yaml, interval: 86400, url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/game_extra.yaml", path: ./cache/rulesets/GameExtra.yaml}
 
 rules:
+  - RULE-SET,SteamDownload,DIRECT,no-resolve
   - PROCESS-NAME,steam.exe,🎮 游戏平台
   - PROCESS-NAME,steamwebhelper.exe,🎮 游戏平台
   - PROCESS-NAME,steamservice.exe,🎮 游戏平台
   - RULE-SET,LocalNetwork,DIRECT,no-resolve
   - RULE-SET,Lan,DIRECT,no-resolve
-  - RULE-SET,SteamDownload,🎮 游戏平台,no-resolve
   - RULE-SET,DownloadExtra,DIRECT,no-resolve
   - RULE-SET,HkBanks,DIRECT,no-resolve
   - RULE-SET,IntlBrokers,🇭🇰 香港节点,no-resolve
