@@ -393,6 +393,8 @@ proxy-groups:
   filter: (?i)韩国|韓國|韩|韓|(^|[^a-z])(kr|korea|south ?korea)([^a-z]|$)
 - name: 🇺🇸 美国节点
   type: select
+  proxies:
+  - REJECT
   use:
   - Sub
   filter: (?i)美国|美國|(^|[^a-z])(us|usa|united ?states)([^a-z]|$)
