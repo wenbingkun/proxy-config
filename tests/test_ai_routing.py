@@ -20,6 +20,7 @@ AI_CASES = (
     "preview.livepreview.claude.app",
     "widget.claudemcpcontent.com",
     "bridge.claudemcpclient.com",
+    "servd-anthropic-website.b-cdn.net",
     "ab.oaistatsig.com",
     "cdn.openaimerge.com",
     "sora.com",
@@ -72,11 +73,16 @@ SHARED_CONTROLS = (
     "other.blob.core.windows.net",
     "other.cloudinary.com",
     "other.webpubsub.azure.com",
+    "other.b-cdn.net",
     "cloudflare-ech.com",
     "widget.claudemcpcontent.com.example.net",
     "evil-claude.app",
 )
-EXACT_CONTROLS = ("child.cdn.openaimerge.com", "child.accounts.spacexsi.com")
+EXACT_CONTROLS = (
+    "child.servd-anthropic-website.b-cdn.net",
+    "child.cdn.openaimerge.com",
+    "child.accounts.spacexsi.com",
+)
 # Deliberately broad overlaps expose a moved/missing AIExtra reference.
 OVERLAPS = {
     "Google": ["DOMAIN-SUFFIX,google.com", "DOMAIN-SUFFIX,googleapis.com"],
