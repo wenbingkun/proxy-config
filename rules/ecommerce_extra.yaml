@@ -1,2 +1,11 @@
 domain_suffix:
   - revolut.com
+  - stripe.com
+  - stripe.network
+  - stripecdn.com
+  - stripe.dev
+  - stripe.events
+  - stripe.global
+  - link.com
+  - link.co
+  - onelink.com
