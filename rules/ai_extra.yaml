@@ -80,6 +80,7 @@ domain_suffix:
 
 # Shared clouds/CDNs stay outside AI; only these dedicated hosts are routed here.
 domain:
+  - servd-anthropic-website.b-cdn.net
   - cdn.openaimerge.com
   - geminiweb-pa.clients.google.com
   - geminiweb-pa.clients6.google.com
