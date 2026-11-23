@@ -2,3 +2,12 @@
 # Source: rules/ecommerce_extra.yaml
 payload:
   - DOMAIN-SUFFIX,revolut.com
+  - DOMAIN-SUFFIX,stripe.com
+  - DOMAIN-SUFFIX,stripe.network
+  - DOMAIN-SUFFIX,stripecdn.com
+  - DOMAIN-SUFFIX,stripe.dev
+  - DOMAIN-SUFFIX,stripe.events
+  - DOMAIN-SUFFIX,stripe.global
+  - DOMAIN-SUFFIX,link.com
+  - DOMAIN-SUFFIX,link.co
+  - DOMAIN-SUFFIX,onelink.com

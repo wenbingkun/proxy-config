@@ -79,7 +79,18 @@ REQUIRED_LOCAL_DOMAINS = {
         "calendly.com",
         "box.com",
     },
-    ROOT / "rules" / "ecommerce_extra.yaml": {"revolut.com"},
+    ROOT / "rules" / "ecommerce_extra.yaml": {
+        "revolut.com",
+        "stripe.com",
+        "stripe.network",
+        "stripecdn.com",
+        "stripe.dev",
+        "stripe.events",
+        "stripe.global",
+        "link.com",
+        "link.co",
+        "onelink.com",
+    },
     ROOT / "rules" / "speedtest.yaml": {"librespeed.org"},
     ROOT / "rules" / "microsoft_extra.yaml": {
         "img-s-msn-com.akamaized.net",
@@ -189,6 +200,9 @@ def assert_domain_only_providers(path: Path) -> None:
     )
     assert "RULE-SET,EcommerceExtra,🛒 电商支付" in rules, (
         f"{path.relative_to(ROOT)} is missing EcommerceExtra routing"
+    )
+    assert rule_sets.index("EcommerceExtra") < rule_sets.index("ProxyLite"), (
+        f"{path.relative_to(ROOT)}: EcommerceExtra must precede ProxyLite"
     )
 
 
