@@ -1,0 +1,87 @@
+# Observed baselines for default-enabled mutable MitM containers (for drift detection in
+# weekly `check_remote_resources.py --mode full`, not a line-by-line upstream code audit).
+# Print a candidate refresh (stdout only; review diff manually before editing) with:
+#   python3 scripts/check_remote_resources.py --print-baselines
+version: 1
+observed_date: '2026-11-24'
+containers:
+- client: loon
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/Loon/Advertising/Advertising.plugin
+  mitm_count: 698
+  mitm_sha256: 9bfc4ff80b732a8d293953a359532f8c971a4282f7e7ae5de1692091ba5d31fe
+  scripts: []
+  other_urls_count: 2
+  other_urls_sha256: 11f5b277c446bb54dd6e86297dddf580c983dd5d34e77f62506d408a90e858f6
+  other_urls:
+  - https://dynamicad.kfc.com.cn/api/app5/homepage/ai/popup
+  - https://info\.mina\.xiaoaisound\.com/advertise/
+  rules: []
+- client: loon
+  url: https://raw.githubusercontent.com/kokoryh/Sparkle/master/release/loon/plugin/bilibili.lpx
+  mitm_count: 6
+  mitm_sha256: 13f05f368f8ef9cf63e912a4242d04fc47b56ce589b8e0afa9d3235b9536e7c3
+  mitm_hostnames:
+  - api.bilibili.com
+  - api.live.bilibili.com
+  - app.bilibili.com
+  - grpc.biliapi.net
+  - line3-h5-mobile-api.biligame.com
+  - www.bilibili.com
+  scripts:
+  - https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.json.js
+  - https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.request.js
+  - https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.response.js
+  - https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/webpage.bilibili.js
+  - https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/jq/bilibili.mine.jq
+  - https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/jq/bilibili.tab.jq
+  other_urls_count: 3
+  other_urls_sha256: 09fee77fe268ffdc819c49fc140418f139b5a145086b2f7121098614dcc34559
+  other_urls:
+  - https://grpc.biliapi.net/bilibili.app.interface.v1.Search/DefaultWords
+  - https://grpc.biliapi.net/bilibili.app.interface.v1.Teenagers/ModeStatus
+  - https://www.bilibili.com/blackboard/era/
+  rules:
+  - AND,((DOMAIN-SUFFIX,chat.bilibili.com),(OR,((DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,tracker),(DOMAIN-KEYWORD,p2p)))),REJECT
+  - DEST-PORT,4480,REJECT-NO-DROP
+  - DEST-PORT,4483,REJECT-NO-DROP
+  - DEST-PORT,9102,REJECT-NO-DROP
+  - DOMAIN,api.biliapi.com,REJECT
+  - DOMAIN,api.biliapi.net,REJECT
+  - DOMAIN,app.biliapi.com,REJECT
+  - DOMAIN,app.biliapi.net,REJECT
+  - DOMAIN,bsbsb.top,PROXY
+  - DOMAIN,dns.google,REJECT
+- client: qx
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/QuantumultX/Advertising/Advertising.conf
+  mitm_count: 582
+  mitm_sha256: df0c2f75a237ae6363ec70648ebdeebca0beea74c343431750cb143bc89c5f54
+  scripts: []
+  other_urls_count: 2
+  other_urls_sha256: 11f5b277c446bb54dd6e86297dddf580c983dd5d34e77f62506d408a90e858f6
+  other_urls:
+  - https://dynamicad.kfc.com.cn/api/app5/homepage/ai/popup
+  - https://info\.mina\.xiaoaisound\.com/advertise/
+  rules: []
+- client: qx
+  url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rewrite/QuantumultX/SafeRedirect/SafeRedirect.conf
+  mitm_count: 122
+  mitm_sha256: f530183236cd622822479026ddf2a5ee462275187f2a1c3b5cb98f8eff29eed1
+  scripts: []
+  other_urls_count: 56
+  other_urls_sha256: d85dbf2a684c23a1619aa728b68f900c788d46ec21fecf31206caf95f8f8e5ed
+  rules: []
+- client: qx
+  url: https://raw.githubusercontent.com/app2smile/rules/master/module/spotify.conf
+  mitm_count: 2
+  mitm_sha256: 778460ec445ccaa376001e3896a33eb13c96cc657b9e364b5f369856985154a5
+  mitm_hostnames:
+  - '*spclient.spotify.com'
+  - spclient.wg.spotify.com
+  scripts:
+  - https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-json.js
+  - https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-proto.js
+  - https://raw.githubusercontent.com/app2smile/rules/master/js/spotify-qx-header.js
+  other_urls_count: 0
+  other_urls_sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  other_urls: []
+  rules: []

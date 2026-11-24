@@ -17,7 +17,7 @@ LOON_RULES_DIR = ROOT / "loon" / "rules"
 SURGE_RULES_DIR = ROOT / "surge" / "rules"
 LOCAL_RULES_MANIFEST = RULES_DIR / "local_rules.yaml"
 # Configuration manifests live beside rule payloads but must not be parsed as rules.
-RULE_METADATA_FILES = {"local_rules.yaml", "upstreams.yaml"}
+RULE_METADATA_FILES = {"local_rules.yaml", "upstreams.yaml", "mutable_container_baselines.yaml"}
 RULE_ID_RE = re.compile(r"^[a-z0-9_]+$")
 # Reserved output stems: geoip_cn.list is hand-maintained; reject_allow.list is a dedicated Surge output.
 RESERVED_RULE_IDS = frozenset({"geoip_cn", "reject_allow"})

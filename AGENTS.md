@@ -28,7 +28,7 @@
 sh scripts/check_all.sh
 ```
 
-清单只写在 `scripts/check_all.sh`（CI 调用同一脚本），新增检查加在那里；以它的退出码为准，最后一行是 `all checks passed`。`tests/test_shellcrash_override.py` 需要固定版本的 Mihomo 核心、mmdb 与 ShellCrash `clash_modify.sh`（版本与哈希见 `.github/workflows/validate.yml`），由 CI 运行；本地跑时按同样哈希下载。不要用 `cmd || echo` 这类会吞掉失败的写法。
+清单只写在 `scripts/check_all.sh`（CI 调用同一脚本），新增检查加在那里；以它的退出码为准，最后一行是 `all checks passed`。离线迭代可运行 `sh scripts/check_all.sh --offline` 跳过 3 项联网校验（设置 `PROXY_CONFIG_QX_PARSER` 时仍会执行 `tests/test_resource_parser.py`），但提交前与 CI 仍必须跑无参数全量检查。`tests/test_shellcrash_override.py` 需要固定版本的 Mihomo 核心、mmdb 与 ShellCrash `clash_modify.sh`（版本与哈希见 `.github/workflows/validate.yml`），由 CI 运行；本地跑时按同样哈希下载。不要用 `cmd || echo` 这类会吞掉失败的写法。
 
 ## 发布路径
 
@@ -48,7 +48,7 @@ sh scripts/check_all.sh
 **Quantumult X**
 - ssid 策略写法：`ssid=X · 自动, X, X, HOME_SSID:DIRECT`（依次为其他 Wi-Fi、蜂窝、家庭 SSID）。仓库 `repo.snippet` 引用「· 自动」组，设备配置缺少这些组时其规则无法生效。
 - 丢弃 UDP 443（QUIC），让 App 回退到 TCP、MitM 才能生效；`fallback_udp_policy = reject`；不设 `no-ipv6`。
-- QX 没有 `no-resolve`：没有域名类规则命中的请求会先解析，再按顺序匹配 IP 规则。所以 bm7 `Cloudflare.list` 用资源解析器去掉 IP 规则（URL 加 `#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0`，`opt-parser=true`；`ntf=0` 关掉解析器每次更新都弹的“已禁用”通知；关键词区分大小写），只保留域名，与 Mihomo 的 Cloudflare 约定一致；否则未收录、托管在 Cloudflare 上的网站都会进 👨‍💻 开发服务。
+- QX 没有 `no-resolve`：没有域名类规则命中的请求会先解析，再按顺序匹配 IP 规则。所以 bm7 `Cloudflare.list` 与 `Amazon.list` 用资源解析器去掉 IP 规则（URL 加 `#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0`，`opt-parser=true`；`ntf=0` 关掉解析器每次更新都弹的“已禁用”通知；关键词区分大小写），只保留域名，与 Mihomo 的 Cloudflare / Amazon 约定一致；否则未收录、托管在 Cloudflare / AWS 上的网站都会被误归入对应策略组。
 - B 站使用仓库冻结托管的 `quantumultx/rewrite/bilibili_ad.conf` 与 `quantumultx/scripts/bilibili_json-safe.js`（旧 `bilibili_json.js` 仅作历史回滚保留），不跟上游，不与其他 B 站重写同时启用。
 - 观察（2026-09）：QX 测速组只在被请求时测速，在家空闲时停在首个节点，属正常。
 

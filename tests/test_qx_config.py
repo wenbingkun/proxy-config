@@ -119,6 +119,19 @@ def check(failures: list[str]) -> dict[str, list[str]]:
             failures.append(f"QX [general] must not set {key}: home routing uses ssid policies")
     if not any(line.rstrip().endswith("enabled=true") for line in sec["rewrite_remote"]):
         failures.append("QX [rewrite_remote] has no enabled rewrite")
+    siri_lines = [l for l in sec["rewrite_remote"] if "iRingo.Siri.snippet" in l]
+    if len(siri_lines) != 1:
+        failures.append("QX [rewrite_remote] must list iRingo.Siri.snippet exactly once")
+    else:
+        siri_enabled = [
+            value.strip().lower()
+            for part in siri_lines[0].split(",")[1:]
+            if "=" in part
+            for key, value in (part.split("=", 1),)
+            if key.strip().lower() == "enabled"
+        ]
+        if siri_enabled != ["false"]:
+            failures.append("QX [rewrite_remote] must keep iRingo.Siri.snippet disabled (enabled=false) to match Loon")
     if "mitm" not in sec:
         failures.append("QX [mitm] section is missing")
     return sec

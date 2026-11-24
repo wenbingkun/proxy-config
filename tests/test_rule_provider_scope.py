@@ -323,16 +323,20 @@ def assert_shared_service_policies() -> None:
         )
 
 
-def assert_qx_cloudflare_domain_only() -> None:
+def assert_qx_shared_cdn_domain_only() -> None:
     """QX has no no-resolve and matches IP rules after resolving any host no host rule matched, so the
-    bm7 Cloudflare list's IP ranges would pull every unlisted Cloudflare-hosted site into the dev
-    group. Mihomo uses a domain-only Cloudflare set; QX drops the IP rules through the resource parser."""
-    entries = [(url, params) for url, params in load_qx_enabled_filters()
-               if "/rule/QuantumultX/Cloudflare/Cloudflare.list" in url]
-    assert len(entries) == 1, "QX must load the Cloudflare list exactly once"
-    url, params = entries[0]
-    assert url.endswith("Cloudflare.list#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0"), f"QX Cloudflare must drop IP rules: {url}"
-    assert params.get("opt-parser") == "true", "QX Cloudflare needs opt-parser=true for #out to apply"
+    bm7 Cloudflare and Amazon lists' IP ranges would pull unlisted CDN-hosted sites into those groups.
+    Mihomo uses domain-only sets; QX drops the IP rules through the resource parser."""
+    enabled = load_qx_enabled_filters()
+    for service in ("Cloudflare", "Amazon"):
+        entries = [(url, params) for url, params in enabled
+                   if f"/rule/QuantumultX/{service}/{service}.list" in url]
+        assert len(entries) == 1, f"QX must load the {service} list exactly once"
+        url, params = entries[0]
+        assert url.endswith(f"{service}.list#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0"), (
+            f"QX {service} must drop IP rules: {url}"
+        )
+        assert params.get("opt-parser") == "true", f"QX {service} needs opt-parser=true for #out to apply"
 
 
 def strip_no_resolve(rule: str) -> str:
@@ -486,7 +490,7 @@ def main() -> int:
         assert_manifest_mihomo_parity(load_yaml(path), manifest, str(path.relative_to(ROOT)))
     assert_local_domain_coverage()
     assert_shared_service_policies()
-    assert_qx_cloudflare_domain_only()
+    assert_qx_shared_cdn_domain_only()
     print("Rule provider scope tests passed.")
     return 0
 
