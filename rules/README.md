@@ -2,7 +2,7 @@
 
 > 返回 [总览](../README.md)。下文仓库命令均在仓库根目录执行。
 
-`rules/` 是仓库自维护规则的唯一编辑入口，由 `scripts/build_rules.py` 生成各端格式：
+`rules/` 是仓库自维护规则的唯一编辑入口，由 `scripts/build_rules.py` 生成各端格式（此外同目录还存放上游治理元数据 `upstreams.yaml` 与可变 MitM 容器漂移基线 `mutable_container_baselines.yaml`，均不作为规则源解析）：
 
 | 产物 | 客户端 |
 |---|---|

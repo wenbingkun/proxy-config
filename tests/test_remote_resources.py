@@ -463,6 +463,552 @@ def test_qx_rewrite_extraction_boundaries() -> None:
         assert all(check.client_of(item.source) == "qx" for item in extracted)
 
 
+def test_keep_body_and_complete_boundaries() -> None:
+    """keep_body allows normal redirects and 403 fallback; complete stays strict; keep_body=False drops non-clash body."""
+    url = JSDELIVR
+    redirected = "https://cdn.example/redirected/Test.list"
+    body = b"HOST-SUFFIX,example.test,PROXY\n"
+    resource = check.Resource(url, "qx-resource", "quantumultx/bootstrap.example.conf:1")
+
+    # keep_body=True allows redirects and retains the full response body.
+    with patch.object(check, "read_response", return_value=(200, "text/plain", body, redirected)):
+        result = check.fetch(resource, "full", timeout=1, retries=0, keep_body=True)
+    assert result.ok and result.body == body and result.final_url == redirected, result
+
+    # complete=True still rejects redirects.
+    with patch.object(check, "read_response", return_value=(200, "text/plain", body, redirected)):
+        result = check.fetch(resource, "full", timeout=1, retries=0, complete=True)
+    assert not result.ok and "redirected" in result.message, result
+
+    # keep_body=False keeps body empty for non-clash resources even in full mode.
+    with patch.object(check, "read_response", return_value=(200, "text/plain", body, url)):
+        result = check.fetch(resource, "full", timeout=1, retries=0, keep_body=False)
+    assert result.ok and result.body == b"", result
+
+    # keep_body=True propagates through jsDelivr HTTP 403 package-size origin fallback.
+    requested: list[str] = []
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> FakeResponse:
+        requested.append(request.full_url)
+        if request.full_url == ORIGIN:
+            return FakeResponse(200, body, ORIGIN)
+        raise http_error(request.full_url, 403, SIZE_BODY)
+
+    with patch.object(check.urllib.request, "urlopen", fake_urlopen):
+        result = check.fetch(resource, "full", timeout=1, retries=0, keep_body=True)
+    assert requested == [url, ORIGIN], requested
+    assert result.ok and result.body == body and result.resource.url == url and result.warning, result
+
+
+def test_parse_mutable_container_syntax() -> None:
+    loon_body = (
+        "#!icon=https://ignored.example/icon.png\n"
+        "# comment https://ignored.example/comment.js\n"
+        "; semicolon https://ignored.example/semi.js\n"
+        "[Rule]\n"
+        "AND, ((DOMAIN, a.test), (OR, (DOMAIN, b.test))), PROXY\n"
+        "DOMAIN-SUFFIX, bsbsb.top, PROXY\n"
+        "[Rewrite]\n"
+        "^https:\\/\\/api\\.example\\/v1\\/ad reject-200\n"
+        'response if ${url} ~= /^https:\\/\\/api\\.example\\/mine/ then jq_file("https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/jq/bilibili.mine.jq")\n'
+        'response if ${url} ~= /^https:\\/\\/api\\.example\\/tab/ then jq_file("https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/jq/bilibili.tab.jq")\n'
+        'response if ${url} ~= /^https:\\/\\/api\\.example\\/json/ then script("https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.json.js", timeout=10)\n'
+        "^https:\\/\\/api\\.example\\/plain 302 https://redirect.example/landing\n"
+        "[Script]\n"
+        "http-request ^https:\\/\\/api\\.example\\/req script-path=https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.request.js\n"
+        "http-response ^https:\\/\\/api\\.example\\/res script-path=\"https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.response.js\"\n"
+        "http-response ^https:\\/\\/api\\.example\\/web script-path=https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/webpage.bilibili.js\n"
+        "http-response ^https:\\/\\/api\\.example\\/jq jq-path=https://cdn.example/extra.jq, data-path=https://cdn.example/data.json\n"
+        "[MitM]\n"
+        "hostname = %APPEND% API.Bilibili.com, www.bilibili.com\n"
+        "hostname = %INSERT% app.bilibili.com, api.bilibili.com\n"
+    ).encode("utf-8")
+    parsed_loon = check.parse_mutable_container(loon_body, "loon")
+    assert parsed_loon["mitm_hostnames"] == ["api.bilibili.com", "app.bilibili.com", "www.bilibili.com"], parsed_loon
+    assert parsed_loon["mitm_count"] == 3
+    assert parsed_loon["scripts"] == sorted([
+        "https://cdn.example/data.json",
+        "https://cdn.example/extra.jq",
+        "https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.json.js",
+        "https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.request.js",
+        "https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/bilibili.protobuf.response.js",
+        "https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/dist/webpage.bilibili.js",
+        "https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/jq/bilibili.mine.jq",
+        "https://raw.githubusercontent.com/kokoryh/Sparkle/refs/heads/master/jq/bilibili.tab.jq",
+    ]), parsed_loon["scripts"]
+    assert parsed_loon["other_urls"] == ["https://redirect.example/landing"], parsed_loon["other_urls"]
+    assert parsed_loon["rules"] == [
+        "AND,((DOMAIN,a.test),(OR,(DOMAIN,b.test))),PROXY",
+        "DOMAIN-SUFFIX,bsbsb.top,PROXY",
+    ], parsed_loon["rules"]
+
+    qx_body = (
+        "# header\n"
+        "hostname = %APPEND% *spclient.spotify.com, SPCLIENT.wg.spotify.com\n"
+        "^https:\\/\\/spclient\\.wg\\.spotify\\.com\\/a url script-response-body https://scripts.example/sp.js\n"
+        "^https:\\/\\/spclient\\.wg\\.spotify\\.com\\/b UA url-and-header echo-response text/json echo-response https://scripts.example/sp.json\n"
+        "^https:\\/\\/spclient\\.wg\\.spotify\\.com\\/c url 302 https://redirect.example/sp\n"
+        "host-suffix, ads.spotify.test, reject\n"
+    ).encode("utf-8")
+    parsed_qx = check.parse_mutable_container(qx_body, "qx")
+    assert parsed_qx["mitm_hostnames"] == ["*spclient.spotify.com", "spclient.wg.spotify.com"], parsed_qx
+    assert parsed_qx["scripts"] == ["https://scripts.example/sp.js", "https://scripts.example/sp.json"], parsed_qx
+    assert parsed_qx["other_urls"] == ["https://redirect.example/sp"], parsed_qx
+    assert parsed_qx["rules"] == ["host-suffix,ads.spotify.test,reject"], parsed_qx
+
+
+def test_mutable_container_baselines_offline() -> None:
+    """Baselines must match enabled mutable containers bidirectionally and validate internally."""
+    observed_date, baselines = check.load_mutable_baselines()
+    assert check.DATE_ISO_RE.fullmatch(observed_date), observed_date
+    enabled = check.enabled_mutable_containers()
+    baseline_keys = [(str(b["client"]), str(b["url"])) for b in baselines]
+    assert set(baseline_keys) == set(enabled) and len(baseline_keys) == len(enabled), (baseline_keys, enabled)
+    assert len(enabled) == 5, enabled
+    assert not any("iRingo.Siri" in url for _, url in enabled), enabled
+
+    # Every QX/Loon exception in rules/upstreams.yaml must fall within MUTABLE_CONTAINER_FIELDS.
+    policy = check.yaml.safe_load(check.UPSTREAMS_POLICY.read_text(encoding="utf-8"))
+    for item in policy["exceptions"]:
+        if item["client"] in {"qx", "loon"}:
+            assert (item["client"], item["field"]) in check.MUTABLE_CONTAINER_FIELDS, item
+
+    # Fragment stripping + enabled=false handling in enabled_mutable_containers().
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "rules").mkdir()
+        (root / "quantumultx").mkdir()
+        (root / "loon").mkdir()
+        (root / "rules" / "upstreams.yaml").write_text(
+            "version: 1\nrules: []\nicons: []\nexceptions:\n"
+            "- client: qx\n  field: rewrite_remote\n  url: https://upstream.example/a.conf\n  reason: test\n"
+            "- client: qx\n  field: rewrite_remote\n  url: https://upstream.example/b.conf\n  reason: test\n"
+            "- client: loon\n  field: plugin\n  url: https://upstream.example/c.plugin\n  reason: test\n",
+            encoding="utf-8",
+        )
+        (root / "quantumultx" / "bootstrap.example.conf").write_text(
+            "[rewrite_remote]\n"
+            "https://upstream.example/a.conf#ntf=0, tag=A, enabled = true\n"
+            "https://upstream.example/b.conf, tag=B, enabled = FALSE\n",
+            encoding="utf-8",
+        )
+        (root / "loon" / "bootstrap.example.conf").write_text(
+            "[Plugin]\n"
+            "https://upstream.example/c.plugin, tag=C\n",
+            encoding="utf-8",
+        )
+        got = check.enabled_mutable_containers(root)
+        assert got == [
+            ("loon", "https://upstream.example/c.plugin"),
+            ("qx", "https://upstream.example/a.conf#ntf=0"),
+        ], got
+
+        # Negative baseline schema validations.
+        valid_entry = {
+            "client": "qx",
+            "url": "https://upstream.example/a.conf",
+            "mitm_count": 1,
+            "mitm_sha256": check._sha256_lines(["a.example"]),
+            "mitm_hostnames": ["a.example"],
+            "scripts": ["https://s.example/a.js"],
+            "other_urls_count": 0,
+            "other_urls_sha256": check._sha256_lines([]),
+            "other_urls": [],
+            "rules": ["host,a.example,reject"],
+        }
+        bad_variants = [
+            {**valid_entry, "mitm_count": 2},
+            {**valid_entry, "mitm_sha256": "0" * 64},
+            {**valid_entry, "mitm_hostnames": ["A.example"]},
+            {**valid_entry, "scripts": ["https://s.example/b.js", "https://s.example/a.js"]},
+            {**valid_entry, "rules": ["host,a.example,reject", "host,a.example,reject"]},
+            {**valid_entry, "unknown_key": 1},
+            {**valid_entry, "https://user:fixture-secret@upstream.example:badport/a.conf": 1},
+            {**valid_entry, "client": ["loon"]},
+            {**valid_entry, 1: "int-key", "extra": "str-key"},
+            {**valid_entry, "url": "https://["},
+            {**valid_entry, "url": "https://user:fixture-secret@upstream.example:badport/a.conf"},
+            {**valid_entry, "mitm_count": True},
+        ]
+        for variant in bad_variants:
+            bad_file = root / "bad.yaml"
+            bad_file.write_text(
+                check.yaml.safe_dump({"version": 1, "observed_date": "2026-11-24", "containers": [variant]}),
+                encoding="utf-8",
+            )
+            try:
+                check.load_mutable_baselines(bad_file)
+            except ValueError as exc:
+                assert "fixture-secret" not in str(exc), str(exc)
+                continue
+            raise AssertionError(f"invalid baseline accepted: {variant}")
+
+        # YAML syntax error (e.g. bad escape `\q` in quoted URL) must raise ValueError without echoing raw source.
+        yaml_err_file = root / "yaml_err.yaml"
+        yaml_err_file.write_text(
+            'version: 1\nobserved_date: "2026-11-24"\ncontainers:\n'
+            '- client: loon\n  url: "https://user:fixture-secret@test.example/path\\q"\n',
+            encoding="utf-8",
+        )
+        try:
+            check.load_mutable_baselines(yaml_err_file)
+        except ValueError as exc:
+            assert "fixture-secret" not in str(exc) and "line " in str(exc), str(exc)
+        else:
+            raise AssertionError("invalid YAML escape accepted")
+
+        # Deeply nested YAML (triggers RecursionError inside PyYAML) must raise ValueError cleanly.
+        deep_yaml = root / "deep.yaml"
+        deep_yaml.write_text("containers: " + "[" * 500 + "]" * 500 + "\n", encoding="utf-8")
+        try:
+            check.load_mutable_baselines(deep_yaml)
+        except ValueError as exc:
+            assert "nesting too deep" in str(exc), str(exc)
+        else:
+            raise AssertionError("deeply nested YAML accepted")
+
+        # YAML surrogate escape (cannot encode to UTF-8) must be rejected at load time.
+        surrogate_file = root / "surrogate.yaml"
+        surrogate_file.write_text(
+            "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n"
+            '- client: loon\n  url: "https://test.example/\\uD800"\n'
+            f"  mitm_count: 0\n  mitm_sha256: {'0' * 64}\n  scripts: []\n"
+            f"  other_urls_count: 0\n  other_urls_sha256: {'0' * 64}\n  rules: []\n",
+            encoding="utf-8",
+        )
+        try:
+            check.load_mutable_baselines(surrogate_file)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("surrogate URL accepted")
+
+        bad_docs = [
+            {"version": 1.0, "observed_date": "2026-11-24", "containers": [valid_entry]},
+            {"version": 1, "observed_date": "2026-99-99", "containers": [valid_entry]},
+            {"version": 1, "observed_date": "2026-02-30", "containers": [valid_entry]},
+            {1: "bad-top-key", "version": 1, "observed_date": "2026-11-24", "containers": []},
+        ]
+        for doc in bad_docs:
+            bad_file = root / "bad_doc.yaml"
+            bad_file.write_text(check.yaml.safe_dump(doc), encoding="utf-8")
+            try:
+                check.load_mutable_baselines(bad_file)
+            except ValueError:
+                continue
+            raise AssertionError(f"invalid baseline document accepted: {doc}")
+
+
+def test_mutable_container_audit_drift_and_escaping() -> None:
+    small_url = "https://upstream.example/small.lpx"
+    large_url = "https://upstream.example/large.plugin"
+    small_base = {
+        "client": "loon",
+        "url": small_url,
+        "mitm_count": 1,
+        "mitm_sha256": check._sha256_lines(["api.example"]),
+        "mitm_hostnames": ["api.example"],
+        "scripts": ["https://cdn.example/a.js"],
+        "other_urls_count": 0,
+        "other_urls_sha256": check._sha256_lines([]),
+        "other_urls": [],
+        "rules": ["DOMAIN,a.test,PROXY"],
+    }
+    large_base = {
+        "client": "loon",
+        "url": large_url,
+        "mitm_count": 1,
+        "mitm_sha256": check._sha256_lines(["old.example"]),
+        "scripts": [],
+        "other_urls_count": 0,
+        "other_urls_sha256": check._sha256_lines([]),
+        "rules": [],
+    }
+    # Clean unchanged check.
+    clean_body = (
+        "[Rule]\nDOMAIN, a.test, PROXY\n"
+        "[Script]\nhttp-response ^x script-path=https://cdn.example/a.js\n"
+        "[MitM]\nhostname = api.example\n"
+    ).encode("utf-8")
+    clean_res = check.Result(
+        check.Resource(small_url, "loon-resource", "loon/bootstrap.example.conf:1"),
+        True, 200, "text/plain", small_url, len(clean_body), "ok", clean_body,
+    )
+    audits = check.mutable_container_audit([clean_res], [small_base])
+    assert len(audits) == 1 and audits[0].state == "unchanged", audits
+
+    # Drifted + hostile upstream strings (C3 escaping).
+    hostile_small = (
+        "[Rule]\nDOMAIN, a.test, PROXY\nDOMAIN, <script>bad</script>|pipe, PROXY\n"
+        "[Script]\nhttp-response ^x script-path=https://cdn.example/new%25.js\n"
+        "[MitM]\nhostname = api.example, evil|<b>100%</b>.example\n"
+    ).encode("utf-8")
+    hostile_large = b"[MitM]\nhostname = a.example, <img src=x>|pipe.example\n"
+    res_small = check.Result(
+        check.Resource(small_url, "loon-resource", "loon/bootstrap.example.conf:1"),
+        True, 200, "text/plain", small_url, len(hostile_small), "ok", hostile_small,
+    )
+    res_large = check.Result(
+        check.Resource(large_url, "loon-resource", "loon/bootstrap.example.conf:2"),
+        True, 200, "text/plain", large_url, len(hostile_large), "ok", hostile_large,
+    )
+    audits = check.mutable_container_audit([res_small, res_large], [small_base, large_base])
+    assert [a.state for a in audits] == ["changed", "changed"], audits
+    assert audits[1].current_mitm_hostnames == ("<img src=x>|pipe.example", "a.example"), audits[1]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        summary_file = Path(tmp) / "summary.md"
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true", "GITHUB_STEP_SUMMARY": str(summary_file)}, clear=True), \
+             contextlib.redirect_stdout(io.StringIO()) as out:
+            check.emit_mutable_container_report(audits, ["bad\n::error::injected"], "2026-11-24")
+        stdout_text = out.getvalue()
+        summary_text = summary_file.read_text(encoding="utf-8")
+        assert all(not line.startswith("::error::") for line in stdout_text.splitlines()), stdout_text
+        assert "::warning::" in stdout_text and "%25" in stdout_text, stdout_text
+        assert "<script>" not in summary_text and "<img " not in summary_text, summary_text
+        assert "&lt;script&gt;" in summary_text and "&#124;pipe" in summary_text, summary_text
+        assert "<details><summary>" in summary_text and "<pre>" in summary_text, summary_text
+
+
+def test_shared_cdn_guard_loon_and_qx() -> None:
+    targets = check.shared_cdn_guard_targets()
+    assert [(c, s) for c, s, _ in targets] == [
+        ("loon", "Amazon"),
+        ("loon", "Cloudflare"),
+        ("qx", "Amazon"),
+        ("qx", "Cloudflare"),
+    ], targets
+
+    # Loon: clean list with no-resolve and pure-domain compound rules passes.
+    loon_ok = (
+        "# comment\n"
+        "DOMAIN-SUFFIX,cloudflare.com\n"
+        "DOMAIN,dash.cloudflare.com\n"
+        "DOMAIN-KEYWORD,cloudflare\n"
+        "DOMAIN-REGEX,^cf\\.\n"
+        "USER-AGENT,Cloudflare*\n"
+        "URL-REGEX,^https://cf\n"
+        "IP-CIDR,1.1.1.0/24,no-resolve\n"
+        "IP-CIDR6,2606:4700::/32,no-resolve\n"
+        "IP6-CIDR,2606:4700::/32,NO-RESOLVE\n"
+        "AND,((DOMAIN,a.test),(DOMAIN,b.test))\n"
+        "AND,((DOMAIN,a.test),(OR,((DOMAIN-SUFFIX,b.test),(NOT,((DOMAIN-KEYWORD,c))))))\n"
+        "SUB-RULE,(DOMAIN-SUFFIX,sub.test),SubGroup\n"
+    ).encode("utf-8")
+    count, issues = check.check_loon_shared_cdn(loon_ok)
+    assert count == 3 and issues == [], (count, issues)
+
+    # Loon: missing no-resolve, IP-ASN, GEOIP, compound IP, unknown/malformed compound sub-rule, depth cap, unknown type all warn.
+    deep_nested = "DOMAIN,a.test"
+    for _ in range(1010):
+        deep_nested = f"NOT,(({deep_nested}))"
+    loon_bad = (
+        "IP-CIDR,1.1.1.0/24\n"
+        "IP-CIDR6,2606:4700::/32\n"
+        "IP-ASN,13335,no-resolve\n"
+        "GEOIP,US,no-resolve\n"
+        "AND,((DOMAIN,a.test),(IP-CIDR,1.1.1.0/24))\n"
+        "AND,((DOMAIN,a.test),(FUTURE-TYPE,x))\n"
+        "AND,((DOMAIN,,),(DOMAIN,b.test))\n"
+        "AND,((DOMAIN,a.test)\n"
+        "SUB-RULE,(FUTURE-TYPE,x),SubGroup\n"
+        "SUB-RULE,(DOMAIN,a.test),SubGroup)\n"
+        f"{deep_nested}\n"
+        "FUTURE-TYPE,foo\n"
+    ).encode("utf-8")
+    count, issues = check.check_loon_shared_cdn(loon_bad)
+    assert count == 5 and len(issues) == 12, (count, issues)
+    assert any("unrecognized sub-rule type 'FUTURE-TYPE'" in i for i in issues), issues
+    assert any("malformed DOMAIN sub-rule" in i for i in issues), issues
+    assert any("malformed SUB-RULE target" in i for i in issues), issues
+    assert any("maximum nesting depth" in i for i in issues), issues
+    assert any("malformed AND compound syntax" in i for i in issues), issues
+
+    # QX (Opus C1): case-sensitive raw-line substring #out first, then classify surviving lines.
+    qx_url = "https://cdn.example/Cloudflare.list#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0"
+    qx_ok = (
+        "# comment\n"
+        "HOST-SUFFIX,cloudflare.com,Cloudflare\n"
+        "HOST,dash.cloudflare.com,Cloudflare\n"
+        "HOST-KEYWORD,cloudflare,Cloudflare\n"
+        "HOST-WILDCARD,*.cloudflare.com,Cloudflare\n"
+        "HOST-REGEX,^cf\\.,Cloudflare\n"
+        "USER-AGENT,Cloudflare*,Cloudflare\n"
+        "IP-CIDR,1.1.1.0/24,Cloudflare\n"
+        "IP-CIDR6,2606:4700::/32,Cloudflare\n"  # C1: contains "IP-CIDR" -> filtered by KOP #out!
+        "IP6-CIDR,2606:4700::/32,Cloudflare\n"
+        "IP-ASN,13335,Cloudflare\n"
+    ).encode("utf-8")
+    filtered, issues = check.check_qx_shared_cdn(qx_ok, qx_url)
+    assert filtered == 4 and issues == [], (filtered, issues)
+
+    # C1: lowercase ip-cidr is NOT excluded by case-sensitive #out and must warn; GEOIP and unknown also warn.
+    qx_bad = (
+        "ip-cidr,1.1.1.0/24,Cloudflare\n"
+        "GEOIP,US,Cloudflare\n"
+        "FUTURE-TYPE,<script>x</script>|pipe,Cloudflare\n"
+    ).encode("utf-8")
+    filtered, issues = check.check_qx_shared_cdn(qx_bad, qx_url)
+    assert filtered == 0 and len(issues) == 3, (filtered, issues)
+    assert "unfiltered IP-CIDR" in issues[0], issues
+    assert "unfiltered GEOIP" in issues[1], issues
+    assert "unrecognized rule type" in issues[2], issues
+
+    # Without #out=, even uppercase IP-CIDR survives and warns.
+    _, no_out_issues = check.check_qx_shared_cdn(b"IP-CIDR,1.1.1.0/24,Cloudflare\n", "https://cdn.example/Amazon.list")
+    assert len(no_out_issues) == 1, no_out_issues
+
+    # C3 escaping in emit_shared_cdn_report.
+    res = check.Result(
+        check.Resource(qx_url, "qx-resource", "quantumultx/bootstrap.example.conf:1"),
+        True, 200, "text/plain", qx_url, len(qx_bad), "ok", qx_bad,
+    )
+    audits = check.shared_cdn_guard_report([res], [("qx", "Cloudflare", qx_url)])
+    assert len(audits) == 1 and audits[0].state == "warn", audits
+    with tempfile.TemporaryDirectory() as tmp:
+        summary_file = Path(tmp) / "summary.md"
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true", "GITHUB_STEP_SUMMARY": str(summary_file)}, clear=True), \
+             contextlib.redirect_stdout(io.StringIO()) as out:
+            check.emit_shared_cdn_report(audits, ["err\n::error::pwn"])
+        stdout_text = out.getvalue()
+        summary_text = summary_file.read_text(encoding="utf-8")
+        assert all(not line.startswith("::error::") for line in stdout_text.splitlines()), stdout_text
+        assert "<script>" not in summary_text and "&lt;script&gt;" in summary_text and "&#124;pipe" in summary_text, summary_text
+
+
+def test_print_baselines_cli_exclusivity() -> None:
+    for bad_argv in (["check", "--print-baselines", "--list"], ["check", "--print-baselines", "--mode", "full"]):
+        with patch.object(sys, "argv", bad_argv), contextlib.redirect_stderr(io.StringIO()):
+            try:
+                check.parse_args()
+            except SystemExit as exc:
+                assert exc.code == 2, (bad_argv, exc.code)
+            else:
+                raise AssertionError(f"expected argparse error for {bad_argv}")
+
+    # print_mutable_baselines reuses extract_resources() Resource objects and outputs valid YAML to stdout.
+    sample_url = "https://upstream.example/sample.lpx"
+    sample_res = check.Resource(sample_url, "loon-resource", "loon/bootstrap.example.conf:1")
+    sample_body = b"[MitM]\nhostname = a.example\n"
+    seen_sources: list[str] = []
+
+    def fake_fetch(resource: check.Resource, mode: str, timeout: float, retries: int,
+                   complete: bool = False, keep_body: bool = False) -> check.Result:
+        seen_sources.append(resource.source)
+        assert mode == "full" and keep_body is True and complete is False
+        return check.Result(resource, True, 200, "text/plain", resource.url, len(sample_body), "ok", sample_body)
+
+    with patch.object(check, "enabled_mutable_containers", return_value=[("loon", sample_url)]), \
+         patch.object(check, "fetch", side_effect=fake_fetch), \
+         contextlib.redirect_stdout(io.StringIO()) as out:
+        code = check.print_mutable_baselines([sample_res], 1.0, 0, 1)
+    assert code == 0 and seen_sources == ["loon/bootstrap.example.conf:1"], (code, seen_sources)
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "printed.yaml"
+        path.write_text(out.getvalue(), encoding="utf-8")
+        _, entries = check.load_mutable_baselines(path)
+        assert len(entries) == 1 and entries[0]["mitm_hostnames"] == ["a.example"], entries
+
+
+def test_main_full_mode_keep_body_and_nonblocking_warnings() -> None:
+    """Full mode requests keep_body for mutable containers & shared CDN lists, and drift/guard/loader issues never fail exit code."""
+    _, baselines = check.load_mutable_baselines()
+    cdn_targets = check.shared_cdn_guard_targets()
+    mut_entry = baselines[0]
+    cdn_client, _, cdn_url = cdn_targets[0]
+    mut_res = check.Resource(
+        str(mut_entry["url"]),
+        "loon-resource" if mut_entry["client"] == "loon" else "qx-resource",
+        "loon/bootstrap.example.conf:1" if mut_entry["client"] == "loon" else "quantumultx/bootstrap.example.conf:1",
+    )
+    cdn_res = check.Resource(
+        cdn_url,
+        "loon-resource" if cdn_client == "loon" else "qx-resource",
+        "loon/bootstrap.example.conf:2" if cdn_client == "loon" else "quantumultx/bootstrap.example.conf:2",
+    )
+    seen_keep_body: dict[str, bool] = {}
+
+    def fake_fetch(resource: check.Resource, mode: str, timeout: float, retries: int,
+                   complete: bool = False, keep_body: bool = False) -> check.Result:
+        seen_keep_body[resource.url] = keep_body
+        if resource.url == mut_res.url:
+            body = b"[MitM]\nhostname = drifted.example\n" if keep_body else b""
+        else:
+            body = b"IP-CIDR,1.1.1.0/24\n" if keep_body else b""
+        return check.Result(resource, True, 200, "text/plain", resource.url, len(body), "ok", body)
+
+    with patch.object(check, "extract_resources", return_value=[mut_res, cdn_res]), \
+         patch.object(check, "script_update_targets", return_value=[]), \
+         patch.object(check, "mihomo_content_report", return_value=([], [], [])), \
+         patch.object(check, "reject_overlap_report", return_value=([], [], [])), \
+         patch.object(check, "fetch", side_effect=fake_fetch), \
+         patch.dict(os.environ, {}, clear=True), \
+         contextlib.redirect_stdout(io.StringIO()) as out:
+        with patch.object(sys, "argv", ["check", "--mode", "light"]):
+            assert check.main() == 0
+            assert seen_keep_body == {mut_res.url: False, cdn_res.url: False}, seen_keep_body
+        seen_keep_body.clear()
+        with patch.object(sys, "argv", ["check", "--mode", "full"]):
+            assert check.main() == 0
+            assert seen_keep_body == {mut_res.url: True, cdn_res.url: True}, seen_keep_body
+            text = out.getvalue()
+            assert "Mutable MitM container drift audit" in text and "[warn] mutable-container" in text, text
+            assert "Shared CDN guard" in text and "[warn] shared-cdn" in text, text
+        # Real corrupt baseline files on disk warn non-blockingly in main() without crashing.
+        with tempfile.TemporaryDirectory() as tmp:
+            bad_samples = (
+                "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n- client: [loon]\n  url: https://a.example/x\n  mitm_count: 0\n  mitm_sha256: " + "0" * 64 + "\n  scripts: []\n  other_urls_count: 0\n  other_urls_sha256: " + "0" * 64 + "\n  rules: []\n",
+                "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n- client: loon\n  url: 'https://['\n  mitm_count: 0\n  mitm_sha256: " + "0" * 64 + "\n  scripts: []\n  other_urls_count: 0\n  other_urls_sha256: " + "0" * 64 + "\n  rules: []\n",
+                'version: 1\nobserved_date: \'2026-11-24\'\ncontainers:\n- client: loon\n  url: "https://test.example/\\uD800"\n  mitm_count: 0\n  mitm_sha256: ' + "0" * 64 + "\n  scripts: []\n  other_urls_count: 0\n  other_urls_sha256: " + "0" * 64 + "\n  rules: []\n",
+                "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n- client: loon\n  url: 'https://user:fixture-secret@test.example:badport/x'\n  mitm_count: 0\n  mitm_sha256: " + "0" * 64 + "\n  scripts: []\n  other_urls_count: 0\n  other_urls_sha256: " + "0" * 64 + "\n  rules: []\n",
+                "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n- client: loon\n  url: https://a.example/x\n  mitm_count: 0\n  mitm_sha256: " + "0" * 64 + "\n  scripts: []\n  other_urls_count: 0\n  other_urls_sha256: " + "0" * 64 + "\n  rules: []\n  'https://user:fixture-secret@test.example:badport/x': 1\n",
+                'version: 1\nobserved_date: "2026-11-24"\ncontainers:\n- client: loon\n  url: "https://user:fixture-secret@test.example/path\\q"\n',
+                "containers: " + "[" * 500 + "]" * 500 + "\n",
+                "version: 1.0\nobserved_date: '2026-99-99'\ncontainers: []\n",
+                "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n- 1: bad\n  extra: key\n",
+            )
+            for idx, content in enumerate(bad_samples):
+                bad_path = Path(tmp) / f"bad-{idx}.yaml"
+                bad_path.write_text(content, encoding="utf-8")
+                summary_path = Path(tmp) / f"summary-{idx}.md"
+                with patch.object(check, "MUTABLE_BASELINES_FILE", bad_path), \
+                     patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary_path)}, clear=True), \
+                     patch.object(sys, "argv", ["check", "--mode", "full"]), \
+                     contextlib.redirect_stdout(io.StringIO()) as warn_out:
+                    assert check.main() == 0, (idx, warn_out.getvalue())
+                    out_text = warn_out.getvalue()
+                    assert "failed to load mutable container baselines" in out_text, (idx, out_text)
+                    assert "fixture-secret" not in out_text, (idx, out_text)
+                    summary_text = summary_path.read_text(encoding="utf-8")
+                    assert "fixture-secret" not in summary_text, (idx, summary_text)
+
+            # Query-string credential in a baseline URL triggering container-set mismatch must be redacted everywhere (P2-1a).
+            mismatch_path = Path(tmp) / "query-mismatch.yaml"
+            mismatch_path.write_text(
+                "version: 1\nobserved_date: '2026-11-24'\ncontainers:\n"
+                "- client: loon\n"
+                "  url: 'https://a.example/x?credential=fixture-value'\n"
+                "  mitm_count: 0\n"
+                f"  mitm_sha256: '{'0' * 64}'\n"
+                "  scripts: []\n"
+                "  other_urls_count: 0\n"
+                f"  other_urls_sha256: '{'0' * 64}'\n"
+                "  rules: []\n",
+                encoding="utf-8",
+            )
+            mismatch_summary = Path(tmp) / "summary-mismatch.md"
+            with patch.object(check, "MUTABLE_BASELINES_FILE", mismatch_path), \
+                 patch.dict(os.environ, {"GITHUB_ACTIONS": "true", "GITHUB_STEP_SUMMARY": str(mismatch_summary)}, clear=True), \
+                 patch.object(sys, "argv", ["check", "--mode", "full"]), \
+                 contextlib.redirect_stdout(io.StringIO()) as mismatch_out:
+                assert check.main() == 0, mismatch_out.getvalue()
+                out_text = mismatch_out.getvalue()
+                summary_text = mismatch_summary.read_text(encoding="utf-8")
+                assert "baseline container set differs" in out_text and "<redacted>" in out_text, out_text
+                assert "fixture-value" not in out_text, out_text
+                assert "fixture-value" not in summary_text and "&lt;redacted&gt;" in summary_text, summary_text
+
+
 def main() -> int:
     resources = check.extract_resources()
     urls = [resource.url for resource in resources]
@@ -612,6 +1158,13 @@ def main() -> int:
     test_content_main_exit_and_modes()
     test_full_download_must_be_complete()
     test_qx_rewrite_extraction_boundaries()
+    test_keep_body_and_complete_boundaries()
+    test_parse_mutable_container_syntax()
+    test_mutable_container_baselines_offline()
+    test_mutable_container_audit_drift_and_escaping()
+    test_shared_cdn_guard_loon_and_qx()
+    test_print_baselines_cli_exclusivity()
+    test_main_full_mode_keep_body_and_nonblocking_warnings()
 
     print(
         f"Remote resource offline tests passed "

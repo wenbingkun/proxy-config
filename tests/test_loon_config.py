@@ -275,6 +275,11 @@ def check_rules(loon: dict, failures: list[str]) -> None:
         failures.append(
             "loon: third-party [Remote Rule] tags/policies/enabled/order differ from QX [filter_remote]"
         )
+    for service in ("Cloudflare", "Amazon"):
+        want_url = f"https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Loon/{service}/{service}.list"
+        matches = [opts for url, opts in remote if url == want_url]
+        if len(matches) != 1 or matches[0].get("enabled", "true").lower() != "true":
+            failures.append(f"loon: [Remote Rule] must enable {service}.list exactly once (guarded by check_remote_resources)")
 
     last_url, last_opts = remote[-1]
     if (last_url, last_opts.get("policy"), last_opts.get("enabled")) != (

@@ -27,6 +27,11 @@ const cf = ['HOST-SUFFIX,cloudflare.com,PROXY', 'HOST,fixture.cloudflare.com,PRO
 const filtered = parse('filter', 'https://fixture.invalid/Cloudflare.list#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0', cf);
 assert(!/^(IP-CIDR|IP6-CIDR|IP-ASN),/im.test(filtered), filtered);
 assert(/cloudflare\.com/i.test(filtered) && /fixture\.cloudflare\.com/i.test(filtered), filtered);
+const amz = ['HOST-SUFFIX,amazon.com,PROXY', 'HOST,fixture.amazon.com,PROXY',
+  'IP-CIDR,13.32.0.0/15,PROXY', 'IP6-CIDR,2600:1f18::/32,PROXY', 'IP-ASN,16509,PROXY'].join('\n');
+const amzFiltered = parse('filter', 'https://fixture.invalid/Amazon.list#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0', amz);
+assert(!/^(IP-CIDR|IP6-CIDR|IP-ASN),/im.test(amzFiltered), amzFiltered);
+assert(/amazon\.com/i.test(amzFiltered) && /fixture\.amazon\.com/i.test(amzFiltered), amzFiltered);
 const node = Buffer.from(parse('server', 'https://fixture.invalid/public-nodes', 'trojan://fixture-password@node.invalid:443?peer=node.invalid#Fixture'), 'base64').toString('utf8');
 assert(/trojan=node\.invalid:443/.test(node), node);
 assert(/password=fixture-password/.test(node) && /tag=Fixture/.test(node), node);
@@ -55,4 +60,4 @@ assert.deepStrictEqual(railRewrite.filter(line => !/^hostname=/.test(line)).map(
   ['https?:\\/\\/ad\\.12306\\.cn\\/ad\\/ser\\/getAdList url script-analyze-echo-response https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/12306-ads.js'], railRewrite.join('\n'));
 assert(railRewrite.includes('hostname=ad.12306.cn'), railRewrite.join('\n'));
 assert.deepStrictEqual(meaningful(parse('filter', railLink, rail)), ['host, ad.12306.cn, direct']);
-console.log('Real parser: Cloudflare exclusions, Trojan conversion, Zhihu and 12306 dual loading and negative controls passed.');
+console.log('Real parser: Cloudflare and Amazon exclusions, Trojan conversion, Zhihu and 12306 dual loading and negative controls passed.');
