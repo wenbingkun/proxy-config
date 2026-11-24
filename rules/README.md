@@ -63,7 +63,7 @@ git push
 
 手动同步时只改对应条目，保留 QX 的订阅、MitM 私密材料及其他本地设置；Windows 重新导入前也需保留或重新填写本地订阅及必要设置。设备已保存的组选择不保证随候选顺序变化而重置；原候选被删除时，需检查客户端实际回退到哪一项。
 
-远程资源轻量巡检每周由 GitHub Actions 自动执行：它只检查实际配置依赖，使用有限并发、超时和每项前 4 KiB 内容识别 404、HTML 错误页及错误图标类型，不 clone 上游仓库，也不把响应写入 Git。手工触发 `Remote Resources` workflow 时可选择 `full`，对 Clash 规则执行完整 YAML / 文本结构检查。失败日志会隐藏 URL 查询参数，避免泄漏可能存在的 token。
+远程资源巡检每周由 GitHub Actions 自动以 `full` 模式执行，手动触发 `Remote Resources` workflow 时可选 `light` 或 `full`：巡检覆盖各端实际配置依赖以及仓库托管的重写/插件容器（含保留用于兼容回滚的历史重写与插件文件），使用有限并发与超时，不 clone 上游仓库，也不把响应写入 Git；`light` 模式读取每项前 4 KiB 识别 404、HTML 错误页及错误图标类型，`full` 模式额外下载完整规则正文校验 Clash YAML / Surge 语法、Mihomo provider 的 IP 覆盖漂移与固定脚本上游字节变化。失败日志会隐藏 URL 查询参数，避免泄漏可能存在的 token。
 
 ## 添加自定义规则
 

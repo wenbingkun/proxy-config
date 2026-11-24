@@ -18,10 +18,57 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 
 PLACEHOLDER_PATTERNS = re.compile(
-    r"replace[-_]me|example\.com|\.test(?:[/:?]|$)|your[-_]token|placeholder",
+    r"replace[-_]me|replace[-_]with|example\.com|\.test(?:[/:?]|$)|your[-_]token|placeholder",
+    re.IGNORECASE,
+)
+STRICT_PLACEHOLDER_RE = re.compile(
+    r"^(?:"
+    r"<[^<>\s]+>"
+    r"|\$(?:[0-9]+|[A-Za-z_][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})"
+    r"|\{[^}\r\n]*\}"
+    r"|%(?:\([A-Za-z_][A-Za-z0-9_]*\))?[sd]"
+    r"|replace[-_]me(?:[-_](?:[0-9]+|one|two|one-changed))?"
+    r"|replace[-_]with[-_]random[-_]key"
+    r"|your[-_](?:token|key|secret)"
+    r"|placeholder"
+    r"|changeme"
+    r")$",
     re.IGNORECASE,
 )
 TOKEN_QUERY_KEY = "token"
+# Construct the PEM marker dynamically so this script does not trigger its own check.
+PEM_PRIVATE_KEY_RE = re.compile(r"-----" + r"BEGIN [A-Z0-9 ]*PRIVATE KEY" + r"-----")
+BEARER_TOKEN_RE = re.compile(
+    r"(?:"
+    r"['\"]?Authorization['\"]?[ \t]*[:=][ \t]*['\"]?Bearer[ \t]+([^\s\"'`<>}{$,;]+)"
+    r"|"
+    r"\bBearer[ \t]+((?=[A-Za-z0-9._~+/=-]{12,})(?=\S*[0-9._~+/=-])[^\s\"'`<>}{$,;]+)"
+    r")",
+    re.IGNORECASE,
+)
+LOCAL_SECRET_ASSIGN_RE = re.compile(
+    r"(?m)^[ \t]*(?:export[ \t]+)?(ROUTER_SECRET|SURGE_KEY)[ \t]*=(?:"
+    r"[ \t]*\"([^\"\r\n]+)\""
+    r"|[ \t]*'([^'\r\n]+)'"
+    r"|([^\s'\"][^\s'\"]*)"
+    r"|[ \t]+([^\s#'\"][^\s'\"]*)"
+    r")"
+)
+SURGE_HTTP_API_RE = re.compile(r"(?m)^[ \t]*http-api[ \t]*=[ \t]*([^@\s]+)@")
+EXTRA_QUERY_SECRET_RE = re.compile(r"[?&](key|secret|auth)=([^\s&\"'`]+)", re.IGNORECASE)
+FORBIDDEN_TRACKED_FILES = (
+    "quantumultx/bootstrap.conf",
+    "loon/bootstrap.conf",
+    "surge/bootstrap.conf",
+    "mihomo/shellcrash/providers.env",
+    "surge/Airport.conf",
+    "surge/airport-dns.sgmodule",
+    "surge/netdiag-api.sgmodule",
+)
+
+
+def is_template_placeholder(value: str) -> bool:
+    return bool(STRICT_PLACEHOLDER_RE.fullmatch(value))
 
 
 def fail(msg: str, failures: list[str]) -> None:
@@ -94,22 +141,40 @@ def check_architecture(failures: list[str]) -> None:
 def check_security(failures: list[str]) -> None:
     """Scan committed files for accidental secrets."""
 
-    # Local bootstraps must not be tracked by git
-    for local_bootstrap in ("quantumultx/bootstrap.conf", "loon/bootstrap.conf", "surge/bootstrap.conf"):
+    # Local secret files must not be tracked by git
+    for local_secret in FORBIDDEN_TRACKED_FILES:
         result = subprocess.run(
-            ["git", "ls-files", local_bootstrap],
+            ["git", "ls-files", local_secret],
             cwd=ROOT,
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
-            fail(f"git ls-files failed for {local_bootstrap}", failures)
+            fail(f"git ls-files failed for {local_secret}", failures)
         if result.stdout.strip():
             fail(
-                f"{local_bootstrap} is tracked by git — "
+                f"{local_secret} is tracked by git — "
                 "it contains secrets and must be gitignored",
                 failures,
             )
+
+    # Any tracked file matching .gitignore (e.g. *.p12, *.pem, *.key, *.dconf, *.local.env) must fail.
+    ignored_tracked = subprocess.run(
+        ["git", "ls-files", "-ci", "-z", "--exclude-standard"],
+        cwd=ROOT,
+        capture_output=True,
+    )
+    if ignored_tracked.returncode != 0:
+        fail("git ls-files -ci failed; ignored-file tracking check incomplete", failures)
+    else:
+        for raw in ignored_tracked.stdout.split(b"\0"):
+            if raw:
+                tracked_rel = os.fsdecode(raw)
+                fail(
+                    f"{tracked_rel} is tracked by git despite matching .gitignore — "
+                    "remove it from tracking",
+                    failures,
+                )
 
     # Scan tracked files and untracked candidates that are not gitignored.
     # -z gives raw NUL-separated paths; without it Git quotes and escapes
@@ -183,6 +248,58 @@ def check_security(failures: list[str]) -> None:
                 fail(
                     f"{rel_path}: possible real subscription URL in {match.group(0).split('=', 1)[0].strip()} — "
                     "use a placeholder instead",
+                    failures,
+                )
+
+        # PEM private key material must never be committed.
+        for match in PEM_PRIVATE_KEY_RE.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            fail(
+                f"{rel_path}:{line}: PEM private key header detected — "
+                "private keys must not be committed",
+                failures,
+            )
+
+        # Bearer credentials must remain template expressions or obvious placeholders.
+        for match in BEARER_TOKEN_RE.finditer(text):
+            bearer_value = match.group(1) or match.group(2)
+            if not is_template_placeholder(bearer_value):
+                line = text.count("\n", 0, match.start()) + 1
+                fail(
+                    f"{rel_path}:{line}: possible real Bearer token: Bearer <redacted> — "
+                    "use a placeholder instead",
+                    failures,
+                )
+
+        # Device-local API secret variables and Surge http-api keys.
+        for match in LOCAL_SECRET_ASSIGN_RE.finditer(text):
+            var_name = match.group(1)
+            secret_value = match.group(2) or match.group(3) or match.group(4) or match.group(5) or ""
+            if secret_value and not is_template_placeholder(secret_value):
+                line = text.count("\n", 0, match.start()) + 1
+                fail(
+                    f"{rel_path}:{line}: possible real secret in {var_name} — "
+                    "use a placeholder instead",
+                    failures,
+                )
+        for match in SURGE_HTTP_API_RE.finditer(text):
+            api_key = match.group(1)
+            if not is_template_placeholder(api_key):
+                line = text.count("\n", 0, match.start()) + 1
+                fail(
+                    f"{rel_path}:{line}: possible real key in http-api — "
+                    "use a placeholder instead",
+                    failures,
+                )
+
+        # Query-string credentials for key/secret/auth (token= is checked above).
+        for match in EXTRA_QUERY_SECRET_RE.finditer(text):
+            param_name, param_value = match.group(1), match.group(2)
+            if not is_template_placeholder(param_value):
+                line = text.count("\n", 0, match.start()) + 1
+                fail(
+                    f"{rel_path}:{line}: possible real query credential: "
+                    f"{param_name}=<redacted> — use a placeholder instead",
                     failures,
                 )
 

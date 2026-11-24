@@ -113,18 +113,19 @@ TEMPLATE_URL='https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@<commit>/mihom
 1. 加锁并用 curl 下载公开模板到临时目录（需要 curl，不再回退到 wget）。
    下载限时为连接 15 秒、整次 120 秒；失败时只报告 curl 退出码（28 为超时），
    不输出模板地址，并在停止或替换任何东西之前退出。该时限只覆盖模板下载阶段，
-   不代表整次部署有总时限；
+   不代表整次部署有总时限；若设置了可选的 `TEMPLATE_SHA256`，会在加锁前校验摘要格式与 `sha256sum` 可用性，并在下载后核对模板 SHA-256（切换单/双订阅或更换模板提交时须同步更新或清除 `TEMPLATE_SHA256`）；
 2. 检查模板与单/双订阅模式匹配，且每个所需占位符只出现一次；
 3. 注入订阅 URL，但不在日志中输出它们；
 4. 使用设备上的 Mihomo/CrashCore 执行 `-t`；
 5. 备份当前配置，并比较旧、新配置中的 `Sub`/`Sub2` URL；仅当对应 URL
    变化、增加或移除时，停止 ShellCrash，临时备份并失效相应的
    `cache/proxy-providers/sub.yaml` 或 `sub2.yaml`，URL 未变化的缓存不会被清理；
-6. 原子替换 `$CRASHDIR/yamls/config.yaml`；
-7. 通过 ShellCrash 启动服务；
+6. 原子替换 `$CRASHDIR/yamls/config.yaml`，并在 `command.env` 显式定义了独立 `TMPDIR`（非 `/`、非 `/tmp`）时清除陈旧的 `$TMPDIR/error.yaml`；
+7. 通过 ShellCrash 启动服务，并在启动后、等待后与 provider 校验后检查是否生成了 `$TMPDIR/error.yaml`（ShellCrash 覆写校验失败回退基础配置的标记）及 `CrashCore` 进程是否存活；
 8. 对新增或 URL 变化的 provider，等待对应缓存生成并确认至少包含一个节点；
-9. 启动失败或 provider 获取超时时，同时恢复上一份配置和被失效的旧缓存，并重新启动旧配置；
-   旧配置也启动失败时，脚本会明确提示服务可能未运行。
+9. 启动失败、检测到 `error.yaml` 覆写回退、`CrashCore` 未运行或 provider 获取超时时，停止核心并将覆写失败现场保存到受控的临时恢复目录（`$deploy_tmp_dir/error.yaml`，权限 `600`），同时恢复上一份配置和被失效的旧缓存，并重新启动旧配置；
+   旧配置启动失败或重启后再次出现 `error.yaml` 时，脚本会保留恢复材料并明确提示服务状态异常；首次安装没有旧配置可恢复时，检测到 `error.yaml` 同样会停止核心而非静默留在基础配置。
+   路由器 `/tmp` 通常为内存盘（tmpfs），如需在回滚失败后跨重启保留临时恢复材料，可在 `providers.env` 设置 `SHELLCRASH_TMP_ROOT` 指向持久卷目录。
 
 本次部署的自动回滚使用：
 

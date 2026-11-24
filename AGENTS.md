@@ -40,7 +40,7 @@ sh scripts/check_all.sh
 
 去广告以 QX、Loon 两端能力相近为目标（Surge 已冻结，不再要求跟进），优先采用适合该客户端的原生实现，不为统一来源替换已验证方案。当前 Loon 高德保留可莉插件；新增补充前先核对现有覆盖，避免同一 App 出现容易混淆的重复条目。以效果优先，不禁止墨鱼来源；回取的公开资源与脚本固定完整提交，个人站点内容仅用审核后的冻结副本。每 App/服务每端只保留一个启用的专用入口；仅去开屏规则可合入共用补充，阿里系 amdc 独立。QX 同一混合资源双段加载算一个入口。
 
-**策略组**：以路由器模板为基准，三端的 32 个基础策略组组名、组序一致；QX 与 Loon 另有 16 个 ssid 包装组（见下）。
+**策略组**：以路由器模板为基准，三端的 32 个基础策略组名称集合一致（QX 与 Loon 组序一致，Mihomo 第 3–14 位按自身分组顺序固定，见 `tests/test_us_group_failclosed.py`）；QX 与 Loon 另有 16 个 ssid 包装组（见下）。
 - 家庭/外出切换（QX、Loon 相同）：需要区分的策略由排在最后的 16 个「· 自动」ssid 组包装，在家走 DIRECT 交给路由器，外出（其他 Wi-Fi、蜂窝）走同名基础组；规则只引用包装组。REJECT、DIRECT、`🛡️ 安全防护` 等不需要切换的策略不包装。全程规则模式：Loon 不用 `ssid-trigger`，QX 不用 `running_mode_trigger` / `ssid_suspended_list`。包装组清单唯一来源是 `scripts/build_rules.py` 的 `HOME_AUTO_GROUPS`（同时决定 `repo.snippet` 的策略名），`tests/test_qx_config.py` 与 `tests/test_loon_config.py` 校验两端模板与之一致。
 - QX 的 `🌏 全球加速` 有意不挂规则；ProxyLite 有意不移植到 QX。
 - 地区组只含本地区节点；非美地区组按延迟自动优选，美国组手动。
@@ -49,7 +49,7 @@ sh scripts/check_all.sh
 - ssid 策略写法：`ssid=X · 自动, X, X, HOME_SSID:DIRECT`（依次为其他 Wi-Fi、蜂窝、家庭 SSID）。仓库 `repo.snippet` 引用「· 自动」组，设备配置缺少这些组时其规则无法生效。
 - 丢弃 UDP 443（QUIC），让 App 回退到 TCP、MitM 才能生效；`fallback_udp_policy = reject`；不设 `no-ipv6`。
 - QX 没有 `no-resolve`：没有域名类规则命中的请求会先解析，再按顺序匹配 IP 规则。所以 bm7 `Cloudflare.list` 用资源解析器去掉 IP 规则（URL 加 `#out=IP-CIDR+IP6-CIDR+IP-ASN&ntf=0`，`opt-parser=true`；`ntf=0` 关掉解析器每次更新都弹的“已禁用”通知；关键词区分大小写），只保留域名，与 Mihomo 的 Cloudflare 约定一致；否则未收录、托管在 Cloudflare 上的网站都会进 👨‍💻 开发服务。
-- B 站使用仓库冻结托管的 `quantumultx/rewrite/bilibili_ad.conf` 与 `quantumultx/scripts/bilibili_json.js`，不跟上游，不与其他 B 站重写同时启用。
+- B 站使用仓库冻结托管的 `quantumultx/rewrite/bilibili_ad.conf` 与 `quantumultx/scripts/bilibili_json-safe.js`（旧 `bilibili_json.js` 仅作历史回滚保留），不跟上游，不与其他 B 站重写同时启用。
 - 观察（2026-09）：QX 测速组只在被请求时测速，在家空闲时停在首个节点，属正常。
 
 **Loon**

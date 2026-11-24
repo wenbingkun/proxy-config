@@ -73,7 +73,7 @@ Safari 超级搜索要求默认搜索引擎为 DuckDuckGo；App Store 地区页�
 
 ## 家庭 / 外出自动切换
 
-与 Loon 相同（见 [Loon 说明](../loon/README.md#家庭--外出自动切换)）：不使用 `running_mode_trigger` 或 `ssid_suspended_list`，运行模式在任何网络下都保持「规则分流」。策略页上方的 32 个组与路由器、Loon 同名同序，在这些组里选择节点。规则实际引用的是排在最后的 16 个「· 自动」ssid 策略（如 `🤖 人工智能 · 自动`、`🐟 兜底分流 · 自动`、`🇭🇰 香港节点 · 自动`）：
+与 Loon 相同（见 [Loon 说明](../loon/README.md#家庭--外出自动切换)）：不使用 `running_mode_trigger` 或 `ssid_suspended_list`，运行模式在任何网络下都保持「规则分流」。策略页上方的 32 个基础组与 Loon 同名同序、与路由器同名同集合，在这些组里选择节点。规则实际引用的是排在最后的 16 个「· 自动」ssid 策略（如 `🤖 人工智能 · 自动`、`🐟 兜底分流 · 自动`、`🇭🇰 香港节点 · 自动`）：
 
 - 连上家里 Wi-Fi：走 DIRECT，交给路由器上的 ShellCrash 分流；
 - 其他 Wi-Fi 与蜂窝：走同名基础组，即原来在 QX 里选好的节点。

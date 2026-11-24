@@ -34,6 +34,7 @@ import os
 import re
 import selectors
 import shutil
+import stat
 import subprocess
 import sys
 import threading
@@ -81,12 +82,45 @@ def source_ip(payload: str) -> str | None:
 def load_config() -> dict[str, str]:
     cfg: dict[str, str] = {}
     if CONFIG.exists():
-        for line in CONFIG.read_text().splitlines():
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0)
+        fd = os.open(CONFIG, flags)
+        try:
+            st = os.fstat(fd)
+            if not stat.S_ISREG(st.st_mode):
+                raise PermissionError(f"{CONFIG} must be a regular file")
+            if hasattr(os, "getuid") and st.st_uid != os.getuid():
+                raise PermissionError(f"{CONFIG} must be owned by the current user")
+            mode = stat.S_IMODE(st.st_mode)
+            if mode & 0o077:
+                raise PermissionError(
+                    f"{CONFIG} permissions {oct(mode)} are too open; run chmod 600 {CONFIG}"
+                )
+        except Exception:
+            os.close(fd)
+            raise
+        with os.fdopen(fd, "r", encoding="utf-8") as handle:
+            content = handle.read()
+        for line in content.splitlines():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 key, value = line.split("=", 1)
                 cfg[key.strip()] = value.strip().strip("\"'")
     return cfg
+
+
+def validate_pymobiledevice3(raw: str) -> str:
+    if (
+        not raw
+        or any(ch.isspace() or ord(ch) < 32 or ch in "%$\\'\";" for ch in raw)
+    ):
+        raise ValueError(
+            "PYMOBILEDEVICE3 must be an absolute path without whitespace, control characters or systemd syntax characters (% $ \\ ' \" ;)"
+        )
+    if not Path(raw).is_absolute():
+        raise ValueError("PYMOBILEDEVICE3 must be an absolute path")
+    if not os.path.isfile(raw) or not os.access(raw, os.X_OK):
+        raise ValueError(f"PYMOBILEDEVICE3 is not an executable file: {raw}")
+    return raw
 
 
 def device_ips(cfg: dict[str, str]) -> list[str]:
@@ -927,6 +961,9 @@ def cmd_record(_args) -> int:
 
 
 def cmd_install_service(_args) -> int:
+    cfg = load_config()
+    usb = re.fullmatch(r"https?://127\.0\.0\.1:(\d+)/?", cfg.get("SURGE_API_USB", ""))
+    pymobiledevice3 = validate_pymobiledevice3(cfg["PYMOBILEDEVICE3"]) if (cfg.get("PYMOBILEDEVICE3") and usb) else None
     unit = Path.home() / ".config/systemd/user" / SERVICE
     unit.parent.mkdir(parents=True, exist_ok=True)
     unit.write_text(
@@ -936,14 +973,12 @@ def cmd_install_service(_args) -> int:
         "Restart=always\nRestartSec=10\n\n[Install]\nWantedBy=default.target\n"
     )
     units = [SERVICE]
-    cfg = load_config()
-    usb = re.fullmatch(r"https?://127\.0\.0\.1:(\d+)/?", cfg.get("SURGE_API_USB", ""))
-    if cfg.get("PYMOBILEDEVICE3") and usb:
+    if pymobiledevice3 and usb:
         # Forward a local port to Surge's API port on the iPhone through the USB cable.
         (unit.parent / USB_SERVICE).write_text(
             "[Unit]\nDescription=USB forward to Surge's HTTP API on the iPhone (proxy-config netdiag)\n\n"
             f"[Service]\nEnvironment=PYMOBILEDEVICE3_USBMUX={USBMUX}\n"
-            f"ExecStart={cfg['PYMOBILEDEVICE3']} usbmux forward {usb[1]} 6171\n"
+            f"ExecStart={pymobiledevice3} usbmux forward {usb[1]} 6171\n"
             "Restart=always\nRestartSec=30\n\n[Install]\nWantedBy=default.target\n"
         )
         units.append(USB_SERVICE)

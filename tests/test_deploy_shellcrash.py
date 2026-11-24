@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shlex
+import shutil
 import signal
 import stat
 import subprocess
@@ -17,10 +19,10 @@ DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"
 DEPLOY_TIMEOUT = 60
 SYSTEM_BIN_DIRS = ("/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")
 
-TEST_PROVIDER_URL_1 = "https://provider.test/sub?auth=fixture-one&mode=clash|meta"
-TEST_PROVIDER_URL_2 = "https://provider.test/sub?auth=fixture-two&mode=clash|meta"
+TEST_PROVIDER_URL_1 = "https://provider.test/sub?auth=replace-me-one&mode=clash|meta"
+TEST_PROVIDER_URL_2 = "https://provider.test/sub?auth=replace-me-two&mode=clash|meta"
 TEST_PROVIDER_URL_1_CHANGED = (
-    "https://provider.test/sub?auth=fixture-one-changed&mode=clash|meta"
+    "https://provider.test/sub?auth=replace-me-one-changed&mode=clash|meta"
 )
 
 TEMPLATE = """\
@@ -69,18 +71,28 @@ def write_env(
     provider_url_2: str = TEST_PROVIDER_URL_2,
     mihomo_bin: Path | None = None,
     template_url: str | None = None,
+    skip_process_check: str | None = "1",
+    template_sha256: str | None = None,
+    startup_wait: str = "0",
+    provider_wait: str = "0",
+    tmp_root: Path | None = None,
 ) -> None:
     values = {
         "SHELLCRASH_DIR": str(shellcrash_dir),
         "TEMPLATE_URL": template_url or f"https://fixture.invalid/{template_name}",
         "SUB_URL_1": provider_url_1,
         "SUB_URL_2": provider_url_2,
-        "SHELLCRASH_STARTUP_WAIT": "0",
-        "SHELLCRASH_PROVIDER_WAIT": "0",
-        "SHELLCRASH_SKIP_PROCESS_CHECK": "1",
+        "SHELLCRASH_STARTUP_WAIT": startup_wait,
+        "SHELLCRASH_PROVIDER_WAIT": provider_wait,
     }
+    if skip_process_check is not None:
+        values["SHELLCRASH_SKIP_PROCESS_CHECK"] = skip_process_check
     if mihomo_bin is not None:
         values["MIHOMO_BIN"] = str(mihomo_bin)
+    if template_sha256 is not None:
+        values["TEMPLATE_SHA256"] = template_sha256
+    if tmp_root is not None:
+        values["SHELLCRASH_TMP_ROOT"] = str(tmp_root)
     path.write_text(
         "\n".join(f"{key}={shlex.quote(value)}" for key, value in values.items())
         + "\n",
@@ -242,6 +254,44 @@ fi
 if [ "$action" = 'start' ] && [ -f "$root/start_fail_once" ]; then
     rm -f "$root/start_fail_once"
     exit 1
+fi
+if [ "$action" = 'start' ] && [ -f "$root/write_error_yaml_once" ]; then
+    rm -f "$root/write_error_yaml_once"
+    printf 'override-failed: true\n' >"$root/bin/error.yaml"
+fi
+if [ "$action" = 'start' ] && [ -f "$root/write_error_yaml_always" ]; then
+    printf 'override-failed-always: true\n' >"$root/bin/error.yaml"
+fi
+if [ "$action" = 'start' ] && [ -f "$root/write_error_yaml_distinct_twice" ]; then
+    if [ -f "$root/write_error_yaml_distinct_twice.second" ]; then
+        rm -f "$root/write_error_yaml_distinct_twice" "$root/write_error_yaml_distinct_twice.second"
+        printf 'override-failed-second: true\n' >"$root/bin/error.yaml"
+    else
+        touch "$root/write_error_yaml_distinct_twice.second"
+        printf 'override-failed-first: true\n' >"$root/bin/error.yaml"
+    fi
+fi
+if [ "$action" = 'start' ] && [ -f "$root/write_error_yaml_delayed_rollback" ]; then
+    if [ -f "$root/write_error_yaml_delayed_rollback.second" ]; then
+        rm -f "$root/write_error_yaml_delayed_rollback" "$root/write_error_yaml_delayed_rollback.second"
+        (sleep 1; printf 'override-failed-rollback-delayed: true\n' >"$root/bin/error.yaml") >/dev/null 2>&1 &
+    else
+        touch "$root/write_error_yaml_delayed_rollback.second"
+        printf 'override-failed-first: true\n' >"$root/bin/error.yaml"
+    fi
+fi
+if [ "$action" = 'start' ] && [ -f "$root/write_error_yaml_after_delay" ]; then
+    rm -f "$root/write_error_yaml_after_delay"
+    (sleep 1; printf 'override-failed-delayed: true\n' >"$root/bin/error.yaml") >/dev/null 2>&1 &
+fi
+if [ "$action" = 'start' ] && [ -f "$root/write_error_yaml_during_provider_wait" ]; then
+    rm -f "$root/write_error_yaml_during_provider_wait"
+    (
+        sleep 1
+        printf 'override-failed-provider-wait: true\n' >"$root/bin/error.yaml"
+        printf '%s\n' 'proxies:' '  - name: late-node' >"$root/cache/proxy-providers/sub.yaml"
+    ) >/dev/null 2>&1 &
+    exit 0
 fi
 if [ "$action" = 'start' ] && [ ! -f "$root/provider_fetch_should_fail" ]; then
     cache_dir="$root/cache/proxy-providers"
@@ -596,6 +646,307 @@ exit 0
                 assert config_path.read_bytes() == previous_config, body
                 assert sub_cache.read_bytes() == previous_cache, body
         provider_body.unlink()
+
+        # Process check via pidof: passes when CrashCore is running, rolls back when missing,
+        # and cannot be bypassed via caller environment SHELLCRASH_SKIP_PROCESS_CHECK=1.
+        write_executable(
+            fake_path / "pidof",
+            """#!/bin/sh
+if [ -f "$FAKE_PIDOF_FAIL" ]; then
+    exit 1
+fi
+echo 14280
+exit 0
+""",
+        )
+        pidof_fail_flag = shellcrash_dir / "pidof_should_fail"
+        pidof_env = dict(process_env, FAKE_PIDOF_FAIL=str(pidof_fail_flag))
+        write_env(env_path, shellcrash_dir, "good.yaml", skip_process_check=None)
+        run_deploy(env_path, pidof_env, should_succeed=True)
+
+        previous_config = config_path.read_bytes()
+        previous_cache = sub_cache.read_bytes()
+        pidof_fail_flag.touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            skip_process_check=None,
+        )
+        output = run_deploy(env_path, pidof_env, should_succeed=False)
+        assert "未检测到 CrashCore 进程" in output, output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+
+        bypass_attempt_env = dict(pidof_env, SHELLCRASH_SKIP_PROCESS_CHECK="1")
+        output = run_deploy(env_path, bypass_attempt_env, should_succeed=False)
+        assert "未检测到 CrashCore 进程" in output, output
+        assert config_path.read_bytes() == previous_config
+        pidof_fail_flag.unlink()
+        (fake_path / "pidof").unlink()
+
+        # ShellCrash override fallback (error.yaml): stale error.yaml is cleared on a good deploy;
+        # new error.yaml produced by start.sh triggers rollback and preserves a mode-600 copy in deploy_tmp_dir.
+        deploy_tmp_root = base / "deploy-tmp"
+        deploy_tmp_root.mkdir(exist_ok=True)
+        error_yaml = bin_dir / "error.yaml"
+        error_yaml.write_text("stale error\n", encoding="utf-8")
+        write_env(env_path, shellcrash_dir, "good.yaml", tmp_root=deploy_tmp_root)
+        run_deploy(env_path, process_env, should_succeed=True)
+        assert not error_yaml.exists()
+
+        previous_config = config_path.read_bytes()
+        previous_cache = sub_cache.read_bytes()
+        (shellcrash_dir / "write_error_yaml_once").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "配置覆写失败并回退到基础配置" in output, output
+        assert "已保留 ShellCrash 覆写失败现场：" in output, output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        assert not error_yaml.exists()
+        preserved_path = Path(output.split("已保留 ShellCrash 覆写失败现场：", 1)[1].splitlines()[0].strip())
+        assert preserved_path.is_file() and "override-failed: true" in preserved_path.read_text(encoding="utf-8")
+        assert stat.S_IMODE(preserved_path.stat().st_mode) == 0o600
+        assert stat.S_IMODE(preserved_path.parent.stat().st_mode) == 0o700
+        shutil.rmtree(preserved_path.parent)
+
+        # Rollback restart that ALSO triggers error.yaml must report old-config override failure and keep recovery.
+        (shellcrash_dir / "write_error_yaml_always").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "旧配置启动后再次检测到 ShellCrash 覆写失败" in output, output
+        assert "旧配置的启动命令已成功执行" not in output, output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        (shellcrash_dir / "write_error_yaml_always").unlink()
+        error_yaml.unlink(missing_ok=True)
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+
+        # Delayed error.yaml on old-config rollback restart must also be caught after startup_wait.
+        (shellcrash_dir / "write_error_yaml_delayed_rollback").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            startup_wait="2",
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "旧配置启动后再次检测到 ShellCrash 覆写失败" in output, output
+        assert "旧配置的启动命令已成功执行" not in output, output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        error_yaml.unlink(missing_ok=True)
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+
+        # If copying error.yaml into deploy_tmp_dir fails AND old-config restart also fails override,
+        # the first error.yaml must be protected via fallback rename rather than deleted or overwritten.
+        write_executable(
+            fake_path / "cp",
+            """#!/bin/sh
+for arg do
+    case "$arg" in
+        */error.yaml) exit 1 ;;
+    esac
+done
+exec /bin/cp "$@"
+""",
+        )
+        (shellcrash_dir / "write_error_yaml_distinct_twice").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "已改名保护原覆写失败现场：" in output, output
+        assert "旧配置启动后再次检测到 ShellCrash 覆写失败" in output, output
+        assert "旧配置的启动命令已成功执行" not in output, output
+        fallback_saved = sorted(bin_dir.glob("error.yaml.proxy-config.*"))
+        assert len(fallback_saved) == 1
+        assert "override-failed-first: true" in fallback_saved[0].read_text(encoding="utf-8")
+        assert stat.S_IMODE(fallback_saved[0].stat().st_mode) == 0o600
+        assert error_yaml.is_file() and "override-failed-second: true" in error_yaml.read_text(encoding="utf-8")
+        fallback_saved[0].unlink()
+        error_yaml.unlink()
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+
+        # If both cp and fallback mv fail, restore old config/cache without restarting old config
+        # so a second override failure cannot overwrite the first error.yaml.
+        write_executable(
+            fake_path / "mv",
+            """#!/bin/sh
+for arg do
+    case "$arg" in
+        */error.yaml) exit 1 ;;
+    esac
+done
+exec /bin/mv "$@"
+""",
+        )
+        (shellcrash_dir / "write_error_yaml_distinct_twice").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "保留原路径不删除" in output, output
+        assert "未重启旧配置" in output, output
+        assert "旧配置的启动命令已成功执行" not in output, output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        assert error_yaml.is_file() and "override-failed-first: true" in error_yaml.read_text(encoding="utf-8")
+        (fake_path / "cp").unlink()
+        (fake_path / "mv").unlink()
+        (shellcrash_dir / "write_error_yaml_distinct_twice").unlink(missing_ok=True)
+        (shellcrash_dir / "write_error_yaml_distinct_twice.second").unlink(missing_ok=True)
+        error_yaml.unlink()
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+
+        # Delayed error.yaml written during startup_wait is caught by the post-wait checkpoint.
+        (shellcrash_dir / "write_error_yaml_after_delay").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            startup_wait="2",
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "配置覆写失败并回退到基础配置" in output, output
+        assert config_path.read_bytes() == previous_config
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+
+        # Delayed error.yaml written during provider wait is caught by the post-provider checkpoint.
+        (shellcrash_dir / "write_error_yaml_during_provider_wait").touch()
+        write_env(
+            env_path,
+            shellcrash_dir,
+            "changed.yaml",
+            provider_url_1=TEST_PROVIDER_URL_1_CHANGED,
+            provider_wait="5",
+            tmp_root=deploy_tmp_root,
+        )
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "配置覆写失败并回退到基础配置" in output, output
+        assert config_path.read_bytes() == previous_config
+        assert sub_cache.read_bytes() == previous_cache
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+
+        # First install with error.yaml fails closed and stops core instead of succeeding on fallback.
+        saved_config = config_path.read_bytes()
+        config_path.unlink()
+        (shellcrash_dir / "write_error_yaml_once").touch()
+        write_env(env_path, shellcrash_dir, "good.yaml", tmp_root=deploy_tmp_root)
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "配置覆写失败并回退到基础配置" in output, output
+        assert "没有可恢复的旧配置" in output, output
+        for leftover in deploy_tmp_root.glob("proxy-config.*"):
+            shutil.rmtree(leftover)
+        config_path.write_bytes(saved_config)
+
+        # TMPDIR isolation: caller TMPDIR=/tmp, explicit /tmp, /, /tmp//, /tmp/. and symlink->/tmp must skip error.yaml.
+        command_env_path = configs_dir / "command.env"
+        saved_command_env = command_env_path.read_text(encoding="utf-8")
+        tmp_symlink = base / "symlink-to-tmp"
+        tmp_symlink.symlink_to("/tmp")
+        for cfg_body, extra_env, expected_warn in (
+            (f"BINDIR={shlex.quote(str(shellcrash_dir))}\n", {"TMPDIR": "/tmp"}, "未显式定义 TMPDIR"),
+            (f"TMPDIR=/tmp\nBINDIR={shlex.quote(str(shellcrash_dir))}\n", {}, "不适合作为独立运行目录"),
+            (f"TMPDIR=/tmp//\nBINDIR={shlex.quote(str(shellcrash_dir))}\n", {}, "不适合作为独立运行目录"),
+            (f"TMPDIR=/tmp/.\nBINDIR={shlex.quote(str(shellcrash_dir))}\n", {}, "不适合作为独立运行目录"),
+            (f"TMPDIR={shlex.quote(str(tmp_symlink))}\nBINDIR={shlex.quote(str(shellcrash_dir))}\n", {}, "不适合作为独立运行目录"),
+            (f"TMPDIR=/\nBINDIR={shlex.quote(str(shellcrash_dir))}\n", {}, "不适合作为独立运行目录"),
+        ):
+            command_env_path.write_text(cfg_body, encoding="utf-8")
+            write_env(env_path, shellcrash_dir, "good.yaml")
+            output = run_deploy(env_path, dict(process_env, **extra_env), should_succeed=True)
+            assert expected_warn in output, (cfg_body, output)
+        command_env_path.write_text(saved_command_env, encoding="utf-8")
+
+        # Optional TEMPLATE_SHA256 verification: lower/uppercase match passes, mismatch/bad-format/missing-tool/nonzero-exit fail.
+        good_sha = hashlib.sha256(TEMPLATE.encode("utf-8")).hexdigest()
+        write_env(env_path, shellcrash_dir, "good.yaml", template_sha256=good_sha)
+        run_deploy(env_path, process_env, should_succeed=True)
+        write_env(env_path, shellcrash_dir, "good.yaml", template_sha256=good_sha.upper())
+        run_deploy(env_path, process_env, should_succeed=True)
+
+        previous_config = config_path.read_bytes()
+        write_env(env_path, shellcrash_dir, "changed.yaml", template_sha256="0" * 64)
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "SHA-256 校验失败" in output, output
+        assert config_path.read_bytes() == previous_config
+
+        # sha256sum exiting non-zero even after printing a matching digest must still fail.
+        write_executable(
+            fake_path / "sha256sum",
+            f"#!/bin/sh\nprintf '%s  -\\n' {shlex.quote(good_sha)}\nexit 1\n",
+        )
+        write_env(env_path, shellcrash_dir, "good.yaml", template_sha256=good_sha)
+        output = run_deploy(env_path, process_env, should_succeed=False)
+        assert "计算模板 SHA-256 失败" in output, output
+        assert config_path.read_bytes() == previous_config
+        (fake_path / "sha256sum").unlink()
+
+        for bad_sha in ("deadbeef", "g" * 64):
+            write_env(env_path, shellcrash_dir, "good.yaml", template_sha256=bad_sha)
+            output = run_deploy(env_path, process_env, should_succeed=False)
+            assert "必须是 64 位十六进制" in output, (bad_sha, output)
+            assert config_path.read_bytes() == previous_config
+
+        # Missing sha256sum when TEMPLATE_SHA256 is set must fail closed before locking.
+        no_sha_bin = base / "no-sha-path"
+        no_sha_bin.mkdir()
+        for tool in ("sh", "curl", "awk", "sed", "tr", "grep", "cat", "rm", "mv", "cp", "mkdir", "mktemp", "chmod", "sleep", "rmdir"):
+            if tool == "curl":
+                (no_sha_bin / "curl").symlink_to(fake_path / "curl")
+                continue
+            for d in SYSTEM_BIN_DIRS:
+                cand = Path(d) / tool
+                if cand.is_file():
+                    (no_sha_bin / tool).symlink_to(cand)
+                    break
+        write_env(env_path, shellcrash_dir, "good.yaml", template_sha256=good_sha)
+        output = run_deploy(env_path, dict(process_env, PATH=str(no_sha_bin)), should_succeed=False)
+        assert "未找到 sha256sum" in output, output
+        assert config_path.read_bytes() == previous_config
+
+        # Newline characters in SUB_URL_1 or SUB_URL_2 must be rejected without leaking the URL.
+        for bad_kwargs in (
+            {"provider_url_1": f"{TEST_PROVIDER_URL_1}\nhttps://evil.test"},
+            {"provider_url_2": f"{TEST_PROVIDER_URL_2}\nhttps://evil.test"},
+        ):
+            write_env(env_path, shellcrash_dir, "good.yaml", **bad_kwargs)
+            output = run_deploy(env_path, process_env, should_succeed=False)
+            assert "不能包含空白字符" in output, (bad_kwargs, output)
+            assert "evil.test" not in output, output
+            assert config_path.read_bytes() == previous_config
 
     print("ShellCrash deployment transaction tests passed")
     return 0

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import yaml
 
+import build_rules
 from build_rules import RULE_METADATA_FILES
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -144,6 +145,22 @@ def main() -> int:
         file_data[path.name] = data
 
     check_cross_file(file_data, warnings)
+
+    try:
+        manifest = build_rules.load_manifest()
+    except (ValueError, OSError, yaml.YAMLError) as exc:
+        errors.append(f"rules/local_rules.yaml: failed to load manifest: {exc}")
+    else:
+        manifest_sources = {item["source"] for item in manifest}
+        disk_sources = {path.name for path in rule_files}
+        for extra in sorted(disk_sources - manifest_sources):
+            errors.append(
+                f"rules/{extra}: rule source file is not registered in rules/local_rules.yaml"
+            )
+        for missing in sorted(manifest_sources - disk_sources):
+            errors.append(
+                f"rules/local_rules.yaml: registered source rules/{missing} does not exist"
+            )
 
     yaml_files = sorted(RULES_DIR.glob("*.yaml")) + sorted((ROOT / "mihomo").rglob("*.yaml"))
     check_duplicate_keys(yaml_files, errors)

@@ -1,0 +1,6 @@
+# Pinned CI dependency lockfile for GitHub Actions (ubuntu-latest, Python 3.11).
+# Install with: pip install --only-binary=:all: --require-hashes -r scripts/requirements-ci.txt
+# Source hashes verified against https://pypi.org/pypi/PyYAML/6.0.4/json (cp311 manylinux wheels only; no sdist).
+PyYAML==6.0.4 \
+    --hash=sha256:622aa875fa6533f25fedcffe23079357d65a690d462200afed5d8e9d0e01ebee \
+    --hash=sha256:71bb5b87465d88d1dfc577115af6d435bff9b26f2512936f610c26aa55966028

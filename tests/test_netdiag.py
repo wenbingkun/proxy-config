@@ -127,6 +127,7 @@ def check_config_example() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         env = Path(tmp) / "env"
         env.write_text("\n".join(line.strip() for line in block.splitlines()))
+        env.chmod(0o600)
         with mock.patch.object(netdiag, "CONFIG", env):
             cfg = netdiag.load_config()
     for key in ("ROUTER_API", "SURGE_API"):

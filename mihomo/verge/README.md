@@ -53,14 +53,15 @@ proxy-providers:
 
 ## 后续更新（已引用规则内容自动刷新）
 
-`config.yaml` 中所有自维护的规则集都通过 `rule-providers` 引用 GitHub Raw 地址：
+`config.yaml` 中所有自维护的规则集都通过 `rule-providers` 引用 jsDelivr `@main` 地址：
 
 ```yaml
 rule-providers:
   AIExtra:
     type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/mihomo/rules/ai_extra.yaml"
+    behavior: classical
+    format: yaml
+    url: "https://cdn.jsdelivr.net/gh/wenbingkun/proxy-config@main/mihomo/rules/ai_extra.yaml"
     interval: 86400
     # ...
 ```

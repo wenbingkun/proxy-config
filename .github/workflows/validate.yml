@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install pyyaml
+        run: "pip install --only-binary=:all: --require-hashes -r scripts/requirements-ci.txt"
 
       - name: Check required files and directories
         run: |
@@ -68,6 +68,7 @@ jobs:
               "scripts/check_reject_conflicts.py",
               "scripts/build_surge_modules.py",
               "scripts/build_loon_plugins.py",
+              "scripts/requirements-ci.txt",
               "surge/modules/rewrite",
               "surge/proxy-config.conf",
               "surge/bootstrap.example.conf",
@@ -75,25 +76,39 @@ jobs:
               "surge/modules/home-direct.sgmodule",
               "surge/modules/home-direct-noblock.sgmodule",
               "surge/rules/reject_allow.list",
-              "tests/test_surge_config.py",
-              "tests/test_umetrip_script.py",
-              "tests/test_xiaohongshu_script.py",
-              "tests/test_wechat_mp_script.py",
+              "tests/test_12306_script.py",
+              "tests/test_acceptance_security.py",
+              "tests/test_ai_routing.py",
+              "tests/test_amap_script.py",
               "tests/test_amdc_script.py",
               "tests/test_app_ad_cleanup.py",
-              "tests/test_amap_script.py",
-              "tests/test_remote_resources.py",
-              "mihomo/shellcrash/deploy.sh",
+              "tests/test_deploy_security.py",
               "tests/test_deploy_shellcrash.py",
-              "tests/test_shellcrash_override.py",
-              "tests/integration_mihomo_rules.py",
-              "tests/test_mihomo_rule_fixture.py",
-              "tests/fixtures/mihomo_rule_matching.yaml",
-              "tests/test_rule_provider_scope.py",
-              "tests/test_region_groups.py",
-              "tests/test_steam_policy.py",
               "tests/test_loon_config.py",
+              "tests/test_mihomo_policy_exceptions.py",
+              "tests/test_mihomo_rule_fixture.py",
+              "tests/test_netdiag.py",
+              "tests/test_netdiag_ipv6.py",
+              "tests/test_netdiag_security.py",
               "tests/test_qx_config.py",
+              "tests/test_region_groups.py",
+              "tests/test_remote_resources.py",
+              "tests/test_rewrite_security.py",
+              "tests/test_rule_provider_scope.py",
+              "tests/test_rules_manifest_closure.py",
+              "tests/test_script_updates.py",
+              "tests/test_shellcrash_override.py",
+              "tests/test_steam_policy.py",
+              "tests/test_surge_config.py",
+              "tests/test_umetrip_script.py",
+              "tests/test_us_group_failclosed.py",
+              "tests/test_wechat_mp_script.py",
+              "tests/test_weibo_mitm.py",
+              "tests/test_xiaohongshu_script.py",
+              "tests/test_yaml_duplicate_keys.py",
+              "mihomo/shellcrash/deploy.sh",
+              "tests/integration_mihomo_rules.py",
+              "tests/fixtures/mihomo_rule_matching.yaml",
           ]
           missing = [p for p in required if not (ROOT / p).exists()]
           if missing:
@@ -204,7 +219,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install pyyaml
+        run: "pip install --only-binary=:all: --require-hashes -r scripts/requirements-ci.txt"
 
       - name: Build slim Mihomo v1.19.31 and check hash
         run: |

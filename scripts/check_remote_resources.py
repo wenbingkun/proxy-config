@@ -26,10 +26,15 @@ import check_reject_conflicts
 
 ROOT = Path(__file__).resolve().parent.parent
 CLASH_CONFIG = ROOT / "mihomo" / "verge" / "config.yaml"
+# Intentionally scans the whole quantumultx/rewrite/ directory, including retained
+# historical compatibility files / conversion inputs (such as AmapPageCleanup.conf and
+# UmetripAds.conf). Like hosted Loon/Surge containers, only runtime-fetched script
+# and echo-response body URLs are extracted, not regex patterns, 302 targets or #!icon comments.
+QX_REWRITE_FILES = tuple(sorted(p for p in (ROOT / "quantumultx" / "rewrite").glob("*") if p.is_file()))
 QX_FILES = (
     ROOT / "quantumultx" / "bootstrap.example.conf",
     ROOT / "quantumultx" / "filter" / "repo.snippet",
-)
+) + QX_REWRITE_FILES
 LOON_FILES = (ROOT / "loon" / "bootstrap.example.conf",) + tuple(
     sorted((ROOT / "loon" / "plugins").glob("*.plugin"))
 )
@@ -46,6 +51,11 @@ DEPLOY_SCRIPT = ROOT / "mihomo" / "shellcrash" / "deploy.sh"
 URL_RE = re.compile(r"https?://[^\s,\"']+")
 # In a hosted Loon plugin only the scripts it loads are resources; other URLs are redirect targets.
 SCRIPT_PATH_RE = re.compile(r"script-path=(https?://[^\s,\"']+)")
+# Kept verbatim with check_upstreams.QX_SCRIPT_RE (copied locally to avoid circular import).
+QX_REWRITE_RESOURCE_RE = re.compile(
+    r'\burl(?:-and-header)?\s+(?:script-\S+|echo-response\s+\S+\s+echo-response)\s+(https?://[^\s,"\']+)',
+    re.I,
+)
 SHELL_TEMPLATE_RE = re.compile(
     r"^DEFAULT_(?:DUAL|SINGLE)_TEMPLATE_URL=['\"](?P<url>https?://[^'\"]+)['\"]$",
     re.MULTILINE,
@@ -234,11 +244,16 @@ def extract_resources() -> list[Resource]:
     for path in QX_FILES + LOON_FILES + SURGE_FILES:
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.lstrip()
-            if not stripped or stripped.startswith("#"):
+            if not stripped or stripped.startswith(("#", ";")):
                 continue
-            is_plugin = path.parent == ROOT / "loon" / "plugins" or path in SURGE_REWRITE_MODULES
-            for match in (SCRIPT_PATH_RE if is_plugin else URL_RE).finditer(line):
-                url = match.group(1 if is_plugin else 0).rstrip(")]}")
+            if path in QX_REWRITE_FILES:
+                pattern, group = QX_REWRITE_RESOURCE_RE, 1
+            elif path.parent == ROOT / "loon" / "plugins" or path in SURGE_REWRITE_MODULES:
+                pattern, group = SCRIPT_PATH_RE, 1
+            else:
+                pattern, group = URL_RE, 0
+            for match in pattern.finditer(line):
+                url = match.group(group).rstrip(")]}")
                 if is_skipped_url(url):
                     continue
                 source = f"{path.relative_to(ROOT)}:{lineno}"

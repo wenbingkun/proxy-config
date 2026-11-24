@@ -201,6 +201,10 @@ def check_qx_parity(loon: dict, failures: list[str]) -> None:
             f"Loon groups differ from QX: missing {sorted(expected_names - set(loon_groups))}, "
             f"extra {sorted(set(loon_groups) - expected_names)}"
         )
+    elif list(loon_groups) != list(qx):
+        failures.append(
+            f"Loon base group order differs from QX: {list(loon_groups)} != {list(qx)}"
+        )
     for name, (qx_kind, qx_members, regex, qx_opts) in qx.items():
         loon_name = name
         if loon_name not in loon_groups:
