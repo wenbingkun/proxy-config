@@ -68,6 +68,8 @@ REQUIRED_LOCAL_DOMAINS = {
         "supabase.com",
         "render.com",
         "railway.app",
+        "t3.codes",
+        "t3coderelay.com",
     },
     ROOT / "rules" / "collaboration_extra.yaml": {
         "miro.com",
