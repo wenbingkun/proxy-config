@@ -10,7 +10,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
-from build_rules import HOME_AUTO_SUFFIX, home_auto  # noqa: E402
+from build_rules import HOME_AUTO_SUFFIX, home_auto, load_manifest  # noqa: E402
 CONFIG_PATHS = (
     ROOT / "mihomo" / "verge" / "config.yaml",
     ROOT / "mihomo" / "verge" / "config-single.yaml",
@@ -399,10 +399,91 @@ def assert_two_stage_rules(path: Path) -> None:
     assert not missing, f"{where}: IP stage is missing {missing}"
 
 
+COMPOUND_RULE_PREFIXES = ("AND,", "OR,", "NOT,", "SUB-RULE,")
+COMPOUND_RULESET_RE = re.compile(r"\bRULE-SET\s*,\s*([^,)\s]+)")
+
+
+def assert_manifest_mihomo_parity(
+    config: dict[str, object], manifest: list[dict[str, str]], label: str
+) -> None:
+    """Every rules/local_rules.yaml entry must be mounted once in Mihomo with matching clash_policy."""
+    providers = config.get("rule-providers")
+    assert isinstance(providers, dict), f"{label}: missing rule-providers"
+    rules = config.get("rules")
+    assert isinstance(rules, list), f"{label}: missing rules"
+
+    manifest_by_id = {item["id"]: item for item in manifest}
+    providers_by_id: dict[str, list[str]] = {}
+    repo_provider_names: set[str] = set()
+
+    for name, provider in providers.items():
+        if not isinstance(provider, dict):
+            continue
+        url = str(provider.get("url", ""))
+        prefix = next((p for p in REPO_RULES_URLS if url.startswith(p)), None)
+        if prefix is None:
+            if "wenbingkun/proxy-config" in url and "/mihomo/rules/" in url:
+                raise AssertionError(
+                    f"{label}: provider {name!r} references repo mihomo/rules/ via non-standard URL {url!r}"
+                )
+            continue
+        filename = url[len(prefix) :]
+        if not filename.endswith(".yaml") or "/" in filename:
+            raise AssertionError(
+                f"{label}: provider {name!r} has unexpected repo rule filename {filename!r}"
+            )
+        rule_id = filename.removesuffix(".yaml")
+        if rule_id not in manifest_by_id:
+            raise AssertionError(
+                f"{label}: provider {name!r} references unregistered manifest id {rule_id!r}"
+            )
+        providers_by_id.setdefault(rule_id, []).append(name)
+        repo_provider_names.add(name)
+
+    missing_ids = sorted(set(manifest_by_id) - set(providers_by_id))
+    assert not missing_ids, f"{label}: manifest rule sets missing from rule-providers: {missing_ids}"
+    duplicate_mounts = {rid: names for rid, names in providers_by_id.items() if len(names) != 1}
+    assert not duplicate_mounts, (
+        f"{label}: manifest rule sets mounted more than once in rule-providers: {duplicate_mounts}"
+    )
+
+    policies_by_provider: dict[str, list[str]] = {}
+    for raw_rule in rules:
+        if not isinstance(raw_rule, str):
+            continue
+        stripped = strip_no_resolve(raw_rule)
+        if stripped.startswith(COMPOUND_RULE_PREFIXES):
+            for match in COMPOUND_RULESET_RE.finditer(stripped):
+                provider_name = match.group(1)
+                if provider_name in repo_provider_names:
+                    raise AssertionError(
+                        f"{label}: compound rule references repo provider {provider_name!r}: {raw_rule!r}"
+                    )
+            continue
+        parts = stripped.split(",")
+        if parts[0] == "RULE-SET" and len(parts) >= 3:
+            policies_by_provider.setdefault(parts[1], []).append(parts[2])
+
+    for rule_id, item in manifest_by_id.items():
+        provider_name = providers_by_id[rule_id][0]
+        actual_policies = policies_by_provider.get(provider_name, [])
+        assert actual_policies, (
+            f"{label}: manifest rule set {rule_id!r} (provider {provider_name!r}) is not referenced in rules"
+        )
+        expected_policy = item["clash_policy"]
+        bad = [p for p in actual_policies if p != expected_policy]
+        assert not bad, (
+            f"{label}: manifest rule set {rule_id!r} (provider {provider_name!r}) routed to {actual_policies!r}, "
+            f"expected {expected_policy!r}"
+        )
+
+
 def main() -> int:
+    manifest = load_manifest()
     for path in CONFIG_PATHS:
         assert_domain_only_providers(path)
         assert_two_stage_rules(path)
+        assert_manifest_mihomo_parity(load_yaml(path), manifest, str(path.relative_to(ROOT)))
     assert_local_domain_coverage()
     assert_shared_service_policies()
     assert_qx_cloudflare_domain_only()

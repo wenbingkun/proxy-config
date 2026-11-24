@@ -25,6 +25,10 @@ verify_sub_provider=0
 verify_sub2_provider=0
 sub_cache_path=''
 sub2_cache_path=''
+shellcrash_error_yaml=''
+template_sha256=''
+deploy_nl='
+'
 
 log() {
     printf '%s\n' "$*"
@@ -127,6 +131,9 @@ validate_subscription_url() {
     case "$subscription_value" in
         http://*|https://*) ;;
         *) fail "$subscription_name 必须是 http:// 或 https:// URL" ;;
+    esac
+    case "$subscription_value" in
+        *"$deploy_nl"*) fail "$subscription_name 不能包含空白字符" ;;
     esac
     if printf '%s' "$subscription_value" | LC_ALL=C grep -q '[[:space:]]'; then
         fail "$subscription_name 不能包含空白字符"
@@ -286,12 +293,67 @@ failed_provider_names() {
     printf '%s' "$failed_names"
 }
 
+resolve_runtime_dir() {
+    candidate_dir=$1
+    case "$candidate_dir" in
+        /*) ;;
+        *) return 1 ;;
+    esac
+    case "$candidate_dir" in
+        */../*|*/./*|*/..|*/.) return 1 ;;
+    esac
+    while [ "$candidate_dir" != '/' ] && [ "${candidate_dir%/}" != "$candidate_dir" ]; do
+        candidate_dir=${candidate_dir%/}
+    done
+    if [ -L "$candidate_dir" ] || [ -d "$candidate_dir" ]; then
+        physical_dir=$(cd -P -- "$candidate_dir" 2>/dev/null && pwd -P) || return 1
+    elif [ ! -e "$candidate_dir" ]; then
+        parent_dir=${candidate_dir%/*}
+        [ -n "$parent_dir" ] || parent_dir='/'
+        base_name=${candidate_dir##*/}
+        [ -n "$base_name" ] || return 1
+        physical_parent=$(cd -P -- "$parent_dir" 2>/dev/null && pwd -P) || return 1
+        case "$physical_parent" in
+            /) physical_dir="/$base_name" ;;
+            *) physical_dir="$physical_parent/$base_name" ;;
+        esac
+    else
+        return 1
+    fi
+    case "$physical_dir" in
+        ''|/|/tmp) return 1 ;;
+        /*) printf '%s' "$physical_dir" ;;
+        *) return 1 ;;
+    esac
+}
+
 recover_deployment() {
     deploy_transaction_started=0
     if ! "$start_script" stop >/dev/null 2>&1; then
         deploy_keep_recovery=1
         log "回滚停止核心失败，未恢复配置或缓存；保留恢复材料：$deploy_tmp_dir；服务状态未确认" >&2
         return 1
+    fi
+    error_yaml_cleared=1
+    if [ -n "$shellcrash_error_yaml" ] && { [ -e "$shellcrash_error_yaml" ] || [ -L "$shellcrash_error_yaml" ]; }; then
+        deploy_keep_recovery=1
+        preserved_error_yaml="$deploy_tmp_dir/error.yaml"
+        if cp "$shellcrash_error_yaml" "$preserved_error_yaml" 2>/dev/null && chmod 600 "$preserved_error_yaml" 2>/dev/null; then
+            log "已保留 ShellCrash 覆写失败现场：$preserved_error_yaml" >&2
+            if ! rm -f "$shellcrash_error_yaml" 2>/dev/null; then
+                error_yaml_cleared=0
+                log "警告：无法清除旧的 $shellcrash_error_yaml，回滚后覆写状态可能无法准确区分" >&2
+            fi
+        else
+            fallback_error_yaml="$shellcrash_error_yaml.proxy-config.$$"
+            if mv "$shellcrash_error_yaml" "$fallback_error_yaml" 2>/dev/null; then
+                chmod 600 "$fallback_error_yaml" 2>/dev/null || true
+                log "警告：无法复制到 $preserved_error_yaml，已改名保护原覆写失败现场：$fallback_error_yaml" >&2
+            else
+                error_yaml_cleared=0
+                log "警告：无法保存或移走 $shellcrash_error_yaml，保留原路径不删除：$shellcrash_error_yaml" >&2
+            fi
+        fi
     fi
     if [ "$had_previous_config" = '1' ]; then
         deploy_stage_path="$target_dir/.config.yaml.rollback.$$"
@@ -301,7 +363,23 @@ recover_deployment() {
             return 1
         fi
         deploy_stage_path=''
+        if [ "$error_yaml_cleared" != '1' ]; then
+            deploy_keep_recovery=1
+            log "已恢复上一份配置和 provider 缓存，但未能保护或清除 $shellcrash_error_yaml，为避免覆盖失败现场未重启旧配置；保留恢复材料：$deploy_tmp_dir；请检查后手动启动" >&2
+            return 1
+        fi
         if "$start_script" start >/dev/null 2>&1; then
+            if [ -n "$shellcrash_error_yaml" ] && { [ -e "$shellcrash_error_yaml" ] || [ -L "$shellcrash_error_yaml" ]; }; then
+                deploy_keep_recovery=1
+                log "旧配置启动后再次检测到 ShellCrash 覆写失败（$shellcrash_error_yaml）；保留恢复材料：$deploy_tmp_dir；服务可能运行在基础配置" >&2
+                return 1
+            fi
+            [ "$startup_wait" -eq 0 ] || sleep "$startup_wait"
+            if [ -n "$shellcrash_error_yaml" ] && { [ -e "$shellcrash_error_yaml" ] || [ -L "$shellcrash_error_yaml" ]; }; then
+                deploy_keep_recovery=1
+                log "旧配置启动后再次检测到 ShellCrash 覆写失败（$shellcrash_error_yaml）；保留恢复材料：$deploy_tmp_dir；服务可能运行在基础配置" >&2
+                return 1
+            fi
             log '已恢复上一份配置和 provider 缓存，旧配置的启动命令已成功执行' >&2
             return 0
         fi
@@ -322,6 +400,12 @@ rollback_config() {
     fail "$1"
 }
 
+check_shellcrash_override_error() {
+    if [ -n "$shellcrash_error_yaml" ] && { [ -e "$shellcrash_error_yaml" ] || [ -L "$shellcrash_error_yaml" ]; }; then
+        rollback_config "ShellCrash 配置覆写失败并回退到基础配置（检测到 $shellcrash_error_yaml）"
+    fi
+}
+
 if [ "$#" -ne 1 ]; then
     fail "用法：$0 /path/to/providers.env"
 fi
@@ -333,6 +417,8 @@ case "$env_file" in
 esac
 [ -r "$env_file" ] || fail "无法读取私密参数文件：$env_file"
 
+# Do not inherit process-check bypass from caller environment; require explicit opt-in inside providers.env.
+SHELLCRASH_SKIP_PROCESS_CHECK='0'
 # providers.env is a trusted, root-owned shell fragment. Keep it mode 600.
 # shellcheck disable=SC1090
 . "$env_file"
@@ -365,6 +451,16 @@ case "$template_url" in
     *) fail 'TEMPLATE_URL 必须是 https:// URL' ;;
 esac
 command -v curl >/dev/null 2>&1 || fail '未找到 curl；模板下载需要 curl 的整次超时，当前配置未改动'
+
+template_sha256=${TEMPLATE_SHA256:-}
+if [ -n "$template_sha256" ]; then
+    case "$template_sha256" in
+        *[!0-9a-fA-F]*) fail 'TEMPLATE_SHA256 必须是 64 位十六进制 SHA-256 摘要' ;;
+    esac
+    [ "${#template_sha256}" -eq 64 ] || fail 'TEMPLATE_SHA256 必须是 64 位十六进制 SHA-256 摘要'
+    template_sha256=$(printf '%s' "$template_sha256" | tr 'A-F' 'a-f')
+    command -v sha256sum >/dev/null 2>&1 || fail '已设置 TEMPLATE_SHA256 但未找到 sha256sum，当前配置未改动'
+fi
 
 startup_wait=${SHELLCRASH_STARTUP_WAIT:-10}
 case "$startup_wait" in
@@ -427,6 +523,11 @@ if [ "$download_status" -ne 0 ]; then
     fail "模板下载失败（curl 退出码 $download_status，28 为超时），当前配置未改动；若路由器无法访问模板地址，可临时设置 TEMPLATE_URL，见 mihomo/shellcrash/README.md"
 fi
 [ -s "$downloaded_template" ] || fail '下载到的模板为空，当前配置未改动'
+if [ -n "$template_sha256" ]; then
+    sha256_output=$(sha256sum <"$downloaded_template") || fail '计算模板 SHA-256 失败，当前配置未改动'
+    actual_template_sha256=$(printf '%s' "$sha256_output" | awk '{print $1}' | tr 'A-F' 'a-f')
+    [ "$actual_template_sha256" = "$template_sha256" ] || fail '下载到的模板 SHA-256 校验失败，当前配置未改动'
+fi
 
 placeholder_1_count=$(count_fixed_occurrences "$PLACEHOLDER_1" "$downloaded_template")
 placeholder_2_count=$(count_fixed_occurrences "$PLACEHOLDER_2" "$downloaded_template")
@@ -466,9 +567,21 @@ if [ "$invalidate_sub2_cache" = '1' ] && [ -n "$new_sub2_url" ]; then
 fi
 
 # Load ShellCrash's runtime and data directories without executing COMMAND.
+# Clear caller TMPDIR so error.yaml detection only trusts an explicit value in command.env.
+unset TMPDIR
 # shellcheck disable=SC1090
 . "$command_env"
 shellcrash_runtime_dir=${TMPDIR:-/tmp/ShellCrash}
+shellcrash_error_yaml=''
+if [ -n "${TMPDIR:-}" ]; then
+    if shellcrash_physical_tmpdir=$(resolve_runtime_dir "$TMPDIR"); then
+        shellcrash_error_yaml="$shellcrash_physical_tmpdir/error.yaml"
+    else
+        log "警告：command.env 中的 TMPDIR（$TMPDIR）不适合作为独立运行目录，跳过 error.yaml 覆写回退检测" >&2
+    fi
+else
+    log '警告：command.env 未显式定义 TMPDIR，跳过 error.yaml 覆写回退检测' >&2
+fi
 shellcrash_bind_dir=${BINDIR:-$shellcrash_dir}
 provider_cache_dir="$shellcrash_bind_dir/cache/proxy-providers"
 provider_cache_backup_dir="$deploy_tmp_dir/provider-cache-backup"
@@ -549,12 +662,18 @@ fi
 mv -f "$deploy_stage_path" "$config_path"
 deploy_stage_path=''
 
+if [ -n "$shellcrash_error_yaml" ]; then
+    rm -f "$shellcrash_error_yaml" || rollback_config '无法清除陈旧的 ShellCrash error.yaml'
+fi
+
 log '配置已原子替换，正在通过 ShellCrash 启动服务……'
 if ! "$start_script" start; then
     rollback_config 'ShellCrash 启动命令失败'
 fi
+check_shellcrash_override_error
 
 [ "$startup_wait" -eq 0 ] || sleep "$startup_wait"
+check_shellcrash_override_error
 
 if [ "${SHELLCRASH_SKIP_PROCESS_CHECK:-0}" != '1' ] && command -v pidof >/dev/null 2>&1; then
     if ! pidof CrashCore >/dev/null 2>&1; then
@@ -569,6 +688,7 @@ if [ "$verify_sub_provider" = '1' ] || [ "$verify_sub2_provider" = '1' ]; then
         rollback_config "$provider_failures 订阅获取失败（未生成包含有效节点的 provider 缓存）；请检查机场后台是否已开启订阅导入或客户端导入开关、订阅链接是否有效，以及路由器能否访问机场订阅地址"
     fi
 fi
+check_shellcrash_override_error
 
 deploy_transaction_started=0
 provider_cache_transaction_started=0

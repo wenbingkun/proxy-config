@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -17,6 +18,16 @@ SURGE_RULES_DIR = ROOT / "surge" / "rules"
 LOCAL_RULES_MANIFEST = RULES_DIR / "local_rules.yaml"
 # Configuration manifests live beside rule payloads but must not be parsed as rules.
 RULE_METADATA_FILES = {"local_rules.yaml", "upstreams.yaml"}
+RULE_ID_RE = re.compile(r"^[a-z0-9_]+$")
+# Reserved output stems: geoip_cn.list is hand-maintained; reject_allow.list is a dedicated Surge output.
+RESERVED_RULE_IDS = frozenset({"geoip_cn", "reject_allow"})
+# Directories scanned by --check for stale generated rule files, paired with expected suffix
+# and an explicit allowlist for hand-maintained files (or compatibility-period retentions).
+GENERATED_DIRS = (
+    (CLASH_RULESETS_DIR, ".yaml", frozenset()),
+    (LOON_RULES_DIR, ".list", frozenset({"geoip_cn.list"})),
+    (SURGE_RULES_DIR, ".list", frozenset()),
+)
 
 RULE_TYPES = (
     ("domain_suffix", "DOMAIN-SUFFIX", "host-suffix"),
@@ -66,12 +77,18 @@ def home_auto(policy: str) -> str:
 
 
 def load_manifest() -> list[dict[str, str]]:
-    data = yaml.safe_load(LOCAL_RULES_MANIFEST.read_text(encoding="utf-8")) or {}
+    data = yaml.safe_load(LOCAL_RULES_MANIFEST.read_text(encoding="utf-8"))
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        raise ValueError(f"{LOCAL_RULES_MANIFEST} must contain a top-level mapping")
     items = data.get("rule_sets")
     if not isinstance(items, list):
         raise ValueError(f"{LOCAL_RULES_MANIFEST} must contain a 'rule_sets' list")
 
     configs: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+    seen_sources: set[str] = set()
     required = {"id", "title", "source", "clash_policy", "qx_policy"}
     for item in items:
         if not isinstance(item, dict):
@@ -81,7 +98,27 @@ def load_manifest() -> list[dict[str, str]]:
             raise ValueError(
                 f"{LOCAL_RULES_MANIFEST} rule set {item!r} is missing keys: {', '.join(missing)}"
             )
-        configs.append({key: str(item[key]) for key in required})
+        for key in required:
+            if not isinstance(item[key], str):
+                raise ValueError(
+                    f"{LOCAL_RULES_MANIFEST}: field {key!r} must be a string, got {type(item[key]).__name__}"
+                )
+        normalized = {key: item[key] for key in required}
+        rule_id = normalized["id"]
+        if not RULE_ID_RE.fullmatch(rule_id):
+            raise ValueError(
+                f"{LOCAL_RULES_MANIFEST}: invalid rule set id {rule_id!r} (expected ^[a-z0-9_]+$)"
+            )
+        if rule_id in RESERVED_RULE_IDS:
+            raise ValueError(f"{LOCAL_RULES_MANIFEST}: reserved rule set id {rule_id!r}")
+        if rule_id in seen_ids:
+            raise ValueError(f"{LOCAL_RULES_MANIFEST}: duplicate rule set id {rule_id!r}")
+        seen_ids.add(rule_id)
+        source_name = normalized["source"]
+        if source_name in seen_sources:
+            raise ValueError(f"{LOCAL_RULES_MANIFEST}: duplicate rule set source {source_name!r}")
+        seen_sources.add(source_name)
+        configs.append(normalized)
     return configs
 
 
@@ -178,18 +215,42 @@ def write_if_changed(path: Path, content: str) -> bool:
     return True
 
 
+def register_output(outputs: dict[Path, str], path: Path, content: str) -> None:
+    if path in outputs:
+        raise ValueError(f"duplicate generated output path: {path}")
+    outputs[path] = content
+
+
 def build_outputs() -> dict[Path, str]:
     outputs: dict[Path, str] = {}
     for item in load_manifest():
         data = load_rule_source(item["source"])
-        outputs[CLASH_RULESETS_DIR / f"{item['id']}.yaml"] = render_clash_ruleset(
-            item["id"], item["source"], data
+        register_output(
+            outputs,
+            CLASH_RULESETS_DIR / f"{item['id']}.yaml",
+            render_clash_ruleset(item["id"], item["source"], data),
         )
-        outputs[LOON_RULES_DIR / f"{item['id']}.list"] = render_loon_list(item["source"], data)
-        outputs[SURGE_RULES_DIR / f"{item['id']}.list"] = render_loon_list(item["source"], data, "Surge")
-    outputs[SURGE_RULES_DIR / "reject_allow.list"] = render_surge_reject_allow()
-    outputs[QX_FILTER_PATH] = render_qx_filter()
+        register_output(outputs, LOON_RULES_DIR / f"{item['id']}.list", render_loon_list(item["source"], data))
+        register_output(
+            outputs, SURGE_RULES_DIR / f"{item['id']}.list", render_loon_list(item["source"], data, "Surge")
+        )
+    register_output(outputs, SURGE_RULES_DIR / "reject_allow.list", render_surge_reject_allow())
+    register_output(outputs, QX_FILTER_PATH, render_qx_filter())
     return outputs
+
+
+def find_stale_outputs(outputs: dict[Path, str]) -> list[Path]:
+    expected = set(outputs)
+    stale: list[Path] = []
+    for directory, suffix, allowlist in GENERATED_DIRS:
+        if not directory.is_dir():
+            continue
+        for entry in sorted(directory.iterdir()):
+            if entry.name.startswith(".") or not entry.is_file() or entry.suffix != suffix:
+                continue
+            if entry not in expected and entry.name not in allowlist:
+                stale.append(entry)
+    return stale
 
 
 def check_outputs(outputs: dict[Path, str]) -> int:
@@ -199,12 +260,16 @@ def check_outputs(outputs: dict[Path, str]) -> int:
         if actual != expected:
             mismatches.append(path)
 
+    stale = find_stale_outputs(outputs)
     if mismatches:
         print("Generated files are out of date:", file=sys.stderr)
         for path in mismatches:
             print(f"  - {path.relative_to(ROOT)}", file=sys.stderr)
-        return 1
-    return 0
+    if stale:
+        print("Stale or unregistered generated files found:", file=sys.stderr)
+        for path in stale:
+            print(f"  - {path.relative_to(ROOT)}", file=sys.stderr)
+    return 1 if (mismatches or stale) else 0
 
 
 def main() -> int:

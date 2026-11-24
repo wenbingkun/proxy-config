@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install pyyaml
+        run: "pip install --only-binary=:all: --require-hashes -r scripts/requirements-ci.txt"
 
       - name: Run acceptance audit
         run: python3 scripts/check_acceptance.py

@@ -17,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import check_remote_resources as check  # noqa: E402
+import check_upstreams  # noqa: E402
 import build_surge_modules  # noqa: E402
 
 
@@ -416,6 +417,52 @@ def test_full_download_must_be_complete() -> None:
         assert not result.ok and not result.body and "IncompleteRead" in result.message
 
 
+def test_qx_rewrite_extraction_boundaries() -> None:
+    assert check.QX_REWRITE_RESOURCE_RE.pattern == check_upstreams.QX_SCRIPT_RE.pattern
+    with tempfile.TemporaryDirectory() as tmp:
+        rewrite_dir = Path(tmp) / "quantumultx" / "rewrite"
+        rewrite_dir.mkdir(parents=True)
+        sample = rewrite_dir / "sample.snippet"
+        sample.write_text(
+            "\n".join(
+                (
+                    "#!icon=https://assets.example/icon.png",
+                    "# comment https://ignored.example/comment.js",
+                    "; semicolon https://ignored.example/semicolon.js",
+                    "^https://api.example/a url 302 https://redirect.example/target",
+                    "^https://api.example/b url script-response-body https://scripts.example/one.js",
+                    "^https://api.example/c UA url-and-header script-request-body https://scripts.example/two.js",
+                    "^https://api.example/d UA url-and-header echo-response text/html echo-response https://scripts.example/body.json",
+                )
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        clash_cfg = Path(tmp) / "clash.yaml"
+        clash_cfg.write_text("rule-providers: {}\n", encoding="utf-8")
+        deploy_sh = Path(tmp) / "deploy.sh"
+        deploy_sh.write_text("", encoding="utf-8")
+        with patch.multiple(
+            check,
+            ROOT=Path(tmp),
+            CLASH_CONFIG=clash_cfg,
+            DEPLOY_SCRIPT=deploy_sh,
+            QX_REWRITE_FILES=(sample,),
+            QX_FILES=(sample,),
+            LOON_FILES=(),
+            SURGE_FILES=(),
+            SURGE_REWRITE_MODULES=(),
+        ):
+            extracted = check.extract_resources()
+        urls = {item.url for item in extracted}
+        assert urls == {
+            "https://scripts.example/one.js",
+            "https://scripts.example/two.js",
+            "https://scripts.example/body.json",
+        }, urls
+        assert all(check.client_of(item.source) == "qx" for item in extracted)
+
+
 def main() -> int:
     resources = check.extract_resources()
     urls = [resource.url for resource in resources]
@@ -483,6 +530,28 @@ def main() -> int:
     rewrite_urls = {r.url for r in resources if r.source.startswith("surge/modules/rewrite/")}
     assert len(check.SURGE_REWRITE_MODULES) == len(build_surge_modules.SOURCES), check.SURGE_REWRITE_MODULES
     assert rewrite_scripts and rewrite_urls == rewrite_scripts, rewrite_urls ^ rewrite_scripts
+    # Hosted QX rewrites are scanned the same way: runtime-fetched scripts and echo-response bodies only.
+    qx_rewrite_scripts = {
+        match.group(1).rstrip(")]}")
+        for path in check.QX_REWRITE_FILES
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.lstrip() and not line.lstrip().startswith(("#", ";"))
+        for match in check.QX_REWRITE_RESOURCE_RE.finditer(line)
+    }
+    qx_rewrite_urls = {r.url for r in resources if r.source.startswith("quantumultx/rewrite/")}
+    assert len(qx_rewrite_scripts) == 25, len(qx_rewrite_scripts)
+    assert qx_rewrite_urls == qx_rewrite_scripts, qx_rewrite_urls ^ qx_rewrite_scripts
+    for expected_url in (
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/bilibili_json-safe.js",
+        "https://raw.githubusercontent.com/app2smile/rules/df6366a7024e0b3f0aa3510c5b791eea6f3cba89/js/bilibili-proto.js",
+        "https://raw.githubusercontent.com/yjqiang/surge_scripts/ae855a8935e8a77d81998bb503ee6158ca83faa73/scripts/bilibili/bilibili_dynamic.js".replace(
+            "ae855a8935e8a77d81998bb503ee6158ca83faa73", "ae855a8935e8a770780c9cb11d6830176e895131"
+        ),
+        "https://raw.githubusercontent.com/fmz200/wool_scripts/5d5f63fcf98bc69d5f8f1b1bae6f86a01ee4bb97/Scripts/template/reject-dict.json",
+        "https://raw.githubusercontent.com/wenbingkun/proxy-config/main/quantumultx/scripts/12306-ads.js",
+    ):
+        assert expected_url in qx_rewrite_urls, expected_url
+    assert not any("biliad.png" in u or "soupian.icu" in u or "duckduckgo.com" in u for u in qx_rewrite_urls)
 
     loon_resource = check.Resource(
         "https://kelee.one/Tool/Loon/Lpx/Example.lpx", "loon-resource", "loon/bootstrap.example.conf:1"
@@ -542,6 +611,7 @@ def main() -> int:
     test_candidate_checkout_and_summary()
     test_content_main_exit_and_modes()
     test_full_download_must_be_complete()
+    test_qx_rewrite_extraction_boundaries()
 
     print(
         f"Remote resource offline tests passed "
