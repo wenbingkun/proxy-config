@@ -89,7 +89,9 @@ domain:
   - appsgenaiserver-pa.clients.google.com
   - appsgenaiserver-pa.clients6.google.com
   - appsgenaiserver-pa.googleapis.com
+  - aicode.googleapis.com
   - cloudaicompanion.googleapis.com
+  - jetski-webchannel.googleapis.com
   - notebooklm.googleapis.com
   - notebooklm-pa.googleapis.com
   - robinfrontend-pa.googleapis.com
