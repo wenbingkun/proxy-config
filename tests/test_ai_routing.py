@@ -30,7 +30,12 @@ AI_CASES = (
     "geminiweb-pa.clients6.google.com",
     "appsgenaiserver-pa.googleapis.com",
     "webchannel-alkalimakersuite-pa.clients6.google.com",
+    "aicode.googleapis.com",
     "cloudaicompanion.googleapis.com",
+    "cloudcode-pa.googleapis.com",
+    "daily-cloudcode-pa.googleapis.com",
+    "jetski-webchannel.googleapis.com",
+    "antigravity.google",
     "api.githubcopilot.com",
     "api.individual.githubcopilot.com",
     "copilot-proxy.githubusercontent.com",
@@ -65,6 +70,8 @@ SHARED_CONTROLS = (
     "storage.googleapis.com",
     "accounts.google.com",
     "www.googleapis.com",
+    "oauth2.googleapis.com",
+    "play.googleapis.com",
     "login.live.com",
     "api.github.com",
     "graph.facebook.com",
@@ -81,6 +88,8 @@ SHARED_CONTROLS = (
 EXACT_CONTROLS = (
     "child.servd-anthropic-website.b-cdn.net",
     "child.cdn.openaimerge.com",
+    "child.aicode.googleapis.com",
+    "child.jetski-webchannel.googleapis.com",
     "child.accounts.spacexsi.com",
 )
 # Deliberately broad overlaps expose a moved/missing AIExtra reference.
