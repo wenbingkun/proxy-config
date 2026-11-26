@@ -122,6 +122,7 @@ REQUIRED_LOCAL_DOMAINS = {
         "transferwise.com",
         "octopus.com.hk",
         "octopuscards.com",
+        "octopus-cards.com",
         "vv1865.com",
     },
     ROOT / "rules" / "intl_brokers.yaml": {
@@ -130,6 +131,7 @@ REQUIRED_LOCAL_DOMAINS = {
     ROOT / "rules" / "crypto_extra.yaml": {
         "safepal.com",
         "safepal.io",
+        "isafepal.com",
     },
 }
 

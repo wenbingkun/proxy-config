@@ -24,6 +24,8 @@ DIRECT_CASES = (
     "octopus.com.hk",
     "www.octopus.com.hk",
     "octopuscards.com",
+    "app.oepay.octopus-cards.com",
+    "static-oepay-app.octopus-cards.com",
     "rbwm-api.hsbc.com.hk",
     "www.hsbc.com.hk",
     "eapi.preferences.prod.ap-east-1.vam-hk.cloud1.vv1865.com",
@@ -40,6 +42,9 @@ CRYPTO_CASES = (
     "safepal.com",
     "api.safepal.com",
     "safepal.io",
+    "wp.isafepal.com",
+    "static.isafepal.com",
+    "ep.isafepal.com",
 )
 EXACT_CONTROLS = (
     "sub.hsbc.edge.sdk.awswaf.com",
@@ -50,9 +55,11 @@ EXACT_CONTROLS = (
 SPOOF_CONTROLS = (
     "evil-wise.com",
     "evil-octopus.com.hk",
+    "evil-octopus-cards.com",
     "evil-vv1865.com",
     "evil-safepal.com",
     "evil-safepal.io",
+    "evil-isafepal.com",
 )
 # Deliberately broad overlaps expose a moved/missing local rule-set reference.
 OVERLAPS = {
@@ -65,6 +72,7 @@ OVERLAPS = {
         "DOMAIN-SUFFIX,hsbc.com.hk",
         "DOMAIN-SUFFIX,vv1865.com",
         "DOMAIN-SUFFIX,safepal.com",
+        "DOMAIN-SUFFIX,isafepal.com",
     ],
 }
 EXPECTED_REJECT_ALLOW = {
@@ -72,6 +80,7 @@ EXPECTED_REJECT_ALLOW = {
     "DOMAIN-SUFFIX,transferwise.com",
     "DOMAIN-SUFFIX,octopus.com.hk",
     "DOMAIN-SUFFIX,octopuscards.com",
+    "DOMAIN-SUFFIX,octopus-cards.com",
     "DOMAIN-SUFFIX,vv1865.com",
     "DOMAIN,hsbc.edge.sdk.awswaf.com",
     "DOMAIN,cdnhsbcrhostorage.azureedge.net",
@@ -228,6 +237,7 @@ def main() -> None:
     assert not missing_allow, f"surge/rules/reject_allow.list missing {sorted(missing_allow)}"
     assert "DOMAIN-SUFFIX,safepal.com" not in reject_allow
     assert "DOMAIN-SUFFIX,safepal.io" not in reject_allow
+    assert "DOMAIN-SUFFIX,isafepal.com" not in reject_allow
 
     print(
         f"Finance routing contracts passed: {len(DIRECT_CASES)} direct, {len(HK_CASES)} HK, "
