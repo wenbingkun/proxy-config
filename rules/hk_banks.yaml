@@ -4,6 +4,8 @@ domain_suffix:
   - hsbc.com
   - hsbc.hk
   - hsbcnet.com
+  # HSBC HK AWS ap-east-1 backend (preferences/messaging)
+  - vv1865.com
   - hangseng.com
   - hangseng.com.hk
   - bochk.com
@@ -82,3 +84,16 @@ domain_suffix:
   # Market data and finance info
   - aastocks.com
   - etnet.com.hk
+
+  # Hong Kong payment / e-wallet (HKMA SVF, direct avoids proxy AML flags)
+  - octopus.com.hk
+  - octopuscards.com
+
+  # Cross-border payment (verified direct from mainland on cellular 2026-11-26)
+  - wise.com
+  - transferwise.com
+
+domain:
+  # HSBC HK exact third-party WAF / Reward+ CDN hosts (keep same DIRECT egress as rbwm-api.hsbc.com.hk)
+  - hsbc.edge.sdk.awswaf.com
+  - cdnhsbcrhostorage.azureedge.net
