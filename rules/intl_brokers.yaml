@@ -12,3 +12,7 @@ domain_suffix:
   # Webull (overseas servers; no user-confirmed mainland reachability)
   - webull.com
   - webull.com.hk
+
+  # HSBC HK Red Hot Offers / Reward+ backend (202.130.104.59:443 timed out 12/12 on mainland
+  # DIRECT in 2026-11-23 logs and 2026-11-26 probe). Precedes hk_banks.yaml so it overrides hsbc.com.hk.
+  - redhotoffers.hsbc.com.hk

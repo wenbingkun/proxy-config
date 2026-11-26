@@ -117,6 +117,27 @@ REQUIRED_LOCAL_DOMAINS = {
         "just-dance.com",
         "justdancenow.com",
     },
+    ROOT / "rules" / "hk_banks.yaml": {
+        "wise.com",
+        "transferwise.com",
+        "octopus.com.hk",
+        "octopuscards.com",
+        "vv1865.com",
+    },
+    ROOT / "rules" / "intl_brokers.yaml": {
+        "redhotoffers.hsbc.com.hk",
+    },
+    ROOT / "rules" / "crypto_extra.yaml": {
+        "safepal.com",
+        "safepal.io",
+    },
+}
+
+REQUIRED_LOCAL_EXACT_DOMAINS = {
+    ROOT / "rules" / "hk_banks.yaml": {
+        "hsbc.edge.sdk.awswaf.com",
+        "cdnhsbcrhostorage.azureedge.net",
+    },
 }
 
 
@@ -206,6 +227,9 @@ def assert_domain_only_providers(path: Path) -> None:
     assert rule_sets.index("EcommerceExtra") < rule_sets.index("ProxyLite"), (
         f"{path.relative_to(ROOT)}: EcommerceExtra must precede ProxyLite"
     )
+    assert rule_sets.index("IntlBrokers") < rule_sets.index("HkBanks"), (
+        f"{path.relative_to(ROOT)}: IntlBrokers must precede HkBanks so subdomain overrides work"
+    )
 
 
 def assert_local_domain_coverage() -> None:
@@ -215,6 +239,13 @@ def assert_local_domain_coverage() -> None:
         assert isinstance(suffixes, list), f"{path.relative_to(ROOT)} has no domain_suffix list"
         missing = expected - set(suffixes)
         assert not missing, f"{path.relative_to(ROOT)} is missing {sorted(missing)}"
+
+    for path, expected in REQUIRED_LOCAL_EXACT_DOMAINS.items():
+        source = load_yaml(path)
+        domains = source.get("domain")
+        assert isinstance(domains, list), f"{path.relative_to(ROOT)} has no domain list"
+        missing = expected - set(domains)
+        assert not missing, f"{path.relative_to(ROOT)} is missing exact domains {sorted(missing)}"
 
     stack_overflow = load_yaml(ROOT / "rules" / "stack_overflow.yaml")
     assert "stack.imgur.com" not in stack_overflow.get("domain", []), (
