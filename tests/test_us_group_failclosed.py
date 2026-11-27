@@ -35,7 +35,6 @@ EXPECTED_US_DIRECT_CONSUMERS = [
     "🤖 人工智能",
     "🎮 游戏平台",
     "👨‍💻 开发服务",
-    "💰 加密货币",
     "🎙️ 商务协作",
     "🛒 电商支付",
     "🍎 苹果服务",
@@ -103,7 +102,7 @@ def assert_us_failclosed_contract(data: dict, expected_use: list[str], label: st
     if us.get("filter") != EXPECTED_US_FILTER:
         raise AssertionError(f"{label}: {US_GROUP} filter regex changed")
 
-    # 2. Consumer boundary check (exact 13 direct, 0 indirect, 0 rules referencing US directly)
+    # 2. Consumer boundary check (exact 12 direct, 0 indirect, 0 rules referencing US directly)
     direct = [g["name"] for g in groups if US_GROUP in (g.get("proxies") or [])]
     if direct != EXPECTED_US_DIRECT_CONSUMERS:
         raise AssertionError(f"{label}: {US_GROUP} direct consumers changed: {direct}")
@@ -188,7 +187,7 @@ def main() -> int:
         assert_mutation_rejected(source, ["Sub", "Sub2"], mut_name, fn)
 
     print(
-        "US group fail-closed contract passed: 4 Mihomo configs, 13 direct consumers, "
+        "US group fail-closed contract passed: 4 Mihomo configs, 12 direct consumers, "
         "unchanged AI group/rules and 5 negative mutations."
     )
     return 0

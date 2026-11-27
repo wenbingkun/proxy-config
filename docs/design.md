@@ -107,7 +107,7 @@ IPv6 在各端统一开启（QX 不设 `no-ipv6`；Windows 配置开启 IPv6；�
 
 节点地区组按以下边界维护：香港、台湾、日本、韩国、新加坡和美国保留独立组；其余收敛为东南亚、亚洲其他、欧洲、美洲、大洋洲和非洲。南亚、中东、中亚、蒙古与澳门均属于“亚洲其他”；加拿大、墨西哥、中美洲、加勒比和南美洲均属于“美洲”，已独立的美国不会重复命中。澳大利亚、新西兰和太平洋岛国统一归入“大洋洲”。除美国节点组保留手动固定选择外，其余地区组均按健康检查延迟自动优选；故障转移组仍按可用性切换。不单设南极组，未命中地区的节点仍可从手动切换、自动选择和故障转移组使用。
 
-Mihomo（Windows Verge 与路由器模板）的 `🇺🇸 美国节点` 显式配置了静态首位候选 `proxies: [REJECT]`：当订阅缓存为空、过滤结果为空或历史选中节点从订阅中消失时，连接直接拒绝而不再隐式回落到等效直连的 `COMPATIBLE`（同时影响引用 `🇺🇸 美国节点` 的 13 个策略组；其他 14 个未配置静态 `REJECT` 的 `use:` 组不在该保证范围内）。全新空选择缓存即便订阅健康也会默认停在 `REJECT`，首次使用需手动选择一次美国节点；已有有效选择且目标节点仍在订阅中时，重启或重载会保留原选择。
+Mihomo（Windows Verge 与路由器模板）的 `🇺🇸 美国节点` 显式配置了静态首位候选 `proxies: [REJECT]`：当订阅缓存为空、过滤结果为空或历史选中节点从订阅中消失时，连接直接拒绝而不再隐式回落到等效直连的 `COMPATIBLE`（同时影响引用 `🇺🇸 美国节点` 的 12 个策略组；其他 14 个未配置静态 `REJECT` 的 `use:` 组不在该保证范围内）。全新空选择缓存即便订阅健康也会默认停在 `REJECT`，首次使用需手动选择一次美国节点；已有有效选择且目标节点仍在订阅中时，重启或重载会保留原选择。
 
 Steam 不再单设策略组：客户端进程、平台域名与商店/社区静态资源（含 `steamcdn-a.akamaihd.net`）均进入 `🎮 游戏平台`，平时可选择合适地区代理改善商店和社区访问；在 Mihomo（Windows Verge 与路由器）上，13 条已核验的 SteamPipe / Steam 国区下载 CDN（`rules/steam_download.yaml`）由排在三条 `PROCESS-NAME` 之前的 `RULE-SET,SteamDownload,DIRECT,no-resolve` 直接走 `DIRECT`，下载无需人工临时切换整个 `🎮 游戏平台` 组（也不再牵连 Epic、Xbox、PlayStation 等其他平台）。在 Windows 上，三个 `PROCESS-NAME` 规则继续兜底处理 `SteamDownload` 未覆盖的商店、联机、新 CDN 或纯 IP 流量；ShellCrash 看不到局域网客户端进程名，仍通过 `SteamDownload`、`Game` 聚合规则与国内旁路分流。Mihomo 使用 `SteamDownloadDirect.yaml` 独立缓存，防止升级时沿用包含商店静态域名的旧规则。Loon 的远程规则和 Quantumult X 的 `repo.snippet` 继续将 `steam_download` 指向 `🎮 游戏平台 · 自动`（在家 DIRECT 交由路由器处理，外出/蜂窝策略另行评估），Surge 维持改写冻结并同步生成列表。Microsoft、Visual Studio、Office、winget 与 npm 下载保持 `DIRECT`。
 
